@@ -19,31 +19,39 @@ Umsetzung eines Online-Brettspiels:
 │   ├── nginx.conf
 │   ├── public/
 │   └── src/
-└── docker-compose.yaml - Zentrale Datei für Deployment
+├── database - Datenbankinitialisierung und -schemas
+├── docker-compose.override.yaml - Override-Datei für Entwicklungsumgebung
+└── docker-compose.yaml - Basis-Datei für Deployment
 ```
+
+## Benötigte Umgebungsvariablen
+
+Auf der Hauptebene eine .env Datei anlegen mit:
+
+- POSTGRES_PASSWORD: Passwort für `postgres` Superuser
+- POSTGRES_LOCAL_USER: Name des regulären Users
+- POSTGRES_LOCAL_PASSWORD: Passwort des regulären Users
+- POSTGRES_DB: Name der verwendeten Datenbank
+
+## Benötigte Pakete
+
+Installieren: docker, docker-buildx, docker-compose
 
 ## Development mit Hot-Reloading
 
-Installieren: docker, docker-buildx, docker-compose, npm, nodejs, uv
-
-1. .env Datei anlegen mit Werten für `POSTGRES_USER`, `POSTGRES_PASSWORD` und `POSTGRES_DB`
-2. Datenbank starten via `sudo docker compose up -d db`
-3. In Ordner `backend` wechseln
-4. FastAPI Server starten via: `uv run fastapi dev main.py`
-5. In separatem Terminal in Ordner `frontend` wechseln
-6. Vite Development Server starten via: `npm run dev`
+Gesamten Container starten via `sudo docker compose up --build`
 
 Vite Server erreichbar unter: http://localhost:5173/
 
-API-Aufrufe werden durch den Vite Dev-Server analog zur späteren Produktionsumgebung umgeleitet (frontend/vite.config.ts).
+FastAPI Server erreichbar unter: http://localhost:8000/
+
+API-Aufrufe werden durch den Vite Dev-Server analog zur späteren Produktionsumgebung umgeleitet (Konfiguration unter `frontend/vite.config.ts`).
 Vite erkennt lokale Dateiänderungen und lädt die geöffnete Seite automatisch neu. Analog gilt das auch für den FastAPI-Dev-Server, welcher bei Dateiänderungen die API-Definitionen neu generiert.
 
 ## Deployment
 
-Installieren: docker, docker-buildx, docker-compose
+Gesamten Container starten via `sudo docker compose -f docker-compose.yaml up --build `
 
-Für Produktionsumgebung:
-1. .env Datei anlegen mit Werten für `POSTGRES_USER`, `POSTGRES_PASSWORD` und `POSTGRES_DB`
-2. Gesamten Container starten via `sudo docker compose up --build`
+Durch `-f docker-compose.yaml` wird die Entwicklungsumgebung aus `docker-compose.override.yaml` übersprungen.
 
 Nginx Server erreichbar unter: http://localhost:80/
