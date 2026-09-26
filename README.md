@@ -35,9 +35,19 @@ Auf der Hauptebene eine .env Datei anlegen mit:
 
 ## Benötigte Pakete
 
-Installieren: docker, docker-buildx, docker-compose
+Installieren: docker, docker-buildx, docker-compose, npm, uv
 
 ## Development mit Hot-Reloading
+
+Frontend Dependencies installieren:
+
+1. `cd frontend/`
+2. `npm ci`
+
+Backend Dependencies installieren:
+
+1. `cd backend/`
+2. `uv sync`
 
 Gesamten Container starten via `sudo docker compose up --build`
 
