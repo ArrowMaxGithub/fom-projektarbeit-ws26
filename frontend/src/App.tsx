@@ -1,120 +1,96 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
+type ResetProps = {
+  onReset: () => void,
+}
+
+function Reset({ onReset }: ResetProps) {
+  return (
+    <>
+      <button
+        type="button"
+        className="reset"
+        onClick={onReset}
+      >
+        Reset
+      </button>
+    </>
+  )
+}
+
+type FieldProps = {
+  value?: string,
+  onClick: () => void,
+}
+
+function Field({ value, onClick }: FieldProps) {
+  return (
+    <>
+      <button
+        type="button"
+        className="field"
+        onClick={onClick}
+      >
+        {value}
+      </button>
+    </>
+  )
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [state, setState] = useState(Array(9).fill(undefined));
+  const [active, setActive] = useState(0);
+
+  async function handleReset() {
+    await fetch("/api/reset", {
+      method: "POST",
+    }).then((data) => data.json())
+      .then((data) => {
+        setActive(data.active);
+        setState(data.states);
+      });
+  }
+
+  async function handleClick(id: number) {
+    await fetch(`/api/state/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "player_id": active }),
+    }).then((data) => data.json())
+      .then((data) => {
+        if (data?.state) {
+          const new_state = state.slice();
+          new_state[id] = data.state;
+          setState(new_state);
+          setActive(data.active);
+        }
+        if (data?.winner) {
+          console.log(`winner: ${data.winner}`);
+        }
+      });
+  }
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+      <Reset onReset={handleReset} />
+      <div className="game">
+        <div className='row'>
+          <Field value={state[0]} onClick={() => handleClick(0)} />
+          <Field value={state[1]} onClick={() => handleClick(1)} />
+          <Field value={state[2]} onClick={() => handleClick(2)} />
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+        <div className='row'>
+          <Field value={state[3]} onClick={() => handleClick(3)} />
+          <Field value={state[4]} onClick={() => handleClick(4)} />
+          <Field value={state[5]} onClick={() => handleClick(5)} />
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className='row'>
+          <Field value={state[6]} onClick={() => handleClick(6)} />
+          <Field value={state[7]} onClick={() => handleClick(7)} />
+          <Field value={state[8]} onClick={() => handleClick(8)} />
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      </div >
     </>
   )
 }
