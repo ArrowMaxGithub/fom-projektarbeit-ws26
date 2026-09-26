@@ -70,14 +70,29 @@ async def get_active_player():
 
 
 @app.get("/api/state/{id}")
-async def get_state(id: int):
+async def get_single_state(id: int):
     cursor = conn.cursor()
     cursor.execute("select state from gamestate where id = %s;", (id,))
     (state,) = cursor.fetchone()
-    print(f"state: {state}")
 
     return {
         "state": state,
+    }
+
+
+@app.get("/api/states")
+async def get_states():
+    cursor = conn.cursor()
+    cursor.execute("select state from gamestate order by id;")
+    rows = cursor.fetchall()
+    states = [row[0] for row in rows]
+
+    cursor.execute("select id from active_player;")
+    (active_id,) = cursor.fetchone()
+
+    return {
+        "states": states,
+        "active": active_id,
     }
 
 
@@ -132,7 +147,8 @@ async def post_reset():
     (active_id,) = cursor.fetchone()
 
     cursor.execute("select state from gamestate;")
-    states = cursor.fetchall()
+    rows = cursor.fetchall()
+    states = [row[0] for row in rows]
 
     return {
         "active": active_id,
