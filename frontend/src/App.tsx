@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 type ResetProps = {
@@ -38,42 +38,86 @@ function Field({ value, onClick }: FieldProps) {
   )
 }
 
-function App() {
-  const [state, setState] = useState(Array(9).fill(undefined));
-  const [active, setActive] = useState(0);
+function ValidateReponse(response: Response) {
+  if (!response.ok) {
+    throw new Error(`Bad response: ${response.status} ${response.statusText}`);
+  }
+  return response.json();
+}
 
-  async function handleReset() {
-    await fetch("/api/reset", {
-      method: "POST",
-    }).then((data) => data.json())
+function LogAndRethrow(error: Error) {
+  console.error(error);
+  throw error;
+}
+
+function Valid(value: any): boolean {
+  return value !== null && value !== undefined
+}
+
+function App() {
+  const [state, setState] = useState(Array(9).fill(null));
+  const [active, setActive] = useState(0);
+  const inputs = ["X", "O"]
+
+  useEffect(() => {
+    handleInit();
+  }, [])
+
+  function handleInit() {
+    fetch("/api/states", {
+    }).then(ValidateReponse)
       .then((data) => {
-        setActive(data.active);
-        setState(data.states);
-      });
+        if (Valid(data?.active)) {
+          setActive(data.active);
+        }
+        if (Valid(data?.states)) {
+          setState(data.states);
+        }
+      })
+      .catch(LogAndRethrow);
   }
 
-  async function handleClick(id: number) {
-    await fetch(`/api/state/${id}`, {
+  function handleReset() {
+    fetch("/api/reset", {
+      method: "POST",
+    }).then(ValidateReponse)
+      .then((data) => {
+        if (Valid(data?.active)) {
+          setActive(data.active);
+        }
+        if (Valid(data?.states)) {
+          setState(data.states);
+        }
+      })
+      .catch(LogAndRethrow);
+  }
+
+  function handleClick(id: number) {
+    fetch(`/api/state/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ "player_id": active }),
-    }).then((data) => data.json())
+    }).then(ValidateReponse)
       .then((data) => {
-        if (data?.state) {
+        if (Valid(data?.state)) {
           const new_state = state.slice();
           new_state[id] = data.state;
           setState(new_state);
+        }
+        if (Valid(data?.active)) {
           setActive(data.active);
         }
-        if (data?.winner) {
+        if (Valid(data?.winner)) {
           console.log(`winner: ${data.winner}`);
         }
-      });
+      })
+      .catch(LogAndRethrow);
   }
 
   return (
     <>
       <Reset onReset={handleReset} />
+      <span>Active Player: {inputs[active]}</span>
       <div className="game">
         <div className='row'>
           <Field value={state[0]} onClick={() => handleClick(0)} />
