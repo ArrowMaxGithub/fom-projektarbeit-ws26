@@ -3,12 +3,17 @@ import os
 import psycopg2
 from fastapi import FastAPI
 from pydantic import BaseModel
+from pydantic_socketio import FastAPISocketIO
+
+print("START")
 
 app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
 )
+
+sio = FastAPISocketIO(app)
 
 conn = psycopg2.connect(
     database=os.getenv("POSTGRES_DB"),
@@ -42,6 +47,23 @@ def determine_winner(states):
             print(f"WINNER:{winner}")
             break
     return winner
+
+
+@sio.event
+async def join(sid):
+    print(f"User joined: {sid}")
+    await sio.emit("lobby", "User joined")
+
+
+class ChatMessage(BaseModel):
+    sender: str
+    content: str
+
+
+@sio.on("chat")
+async def chat(sid, model: ChatMessage):
+    await sio.emit("chat", model)
+    return {}
 
 
 @app.get("/api/winner")
