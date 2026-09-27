@@ -1,5 +1,81 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type SubmitEvent } from 'react'
 import './App.css'
+import { io } from 'socket.io-client';
+
+export const socket = io(undefined); // Infer URL from window.location
+
+// TODO: Setup automatic Python pydantic model export to TS-interfaces
+export interface Message {
+  sender: string,
+  content: string,
+}
+
+// Adapted from: https://socket.io/how-to/use-with-react
+function Chat() {
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [messages, setMessages] = useState<Array<Message>>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState("Anon");
+
+  useEffect(() => {
+    function onConnect() {
+      setIsConnected(true);
+    }
+
+    function onDisconnect() {
+      setIsConnected(false);
+    }
+
+    function onMessage(msg: Message) {
+      setMessages(prev => prev.concat(msg));
+    }
+
+    socket.on('connect', onConnect);
+    socket.on('chat', onMessage);
+    socket.on('disconnect', onDisconnect);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('chat', onMessage);
+      socket.off('disconnect', onDisconnect);
+    };
+  }, []);
+
+  function OnChat(event: SubmitEvent) {
+    event.preventDefault();
+    setIsLoading(true);
+
+    const msg: Message = {
+      sender: name,
+      content: input,
+    };
+
+    socket.timeout(5000).emit('chat', msg, () => {
+      setIsLoading(false);
+    });
+  }
+
+  return (
+    <div className="Chat">
+      <p>Connected: {'' + isConnected}</p>
+      <input onChange={current => setName(current.target.value)} placeholder={name} />
+      <button onClick={() => socket.connect()}>Connect</button>
+      <button onClick={() => socket.disconnect()}>Disconnect</button>
+      <form onSubmit={OnChat}>
+        <input onChange={current => setInput(current.target.value)} />
+        <button type="submit" disabled={isLoading}>Send Message</button>
+      </form>
+      <ul>
+        {
+          messages.map((msg, index) =>
+            <li key={index}>{msg.sender}: {msg.content}</li>
+          )
+        }
+      </ul>
+    </div>
+  )
+}
 
 type ResetProps = {
   onReset: () => void,
@@ -135,6 +211,7 @@ function App() {
           <Field value={state[8]} onClick={() => handleClick(8)} />
         </div>
       </div >
+      <Chat />
     </>
   )
 }
