@@ -1,4 +1,5 @@
 import os
+from collections.abc import Sequence
 
 import psycopg2
 from fastapi import FastAPI
@@ -49,10 +50,59 @@ def determine_winner(states):
     return winner
 
 
+class Player(BaseModel):
+    name: str
+
+
 @sio.event
-async def join(sid):
-    print(f"User joined: {sid}")
-    await sio.emit("lobby", "User joined")
+async def join(sid, player: Player) -> int:
+    cursor = conn.cursor()
+    cursor.execute(
+        "insert into players (name) values %s returning id;", ((player.name,),)
+    )
+    conn.commit()
+    (player_id,) = cursor.fetchone()
+
+    await sio.emit("chat", {"sender": "Server", "content": f"{player.name} joined"})
+
+    return player_id
+
+
+class Play(BaseModel):
+    player_id: int
+    role: int
+
+
+@sio.event
+async def play(sid, play: Play):
+    role_labels = ["Spectator", "X", "O"]
+    cursor = conn.cursor()
+    cursor.execute("select name from players where id = %s;", (play.player_id,))
+    (name,) = cursor.fetchone()
+
+    cursor.execute("select count(*) from active_players where role = %s;", (play.role,))
+    (taken,) = cursor.fetchone()
+    if taken == 0:
+        cursor.execute(
+            "insert into active_players values %s;",
+            ((play.player_id, play.role, play.role == 1),),
+        )
+        await sio.emit(
+            "chat",
+            {"sender": "Server", "content": f"{name} plays {role_labels[play.role]}"},
+        )
+        cursor.execute("select count(*) from active_players;")
+        (count,) = cursor.fetchone()
+        if count == 2:
+            await sio.emit(
+                "chat",
+                {"sender": "Server", "content": "Game is starting"},
+            )
+            await sio.emit("start")
+
+        conn.commit()
+
+    return taken == 0
 
 
 class ChatMessage(BaseModel):
@@ -60,119 +110,91 @@ class ChatMessage(BaseModel):
     content: str
 
 
-@sio.on("chat")
-async def chat(sid, model: ChatMessage):
-    await sio.emit("chat", model)
-    return {}
+@sio.event
+async def chat(sid, message: ChatMessage):
+    await sio.emit("chat", message)
 
 
-@app.get("/api/winner")
-async def get_winner():
-    cursor = conn.cursor()
-    cursor.execute("select id, state from gamestate order by id;")
-    rows = cursor.fetchall()
-    (_ids, states) = zip(*rows)
-
-    winner = determine_winner(states)
-
-    return {
-        "winner": winner,
-    }
-
-
-@app.get("/api/active_player")
-async def get_active_player():
-    cursor = conn.cursor()
-    cursor.execute("select id from active_player;")
-    (id,) = cursor.fetchone()
-
-    return {
-        "active_player": id,
-    }
-
-
-@app.get("/api/state/{id}")
-async def get_single_state(id: int):
-    cursor = conn.cursor()
-    cursor.execute("select state from gamestate where id = %s;", (id,))
-    (state,) = cursor.fetchone()
-
-    return {
-        "state": state,
-    }
-
-
-@app.get("/api/states")
-async def get_states():
-    cursor = conn.cursor()
-    cursor.execute("select state from gamestate order by id;")
-    rows = cursor.fetchall()
-    states = [row[0] for row in rows]
-
-    cursor.execute("select id from active_player;")
-    (active_id,) = cursor.fetchone()
-
-    return {
-        "states": states,
-        "active": active_id,
-    }
-
-
-class StateModel(BaseModel):
+class Move(BaseModel):
     player_id: int
+    field: int
 
 
-@app.post("/api/state/{id}")
-async def post_state(id: int, model: StateModel):
+class Gamestate(BaseModel):
+    active: int
+    states: Sequence[int]
+    winner: int
+
+
+@sio.event
+async def move(sid, move: Move):
+    print(move)
     cursor = conn.cursor()
 
-    cursor.execute("select id from active_player;")
-    (active_id,) = cursor.fetchone()
-    if active_id == -1 or model.player_id != active_id:
+    cursor.execute("select id, role from active_players where active = true;")
+    row = cursor.fetchone()
+    if row is None or move.player_id != row[0]:
         return
 
-    cursor.execute("select state from gamestate where id = %s;", (id,))
+    active_id = row[0]
+    active_role = row[1]
+
+    cursor.execute("select state from gamestate where id = %s;", (move.field,))
     (state,) = cursor.fetchone()
-    if state:
+    if state != 0:
         return
 
-    state = "X" if active_id == 0 else "O"
-
-    cursor.execute("update gamestate set state = %s where id = %s;", (state, id))
+    cursor.execute(
+        "update gamestate set state = %s where id = %s;", (active_role, move.field)
+    )
     conn.commit()
 
     cursor.execute("select id, state from gamestate order by id;")
     rows = cursor.fetchall()
-    (_ids, states) = zip(*rows)
+    (_fields, states) = zip(*rows)
 
     winner = determine_winner(states)
 
-    next_active_id = -1 if winner else (active_id + 1) % 2
-    cursor.execute("update active_player set id = %s;", (next_active_id,))
+    if winner:
+        next_active_role = 0
+        cursor.execute("update active_players set active = false;")
+        cursor.execute("select name from players where id = %s;", (active_id,))
+        (name,) = cursor.fetchone()
+        await sio.emit(
+            "chat",
+            {"sender": "Server", "content": f"{name} won"},
+        )
+    else:
+        next_active_role = 2 if active_role == 1 else 1
+        cursor.execute(
+            "update active_players set active = false where id = %s;", (active_id,)
+        )
+        cursor.execute(
+            "update active_players set active = true where not id = %s;",
+            (active_id,),
+        )
+
     conn.commit()
+    await sio.emit(
+        "gamestate",
+        {
+            "active": next_active_role,
+            "states": states,
+            "winner": winner,
+        },
+    )
 
-    return {
-        "active": next_active_id,
-        "state": state,
-        "winner": winner,
-    }
 
-
-@app.post("/api/reset")
-async def post_reset():
+@sio.event
+async def reset(sid):
     cursor = conn.cursor()
-    cursor.execute("update gamestate set state = NULL;")
-    cursor.execute("update active_player set id = 0;")
+    cursor.execute("delete from active_players;")
+    cursor.execute("update gamestate set state = 0;")
     conn.commit()
 
-    cursor.execute("select id from active_player;")
-    (active_id,) = cursor.fetchone()
+    await sio.emit(
+        "chat",
+        {"sender": "Server", "content": "Resetting game"},
+    )
 
-    cursor.execute("select state from gamestate;")
-    rows = cursor.fetchall()
-    states = [row[0] for row in rows]
-
-    return {
-        "active": active_id,
-        "states": states,
-    }
+    await sio.emit("reset")
