@@ -83,6 +83,7 @@ async def play(sid, play: Play):
     cursor.execute("select count(*) from active_players where role = %s;", (play.role,))
     (taken,) = cursor.fetchone()
     if taken == 0:
+        cursor.execute("delete from active_players where id = %s;", (play.player_id,))
         cursor.execute(
             "insert into active_players values %s;",
             ((play.player_id, play.role, play.role == 1),),
