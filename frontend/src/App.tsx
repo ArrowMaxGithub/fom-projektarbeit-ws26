@@ -16,7 +16,8 @@ export interface Move {
 }
 
 export interface Player {
-  name: string,
+  player_id: number,
+  player_name: string,
 }
 
 export interface Play {
@@ -28,6 +29,11 @@ export interface Gamestate {
   active: number,
   states: number[],
   winner: number | null,
+}
+
+export interface Role {
+  role: number,
+  taken: boolean,
 }
 
 type ResetProps = {
@@ -74,14 +80,18 @@ function App() {
   const [messages, setMessages] = useState<Array<Message>>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState("Anon");
+  const [xTaken, setXTaken] = useState(false);
+  const [OTaken, setOTaken] = useState(false);
 
   const [gamestate, setGamestate] = useState<Gamestate>({
     active: 1,
     states: Array(9).fill(0),
     winner: null,
   });
-  const [player_id, setPlayerID] = useState<number>(0);
+  const [player, setPlayer] = useState<Player>({
+    player_name: "Anon",
+    player_id: 0
+  });
   const [role, setRole] = useState<number>(0);
   const [gamestart, setGameStart] = useState(false);
   const roles = ["Spectator", "X", "O"];
@@ -113,20 +123,37 @@ function App() {
       setGameStart(true);
     }
 
+    function onRoleTaken(role: Role) {
+      if (role.taken) {
+        console.log(`Role taken: ${role.role}`);
+      } else {
+        console.log(`Role released: ${role.role}`);
+      }
+      if (role.role == 1) {
+        setXTaken(role.taken);
+      } else if (role.role == 2) {
+        setOTaken(role.taken);
+      }
+    }
+
     function onGameReset() {
       console.log("Game is reset");
+
       setGamestate({
         active: 1,
         states: Array(9).fill(0),
         winner: null,
       });
       setRole(0);
+      setXTaken(false);
+      setOTaken(false);
       setGameStart(false);
     }
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('chat', onChat);
+    socket.on('role', onRoleTaken);
     socket.on('gamestate', onGameState);
     socket.on('start', onGameStart);
     socket.on('reset', onGameReset);
@@ -135,6 +162,7 @@ function App() {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('chat', onChat);
+      socket.off('role', onRoleTaken);
       socket.off('gamestate', onGameState);
       socket.off('reset', onGameReset);
     };
@@ -145,7 +173,7 @@ function App() {
     setIsLoading(true);
 
     const msg: Message = {
-      sender: name,
+      sender: player.player_name,
       content: input,
     };
 
@@ -156,27 +184,40 @@ function App() {
 
   function handleConnect() {
     socket.connect();
-    const player: Player = {
-      name,
-    };
-    socket.emit('join', player, (player_id: number) => {
-      console.log(`My player ID: ${player_id}`);
-      setPlayerID(player_id);
+    socket.emit('join', player, (player: Player, gamestate: Gamestate, roles: boolean[]) => {
+      console.log(`My player ID: ${player.player_id} | My Name: ${player.player_name}`);
+      console.log(`Gamestate: ${gamestate.states} | roles: ${roles}`);
+      setPlayer(player);
+      setGamestate(gamestate);
+      setXTaken(roles[1]);
+      setOTaken(roles[2]);
+      setGameStart(gamestate.states.some(e => e !== 0));
     });
   }
 
   function handleDiconnect() {
-    socket.emit('disconnect');
+    socket.emit('leave', player);
+    socket.disconnect();
+
   }
 
   function handleReset() {
     socket.emit('reset');
-    setRole(0);
+  }
+
+  function handleNameChange(current: string) {
+    if (!isConnected) {
+      const new_player: Player = {
+        player_name: current,
+        player_id: player.player_id,
+      };
+      setPlayer(new_player);
+    }
   }
 
   function handlePlay(role: number) {
     const play: Play = {
-      player_id,
+      player_id: player.player_id,
       role,
     };
     socket.emit('play', play, (ok: boolean) => {
@@ -191,7 +232,7 @@ function App() {
 
   function handleClick(field: number) {
     const move: Move = {
-      player_id,
+      player_id: player.player_id,
       field,
     };
     socket.emit('move', move);
@@ -219,14 +260,14 @@ function App() {
           <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[8] ?? 0]} onClick={() => handleClick(8)} />
         </div>
       </div >
-      <button onClick={() => handlePlay(1)} disabled={role === 1 || gamestart}>Play {roles[1]}</button>
-      <button onClick={() => handlePlay(2)} disabled={role === 2 || gamestart}>Play {roles[2]}</button>
-      <span style={{ margin: "0 0 0 1em" }}>{gamestart ? "Game in progress" : "Waiting for players"}</span>
+      <button onClick={() => handlePlay(1)} disabled={xTaken}>Play {roles[1]}</button>
+      <button onClick={() => handlePlay(2)} disabled={OTaken}>Play {roles[2]}</button>
+      <span style={{ margin: "0 0 0 1em" }}>{gamestate.winner ? `${roles[gamestate.winner]} won` : gamestart ? "Game in progress" : "Waiting for players"}</span>
       <div className="Chat">
         <p>Connected: {'' + isConnected}</p>
-        <input onChange={current => setName(current.target.value)} placeholder={"Anon"} />
-        <button onClick={() => handleConnect()}>Connect</button>
-        <button onClick={() => handleDiconnect()}>Disconnect</button>
+        <input disabled={isConnected} onChange={current => handleNameChange(current.target.value)} placeholder={"Anon"} />
+        <button disabled={isConnected} onClick={() => handleConnect()}>Connect</button>
+        <button disabled={!isConnected} onClick={() => handleDiconnect()}>Disconnect</button>
         <form onSubmit={sendMessage}>
           <input onChange={current => setInput(current.target.value)} />
           <button type="submit" disabled={isLoading}>Send Message</button>
