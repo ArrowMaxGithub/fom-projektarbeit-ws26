@@ -1,12 +1,10 @@
 import os
-from collections.abc import Sequence
 
-import psycopg2
+import psycopg
 from fastapi import FastAPI
-from pydantic import BaseModel
+from models import *
 from pydantic_socketio import FastAPISocketIO
-
-print("START")
+from queries import *
 
 app = FastAPI(
     docs_url="/api/docs",
@@ -16,8 +14,8 @@ app = FastAPI(
 
 sio = FastAPISocketIO(app)
 
-conn = psycopg2.connect(
-    database=os.getenv("POSTGRES_DB"),
+conn = psycopg.connect(
+    dbname=os.getenv("POSTGRES_DB"),
     host="database",  # docker container name
     user=os.getenv("POSTGRES_LOCAL_USER"),
     password=os.getenv("POSTGRES_LOCAL_PASSWORD"),
@@ -25,152 +23,37 @@ conn = psycopg2.connect(
 )
 
 
-def determine_winner(states):
-    combinations = (
-        # Rows
-        (0, 1, 2),
-        (3, 4, 5),
-        (6, 7, 8),
-        # Columns
-        (0, 3, 6),
-        (1, 4, 7),
-        (2, 5, 8),
-        # Diagonals
-        (0, 4, 8),
-        (2, 4, 6),
-    )
+async def guarded_query(QueryFn):
+    try:
+        query = QueryFn()
 
-    winner = None
+    except ValueError as e:
+        print(f"Transaction aborted due to invalid input. Reason: {e}")
+        query.reject(sio)
+        raise exception
 
-    for c in combinations:
-        if states[c[0]] and (states[c[0]] == states[c[1]] == states[c[2]]):
-            winner = states[c[0]]
-            print(f"WINNER:{winner}")
-            break
-    return winner
+    except Exception as e:  # noqa: BLE001
+        print(f"Transaction aborted. Reason: {e}")
+        query.reject(sio)
+        raise exception
 
-
-class Player(BaseModel):
-    player_id: int
-    player_name: str
+    else:
+        return await query.fullfill(sio)
 
 
 @sio.event
-async def join(sid, player: Player) -> Player:
-    cursor = conn.cursor()
-    cursor.execute(
-        "insert into players (name) values %s returning id;", ((player.player_name,),)
-    )
-    conn.commit()
-    (player_id,) = cursor.fetchone()
-    player.player_id = player_id
-
-    await sio.emit(
-        "chat", {"sender": "Server", "content": f"{player.player_name} joined"}
-    )
-
-    cursor.execute("select id, state from gamestate order by id;")
-    rows = cursor.fetchall()
-    (_fields, states) = zip(*rows)
-
-    winner = determine_winner(states)
-
-    cursor.execute("select id from active_players where active = true;")
-    row = cursor.fetchone()
-    active = -1 if row is None else row[0]
-
-    cursor.execute("select role from active_players;")
-    rows = cursor.fetchall()
-    roles = [False, False, False]
-    for row in rows:
-        roles[row[0]] = True
-
-    return (
-        {"player_id": player_id, "player_name": player.player_name},
-        {
-            "active": active,
-            "states": states,
-            "winner": winner,
-        },
-        roles,
-    )
+async def join(sid, player: Player):
+    return await guarded_query(lambda: JoinQuery(conn, sid, player))
 
 
 @sio.event
 async def leave(sid, player: Player):
-    cursor = conn.cursor()
-    cursor.execute("delete from players where id = %s;", ((player.player_id,),))
-    conn.commit()
-
-    await sio.emit(
-        "chat", {"sender": "Server", "content": f"{player.player_name} left"}
-    )
-
-
-class Play(BaseModel):
-    player_id: int
-    role: int
+    return await guarded_query(lambda: LeaveQuery(conn, sid, player))
 
 
 @sio.event
 async def play(sid, play: Play):
-    role_labels = ["Spectator", "X", "O"]
-    cursor = conn.cursor()
-    cursor.execute("select name from players where id = %s;", (play.player_id,))
-    (name,) = cursor.fetchone()
-
-    cursor.execute("select count(*) from active_players where role = %s;", (play.role,))
-    (taken,) = cursor.fetchone()
-    if taken == 0:
-        cursor.execute(
-            "select role from active_players where id = %s;", (play.player_id,)
-        )
-        row = cursor.fetchone()
-        if row != None:
-            await sio.emit(
-                "role",
-                {
-                    "role": row[0],
-                    "taken": False,
-                },
-            )
-            cursor.execute(
-                "delete from active_players where id = %s;", (play.player_id,)
-            )
-
-        cursor.execute(
-            "insert into active_players values %s;",
-            ((play.player_id, play.role, play.role == 1),),
-        )
-        await sio.emit(
-            "chat",
-            {"sender": "Server", "content": f"{name} plays {role_labels[play.role]}"},
-        )
-        await sio.emit(
-            "role",
-            {
-                "role": play.role,
-                "taken": True,
-            },
-        )
-
-        cursor.execute("select count(*) from active_players;")
-        (count,) = cursor.fetchone()
-        if count == 2:
-            await sio.emit(
-                "chat",
-                {"sender": "Server", "content": "Game is starting"},
-            )
-            await sio.emit("start")
-
-        conn.commit()
-
-    return taken == 0
-
-
-class ChatMessage(BaseModel):
-    sender: str
-    content: str
+    return await guarded_query(lambda: PlayQuery(conn, sid, play))
 
 
 @sio.event
@@ -178,86 +61,11 @@ async def chat(sid, message: ChatMessage):
     await sio.emit("chat", message)
 
 
-class Move(BaseModel):
-    player_id: int
-    field: int
-
-
-class Gamestate(BaseModel):
-    active: int
-    states: Sequence[int]
-    winner: int
-
-
 @sio.event
 async def move(sid, move: Move):
-    print(move)
-    cursor = conn.cursor()
-
-    cursor.execute("select id, role from active_players where active = true;")
-    row = cursor.fetchone()
-    if row is None or move.player_id != row[0]:
-        return
-
-    active_id = row[0]
-    active_role = row[1]
-
-    cursor.execute("select state from gamestate where id = %s;", (move.field,))
-    (state,) = cursor.fetchone()
-    if state != 0:
-        return
-
-    cursor.execute(
-        "update gamestate set state = %s where id = %s;", (active_role, move.field)
-    )
-    conn.commit()
-
-    cursor.execute("select id, state from gamestate order by id;")
-    rows = cursor.fetchall()
-    (_fields, states) = zip(*rows)
-
-    winner = determine_winner(states)
-
-    if winner:
-        next_active_role = -1
-        cursor.execute("update active_players set active = false;")
-        cursor.execute("select name from players where id = %s;", (active_id,))
-        (name,) = cursor.fetchone()
-        await sio.emit(
-            "chat",
-            {"sender": "Server", "content": f"{name} won"},
-        )
-    else:
-        next_active_role = 2 if active_role == 1 else 1
-        cursor.execute(
-            "update active_players set active = false where id = %s;", (active_id,)
-        )
-        cursor.execute(
-            "update active_players set active = true where not id = %s;",
-            (active_id,),
-        )
-
-    conn.commit()
-    await sio.emit(
-        "gamestate",
-        {
-            "active": next_active_role,
-            "states": states,
-            "winner": winner,
-        },
-    )
+    return await guarded_query(lambda: MoveQuery(conn, sid, move))
 
 
 @sio.event
 async def reset(sid):
-    cursor = conn.cursor()
-    cursor.execute("delete from active_players;")
-    cursor.execute("update gamestate set state = 0;")
-    conn.commit()
-
-    await sio.emit(
-        "chat",
-        {"sender": "Server", "content": "Resetting game"},
-    )
-
-    await sio.emit("reset")
+    return await guarded_query(lambda: ResetQuery(conn, sid))

@@ -18,7 +18,7 @@ drop table if exists players;
 
 create table players ( id serial primary key, name text );
 
-drop table if exists active_player;
+drop table if exists active_players;
 
 create table active_players (
     id int primary key,
