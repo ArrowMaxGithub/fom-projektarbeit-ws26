@@ -1,93 +1,26 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
 import './App.css'
+import type { ChatMessage, Move, Player, Play, Gamestate, RoleTaken } from './interfaces.tsx'
+import Reset from './components/Reset.tsx'
+import Field from './components/Field.tsx'
 import { io } from 'socket.io-client';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
-// TODO: Setup automatic Python pydantic model export to TS-interfaces
-export interface Message {
-  sender: string,
-  content: string,
-}
-
-export interface Move {
-  player_id: number,
-  field: number,
-}
-
-export interface Player {
-  player_id: number,
-  player_name: string,
-}
-
-export interface Play {
-  player_id: number,
-  role: number,
-}
-
-export interface Gamestate {
-  active: number,
-  states: number[],
-  winner: number | null,
-}
-
-export interface Role {
-  role: number,
-  taken: boolean,
-}
-
-type ResetProps = {
-  onReset: () => void,
-}
-
-function Reset({ onReset }: ResetProps) {
-  return (
-    <>
-      <button
-        type="button"
-        className="reset"
-        onClick={onReset}
-      >
-        Reset
-      </button>
-    </>
-  )
-}
-
-type FieldProps = {
-  disabled: boolean,
-  value?: string,
-  onClick: () => void,
-}
-
-function Field({ disabled, value, onClick }: FieldProps) {
-  return (
-    <>
-      <button
-        type="button"
-        disabled={disabled}
-        className="field"
-        onClick={onClick}
-      >
-        {value}
-      </button>
-    </>
-  )
+const DefaultGameState: Gamestate = {
+  active: 1,
+  states: Array(9).fill(0),
+  winner: null,
 }
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [messages, setMessages] = useState<Array<Message>>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [chat, setChat] = useState<Array<ChatMessage>>([]);
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const [xTaken, setXTaken] = useState(false);
   const [OTaken, setOTaken] = useState(false);
-
-  const [gamestate, setGamestate] = useState<Gamestate>({
-    active: 1,
-    states: Array(9).fill(0),
-    winner: null,
-  });
+  const [gamestate, setGamestate] = useState<Gamestate>(DefaultGameState);
   const [player, setPlayer] = useState<Player>({
     player_name: "Anon",
     player_id: 0
@@ -108,9 +41,9 @@ function App() {
       setIsConnected(false);
     }
 
-    function onChat(msg: Message) {
+    function onChat(msg: ChatMessage) {
       console.log(`Incoming message from ${msg.sender}: ${msg.content}`);
-      setMessages(prev => prev.concat(msg));
+      setChat(prev => prev.concat(msg));
     }
 
     function onGameState(gamestate: Gamestate) {
@@ -123,7 +56,7 @@ function App() {
       setGameStart(true);
     }
 
-    function onRoleTaken(role: Role) {
+    function onRoleTaken(role: RoleTaken) {
       if (role.taken) {
         console.log(`Role taken: ${role.role}`);
       } else {
@@ -139,11 +72,7 @@ function App() {
     function onGameReset() {
       console.log("Game is reset");
 
-      setGamestate({
-        active: 1,
-        states: Array(9).fill(0),
-        winner: null,
-      });
+      setGamestate(DefaultGameState);
       setRole(0);
       setXTaken(false);
       setOTaken(false);
@@ -164,21 +93,20 @@ function App() {
       socket.off('chat', onChat);
       socket.off('role', onRoleTaken);
       socket.off('gamestate', onGameState);
+      socket.off('start', onGameStart);
       socket.off('reset', onGameReset);
     };
   }, []);
 
-  function sendMessage(event: SubmitEvent) {
+  function handleSubmitMessage(event: SubmitEvent) {
     event.preventDefault();
-    setIsLoading(true);
-
-    const msg: Message = {
+    setIsSending(true);
+    const msg: ChatMessage = {
       sender: player.player_name,
-      content: input,
+      content: message,
     };
-
     socket.emit('chat', msg, () => {
-      setIsLoading(false);
+      setIsSending(false);
     });
   }
 
@@ -206,26 +134,24 @@ function App() {
   }
 
   function handleNameChange(current: string) {
-    if (!isConnected) {
-      const new_player: Player = {
-        player_name: current,
-        player_id: player.player_id,
-      };
-      setPlayer(new_player);
-    }
+    const new_player: Player = {
+      player_name: current,
+      player_id: player.player_id,
+    };
+    setPlayer(new_player);
   }
 
-  function handlePlay(role: number) {
-    const play: Play = {
+  function handleChooseRole(role: number) {
+    const choose: Play = {
       player_id: player.player_id,
       role,
     };
-    socket.emit('play', play, (ok: boolean) => {
+    socket.emit('play', choose, (ok: boolean) => {
       if (ok) {
         console.log(`My Role: ${role}`);
         setRole(role);
       } else {
-        console.log(`Could not select role: ${role}`);
+        console.log(`Could not choose role: ${role}`);
       }
     });
   }
@@ -238,43 +164,39 @@ function App() {
     socket.emit('move', move);
   }
 
+  function generate_field(index: number) {
+    const disabled = !gamestart || role !== gamestate.active;
+    const value = states[gamestate.states[index] ?? 0];
+    return <Field key={index} disabled={disabled} value={value} onClick={() => handleClick(index)} />;
+  }
+
   return (
     <>
       <Reset onReset={handleReset} />
-      <span style={{ margin: "0 0 0 1em" }}>Active Player: {roles[gamestate.active]}</span>
-      <span style={{ margin: "0 0 0 1em" }}>You are: {roles[role]}</span>
-      <div className="game">
-        <div className='row'>
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[0] ?? 0]} onClick={() => handleClick(0)} />
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[1] ?? 0]} onClick={() => handleClick(1)} />
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[2] ?? 0]} onClick={() => handleClick(2)} />
-        </div>
-        <div className='row'>
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[3] ?? 0]} onClick={() => handleClick(3)} />
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[4] ?? 0]} onClick={() => handleClick(4)} />
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[5] ?? 0]} onClick={() => handleClick(5)} />
-        </div>
-        <div className='row'>
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[6] ?? 0]} onClick={() => handleClick(6)} />
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[7] ?? 0]} onClick={() => handleClick(7)} />
-          <Field disabled={!gamestart || role !== gamestate.active} value={states[gamestate.states[8] ?? 0]} onClick={() => handleClick(8)} />
-        </div>
+      <span>Active Player: {roles[gamestate.active]}</span>
+      <span>You are: {roles[role]}</span>
+      <div className="board">
+        {[0, 1, 2].map(row =>
+          <div key={row} className='row'>
+            {[0, 1, 2].map(col => generate_field(row * 3 + col))}
+          </div>)
+        }
       </div >
-      <button onClick={() => handlePlay(1)} disabled={xTaken}>Play {roles[1]}</button>
-      <button onClick={() => handlePlay(2)} disabled={OTaken}>Play {roles[2]}</button>
-      <span style={{ margin: "0 0 0 1em" }}>{gamestate.winner ? `${roles[gamestate.winner]} won` : gamestart ? "Game in progress" : "Waiting for players"}</span>
+      <button onClick={() => handleChooseRole(1)} disabled={xTaken}>Play {roles[1]}</button>
+      <button onClick={() => handleChooseRole(2)} disabled={OTaken}>Play {roles[2]}</button>
+      <span>{gamestate.winner ? `${roles[gamestate.winner]} won` : gamestart ? "Game in progress" : "Waiting for players"}</span>
       <div className="Chat">
         <p>Connected: {'' + isConnected}</p>
         <input disabled={isConnected} onChange={current => handleNameChange(current.target.value)} placeholder={"Anon"} />
         <button disabled={isConnected} onClick={() => handleConnect()}>Connect</button>
         <button disabled={!isConnected} onClick={() => handleDiconnect()}>Disconnect</button>
-        <form onSubmit={sendMessage}>
-          <input onChange={current => setInput(current.target.value)} />
-          <button type="submit" disabled={isLoading}>Send Message</button>
+        <form onSubmit={handleSubmitMessage}>
+          <input onChange={current => setMessage(current.target.value)} />
+          <button type="submit" disabled={isSending}>Send Message</button>
         </form>
         <ul>
           {
-            messages.map((msg, index) =>
+            chat.map((msg, index) =>
               <li key={index}>{msg.sender}: {msg.content}</li>
             )
           }
