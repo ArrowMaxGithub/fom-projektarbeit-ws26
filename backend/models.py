@@ -1,29 +1,6 @@
-# TODO: Setup automatic Python pydantic model export to TS-interfaces
-
-from collections.abc import Sequence
+# TODO: Setup automatic Python pydantic model export to TypeScript-interfaces
 
 from pydantic import BaseModel
-
-
-class ChatMessage(BaseModel):
-    sender: str
-    content: str
-
-
-class Gamestate(BaseModel):
-    active: int
-    states: Sequence[int]
-    winner: int
-
-
-class Move(BaseModel):
-    player_id: int
-    field: int
-
-
-class Play(BaseModel):
-    player_id: int
-    role: int
 
 
 class Player(BaseModel):
@@ -31,6 +8,6 @@ class Player(BaseModel):
     player_name: str
 
 
-class RoleTaken(BaseModel):
-    role: int
-    taken: bool
+class ChatMessage(BaseModel):
+    sender: str
+    content: str
