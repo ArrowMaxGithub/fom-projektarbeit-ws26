@@ -1,8 +1,6 @@
 class Query:
     async def fullfill(self, sio): ...
 
-    async def reject(self, sio): ...
-
 
 class PlayQuery(Query):
     def __init__(self, conn, sid, play):
@@ -124,15 +122,29 @@ class LeaveQuery(Query):
     def __init__(self, conn, sid, player):
         self.player = player
         self.sid = sid
+        self.active_player = False
 
         with conn.transaction():
             cursor = conn.cursor()
             cursor.execute(t"delete from players where id = {self.player.player_id};")
+            row = cursor.execute(
+                t"delete from active_players where id = {self.player.player_id} returning id;"
+            ).fetchone()
+            self.active_player = row is not None
+            if self.active_player:
+                cursor.execute("delete from active_players;")
+                cursor.execute("update gamestate set state = 0;")
 
     async def fullfill(self, sio):
         await sio.emit(
             "chat", {"sender": "Server", "content": f"{self.player.player_name} left"}
         )
+        if self.active_player != 0:
+            await sio.emit(
+                "chat",
+                {"sender": "Server", "content": "Resetting game"},
+            )
+            await sio.emit("reset")
 
 
 class ResetQuery(Query):
@@ -168,6 +180,7 @@ def determine_winner(states):
         (2, 4, 6),
     )
 
+    draw = False
     winner = None
 
     for c in combinations:
@@ -175,7 +188,11 @@ def determine_winner(states):
             winner = states[c[0]]
             print(f"WINNER:{winner}")
             break
-    return winner
+
+    if all(states):
+        draw = True
+
+    return (draw, winner)
 
 
 class MoveQuery(Query):
@@ -191,15 +208,16 @@ class MoveQuery(Query):
             active_id = row[0] if row else None
             active_role = row[1] if row else None
             if move.player_id != active_id:
-                return
+                raise ValueError(f"Illegal move: {move}")
 
             row = cursor.execute(
                 t"select state from gamestate where id = {move.field};"
             ).fetchone()
             state = row[0] if row else None
             if state != 0:
-                return
+                raise ValueError(f"Illegal move: {move.field}")
 
+            self.legal = True
             cursor.execute(
                 t"update gamestate set state = {active_role} where id = {move.field};"
             )
@@ -209,14 +227,18 @@ class MoveQuery(Query):
             ).fetchall()
             (_fields, self.states) = zip(*rows)
 
-            self.winner = determine_winner(self.states)
-            if determine_winner(self.states):
+            (self.draw, self.winner) = determine_winner(self.states)
+            if self.winner:
                 self.next_active_role = -1
                 cursor.execute("update active_players set active = false;")
                 row = cursor.execute(
                     t"select name from players where id = {active_id};"
                 ).fetchone()
                 self.winner_name = row[0] if row else None
+
+            elif self.draw:
+                self.next_active_role = -1
+                cursor.execute(t"update active_players set active = false;")
 
             else:
                 self.next_active_role = 2 if active_role == 1 else 1
@@ -232,6 +254,12 @@ class MoveQuery(Query):
             await sio.emit(
                 "chat",
                 {"sender": "Server", "content": f"{self.winner_name} won"},
+            )
+
+        elif self.draw:
+            await sio.emit(
+                "chat",
+                {"sender": "Server", "content": "Draw"},
             )
 
         await sio.emit(

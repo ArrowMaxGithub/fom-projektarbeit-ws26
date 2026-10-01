@@ -46,6 +46,10 @@ function App() {
       setChat(prev => prev.concat(msg));
     }
 
+    function onError(error: string) {
+      console.error(`${error}`);
+    }
+
     function onGameState(gamestate: Gamestate) {
       console.log(`New Gamestate: Active: ${roles[gamestate.active]} | states: ${gamestate.states} | winner: ${gamestate.winner}`);
       setGamestate(gamestate);
@@ -82,6 +86,7 @@ function App() {
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('chat', onChat);
+    socket.on('error', onError);
     socket.on('role', onRoleTaken);
     socket.on('gamestate', onGameState);
     socket.on('start', onGameStart);
@@ -91,6 +96,7 @@ function App() {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('chat', onChat);
+      socket.off('error', onError);
       socket.off('role', onRoleTaken);
       socket.off('gamestate', onGameState);
       socket.off('start', onGameStart);
