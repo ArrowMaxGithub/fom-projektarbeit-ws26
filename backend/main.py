@@ -23,19 +23,17 @@ conn = psycopg.connect(
 )
 
 
-async def guarded_query(QueryFn):
+async def guarded_query(sid, QueryFn):
     try:
         query = QueryFn()
 
-    except ValueError as e:
-        print(f"Transaction aborted due to invalid input. Reason: {e}")
-        query.reject(sio)
-        raise exception
-
-    except Exception as e:  # noqa: BLE001
-        print(f"Transaction aborted. Reason: {e}")
-        query.reject(sio)
-        raise exception
+    except Exception as reason:  # noqa: BLE001
+        print(f"Transaction aborted. Reason: {reason}")
+        await sio.emit(
+            event="error",
+            data=f"Error: {reason}",
+            to=sid,
+        )
 
     else:
         return await query.fullfill(sio)
@@ -43,17 +41,17 @@ async def guarded_query(QueryFn):
 
 @sio.event
 async def join(sid, player: Player):
-    return await guarded_query(lambda: JoinQuery(conn, sid, player))
+    return await guarded_query(sid, lambda: JoinQuery(conn, sid, player))
 
 
 @sio.event
 async def leave(sid, player: Player):
-    return await guarded_query(lambda: LeaveQuery(conn, sid, player))
+    return await guarded_query(sid, lambda: LeaveQuery(conn, sid, player))
 
 
 @sio.event
 async def play(sid, play: Play):
-    return await guarded_query(lambda: PlayQuery(conn, sid, play))
+    return await guarded_query(sid, lambda: PlayQuery(conn, sid, play))
 
 
 @sio.event
@@ -63,9 +61,9 @@ async def chat(sid, message: ChatMessage):
 
 @sio.event
 async def move(sid, move: Move):
-    return await guarded_query(lambda: MoveQuery(conn, sid, move))
+    return await guarded_query(sid, lambda: MoveQuery(conn, sid, move))
 
 
 @sio.event
 async def reset(sid):
-    return await guarded_query(lambda: ResetQuery(conn, sid))
+    return await guarded_query(sid, lambda: ResetQuery(conn, sid))
