@@ -1,5 +1,3 @@
-# TODO: Setup automatic Python pydantic model export to TypeScript-interfaces
-
 from pydantic import BaseModel
 
 
