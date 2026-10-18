@@ -15,10 +15,8 @@ api = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
 )
-
 sio = AsyncServer(async_mode="asgi")
-
-app = ASGIApp(sio, other_asgi_app=api, socketio_path="/socket.io")
+app = ASGIApp(sio, other_asgi_app=api)
 
 user = os.getenv("POSTGRES_LOCAL_USER")
 password = os.getenv("POSTGRES_LOCAL_PASSWORD")

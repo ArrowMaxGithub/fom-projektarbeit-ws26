@@ -4,4 +4,5 @@ COPY . /app
 WORKDIR /app
  
 EXPOSE 8000
-CMD ["uv", "run", "fastapi", "run", "main.py", "--forwarded-allow-ips=*"]
+
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--forwarded-allow-ips=*"]
