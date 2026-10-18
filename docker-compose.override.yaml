@@ -12,7 +12,7 @@ services:
       - /app/node_modules
 
   backend:
-    command: "uv run fastapi dev main.py --host 0.0.0.0 --forwarded-allow-ips=*"
+    command: "uv run uvicorn main:app --host 0.0.0.0 --reload --forwarded-allow-ips=*"
     ports:
       - "8000:8000"
     volumes:
