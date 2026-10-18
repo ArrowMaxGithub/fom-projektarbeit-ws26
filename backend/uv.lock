@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 
 [[package]]
@@ -56,7 +56,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.141.1" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.6" },
-    { name = "pydantic-socketio", extras = ["fastapi"], specifier = ">=0.1.3" },
+    { name = "pydantic-socketio", extras = ["fastapi"], specifier = ">=0.2.1" },
 ]
 
 [[package]]
@@ -550,15 +550,16 @@ wheels = [
 
 [[package]]
 name = "pydantic-socketio"
-version = "0.1.3"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-socketio" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/91/d7/79fcfd852c1bd9a7ef055faff5a0f5e2dcb7097f1aac33749130e44ba645/pydantic_socketio-0.1.3.tar.gz", hash = "sha256:b030a54eb2949db9c330ff5c6619886b5f13825c766de3ce5fcdb6f0709e37e4", size = 200538, upload-time = "2025-10-08T08:31:32.291Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/18/574bac1d666c7660d32437f4902236b9a9627c8309d39e7751a6a9188b56/pydantic_socketio-0.2.1.tar.gz", hash = "sha256:ed59dd6b1eeda6741c7852091a0395a7154d82b68b279f7374b8f28cb026225b", size = 291892, upload-time = "2026-09-27T16:06:16.062Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/99/0d40073ad324680cfe907667a2e386145307ccdbef6427683cfd878ebba0/pydantic_socketio-0.1.3-py3-none-any.whl", hash = "sha256:d05a066e9ed488e67f550944456b338e2317c637a038ffaa41b6f9323f8e07c3", size = 7774, upload-time = "2025-10-08T08:31:31.228Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/87/2d425dc69120e2228450e1d58c9e69ac14d85729a7750d9eb4db614a3250/pydantic_socketio-0.2.1-py3-none-any.whl", hash = "sha256:7a035452f1458ded4cef411a28bf2d16767b30654b2424ebcbd32d3ab1414121", size = 16156, upload-time = "2026-09-27T16:06:14.673Z" },
 ]
 
 [package.optional-dependencies]

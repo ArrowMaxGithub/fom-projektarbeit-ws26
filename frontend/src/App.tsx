@@ -69,6 +69,8 @@ function App() {
   }
 
   function handleConnect() {
+    console.log("Trying to connect");
+
     socket.connect();
     // `ack` is the response from the executed server query
     // It will be undefined for a failed query

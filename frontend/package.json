@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "generate": "npx @pydantic-socketio/codegen /src/backend/asyncapi.json -o src/backend/interfaces.tsx",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pydantic-socketio/codegen": "^0.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "socket.io-client": "^4.8.4"
