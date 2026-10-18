@@ -3,13 +3,13 @@ Projektarbeit im Modul Softwareentwicklung &amp; UX
 
 Umsetzung eines Online-Brettspiels:
 - React als Typescript Frontend, gebündelt durch Vite
-- FastAPI als Python Backend
+- Uvicorn als Python Backend mit FastAPI und Socket.IO
 - PostgreSQL als Datenbank
 - Deployment via Docker-Compose
 
 ## Projektstruktur
 ```
-├── backend - FastAPI Server mit UV Projektmanagement
+├── backend - Uvicorn Server mit UV Projektmanagement
 │   ├── Dockerfile
 │   ├── main.py
 │   └── pyproject.toml
@@ -53,14 +53,14 @@ Gesamten Container starten via `sudo docker compose up --build`
 
 Vite Server erreichbar unter: http://localhost:5173/
 
-FastAPI Server erreichbar unter: http://localhost:8000/
+Uvicorn Server erreichbar unter: http://localhost:8000/
 
 API-Aufrufe werden durch den Vite Dev-Server analog zur späteren Produktionsumgebung umgeleitet (Konfiguration unter `frontend/vite.config.ts`).
-Vite erkennt lokale Dateiänderungen und lädt die geöffnete Seite automatisch neu. Analog gilt das auch für den FastAPI-Dev-Server, welcher bei Dateiänderungen die API-Definitionen neu generiert.
+Vite erkennt lokale Dateiänderungen und lädt die geöffnete Seite automatisch neu. Analog gilt das auch für den Uvicorn-Dev-Server, welcher bei Dateiänderungen die API-Definitionen neu generiert.
 
 ## Deployment
 
-Gesamten Container starten via `sudo docker compose -f docker-compose.yaml up --build `
+Gesamten Container starten via `sudo docker compose -f docker-compose.yaml up --build`
 
 Durch `-f docker-compose.yaml` wird die Entwicklungsumgebung aus `docker-compose.override.yaml` übersprungen.
 
