@@ -1,0 +1,197 @@
+{
+  "asyncapi": "3.1.0",
+  "info": {
+    "title": "API",
+    "version": "1"
+  },
+  "channels": {
+    "op_chat_receive_root_31380286d0f757e7_channel": {
+      "address": "/",
+      "messages": {
+        "op_chat_receive_root_31380286d0f757e7_message": {
+          "$ref": "#/components/messages/op_chat_receive_root_31380286d0f757e7_message"
+        }
+      }
+    },
+    "op_join_receive_root_9d3055653192c35e_channel": {
+      "address": "/",
+      "messages": {
+        "op_join_receive_root_9d3055653192c35e_message": {
+          "$ref": "#/components/messages/op_join_receive_root_9d3055653192c35e_message"
+        }
+      }
+    },
+    "op_leave_receive_root_363790e9482e4ad5_channel": {
+      "address": "/",
+      "messages": {
+        "op_leave_receive_root_363790e9482e4ad5_message": {
+          "$ref": "#/components/messages/op_leave_receive_root_363790e9482e4ad5_message"
+        }
+      }
+    }
+  },
+  "operations": {
+    "op_chat_receive_root_31380286d0f757e7": {
+      "summary": "Receive chat (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_chat_receive_root_31380286d0f757e7_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_chat_receive_root_31380286d0f757e7_channel/messages/op_chat_receive_root_31380286d0f757e7_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_join_receive_root_9d3055653192c35e": {
+      "summary": "Receive join (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_join_receive_root_9d3055653192c35e_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_join_receive_root_9d3055653192c35e_channel/messages/op_join_receive_root_9d3055653192c35e_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_leave_receive_root_363790e9482e4ad5": {
+      "summary": "Receive leave (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_leave_receive_root_363790e9482e4ad5_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_leave_receive_root_363790e9482e4ad5_channel/messages/op_leave_receive_root_363790e9482e4ad5_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    }
+  },
+  "components": {
+    "messages": {
+      "op_chat_receive_root_31380286d0f757e7_message": {
+        "name": "chat",
+        "x-pydantic-socketio": {
+          "event": "chat",
+          "arguments": [
+            {
+              "name": "message"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "sender": {
+                  "title": "Sender",
+                  "type": "string"
+                },
+                "content": {
+                  "title": "Content",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "sender",
+                "content"
+              ],
+              "title": "ChatMessage",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "op_join_receive_root_9d3055653192c35e_message": {
+        "name": "join",
+        "x-pydantic-socketio": {
+          "event": "join",
+          "arguments": [
+            {
+              "name": "player"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "player_id": {
+                  "title": "Player Id",
+                  "type": "integer"
+                },
+                "player_name": {
+                  "title": "Player Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "player_id",
+                "player_name"
+              ],
+              "title": "Player",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "op_leave_receive_root_363790e9482e4ad5_message": {
+        "name": "leave",
+        "x-pydantic-socketio": {
+          "event": "leave",
+          "arguments": [
+            {
+              "name": "player"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "player_id": {
+                  "title": "Player Id",
+                  "type": "integer"
+                },
+                "player_name": {
+                  "title": "Player Name",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "player_id",
+                "player_name"
+              ],
+              "title": "Player",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "schemas": {}
+  },
+  "x-pydantic-socketio": {
+    "formatVersion": 1,
+    "role": "server"
+  }
+}
