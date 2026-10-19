@@ -3,6 +3,7 @@
   --bg: #16171d;
   --font: system-ui, Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
+  --disabled-filter: grayscale(0.7) brightness(0.7);
 
   font: 18px var(--font);
   color-scheme: only dark;
