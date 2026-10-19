@@ -1,0 +1,73 @@
+Regeln für GeoCatcher:
+
+Gespielt wird nach den Grundregeln.  
+Spieleranzahl: 2–6
+Spieldauer: 22 Runden maximal.
+
+Fortbewegung:
+Taxi (Gelb)  
+Bus (Grün)  
+U-Bahn (Rot)  
+Schwarze Route
+
+---
+
+Setup des Spiels:
+Nach Entscheidung, welche Spieler Detektive und welcher Spieler Mister X wird, ziehen die Spieler jeweils die ihrer Rolle entsprechende Anzahl an Tickets aus dem allgemeinen Stapel. 
+Dieser besteht aus: 
+- 57x Taxiticket
+- 45x Busticket
+- 23x Undergroundticket
+- 5x Black Ticket
+- 2x Doppelzugticket
+
+- Detektive erhalten jeweils: 11x Taxi, 8x Bus, 4x U-Bahn. Verbrauchte Tickets der Detektive wandern in den allgemeinen Stapel zurück.
+- Mister X erhält: 5x Black Ticket und 2x Doppelzugtickets. Die übrigen Tickets erhält er aus dem allgemeinen Stapel.  
+
+Jeder Spieler erhält eine Karte für seine Startposition. Seine Spielfigur erscheint auf dem jeweiligen Knotenpunkt. Mister X Startposition bleibt unbekannt und auch seine Spielfigur erscheint nicht.
+Wenn maximal 4 Spieler spielen, kommen Bobbys als Hilfsdetektive zum Einsatz. (Max 2 Spieler = 2 Bobbys, Max 3 Spieler = 2 Bobbys, Max 4 Spieler = 1 Bobby)
+Bobbys benötigen keine Tickets zur Fortbewegung und können jedes verfügbare Verkehrsmittel nutzen. Ansonsten gelten für sie die gleichen Bewegungsregeln wie für die Detektive.
+
+---
+
+Spielablauf:
+Mister X beginnt jede Runde und führt zuerst seinen Zug aus. Anschließend dürfen alle Detektive in beliebiger Reihenfolge jeweils einen Zug durchführen.
+Pro Zug darf sich ein Spieler entlang einer gültigen Verbindung zum nächsten Knotenpunkt bewegen. Dabei muss ein entsprechendes Ticket verwendet werden.
+Kann ein Detektiv aufgrund fehlender Tickets oder fehlender gültiger Verbindungen keinen Zug durchführen, muss er aussetzen.
+Mister X muss nach jedem Zug das verwendete Ticket auf seinem Fahrtprotokoll ablegen und seine erreichte Position wird verdeckt eingetragen. Die Detektive können dadurch nachvollziehen, welche Verkehrsmittel Mister X verwendet hat, jedoch nicht, wohin er gefahren ist.
+Nach dem 3., 8., 13. und 18. Zug muss Mister X seine Position freigeben. Hierfür wird die Spielfigur auf dem entsprechenden Knotenpunkt sichtbar. Anschließend wird die Figur wieder entfernt und Mister X bewegt sich von neuem verdeckt.
+
+---
+
+Benutzung der Fortbewegungsmittel:
+Es können auf einem Knotenpunkt nur die Fortbewegungsmittel genutzt werden, die dieser auch farblich darstellt. Bewegt wird sich entlang der entsprechend farblichen Linie bis zum nächsten Knotenpunkt der selben Farbe.
+Für jede Bewegung muss ein entsprechendes Ticket abgegeben werden. Die Detektive geben ihre verwendeten Tickets an den allgemeinen Ticketvorrat. Mister X legt seine verwendeten Tickets auf seiner Fahrtentafel ab.
+Ein Knotenpunkt darf nicht von mehreren Detektiven gleichzeitig besetzt werden.
+
+---
+
+Spezialtickets von Mister X:
+
+Black Ticket:
+Mister X kann ein Black Ticket verwenden, um das genutzte Fortbewegungsmittel geheim zu halten. Das Black Ticket ersetzt dabei ein normales Fahrticket.
+Außerdem kann Mister X mit einem Black Ticket die schwarzen Routen auf dem Spielplan nutzen. Diese können nicht mit normalen Tickets befahren werden.
+
+Doppelzugticket:
+Mister X kann ein Doppelzugticket verwenden, um zwei Züge direkt hintereinander auszuführen.
+Für beide Bewegungen muss jeweils ein entsprechendes Fahrticket verwendet und die Position im Fahrtprotokoll eingetragen werden.
+Beide Bewegungen zählen als einzelne Züge von Mister X. Fällt einer dieser Züge auf einen Erscheinungszug, muss Mister X seine Position entsprechend freigeben.
+
+---
+
+Spielende:
+1.) Die Detektive gewinnen, wenn es ihnen gelingt, auf ein Feld zu ziehen, auf dem sich Mister X gerade befindet, oder wenn Mister X auf ein Feld zieht, das bereits von einem Detektiv besetzt ist.
+
+2.) Die Detektive gewinnen ebenfalls, wenn Mister X keine gültige Bewegung mehr durchführen kann.
+
+3.) Mister X gewinnt, wenn es ihm gelingt, den Detektiven bis zum Ende seines 22. Zuges zu entkommen.
+
+4.) Mister X gewinnt ebenfalls, wenn kein Detektiv und kein Bobbie mehr eine gültige Bewegung durchführen kann.
+
+---
+
+Quelle: https://product-files.ravensburger.cloud/manuals/686487.pdf
