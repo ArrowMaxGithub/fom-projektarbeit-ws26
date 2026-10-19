@@ -1,9 +1,10 @@
 // Advertised game in main lobby
-export interface GameInfo {
+export type GameInfo = {
     room_code: string,
     creator_name: string,
     map_name: string,
     status: Status,
+    players: number | null, // null for Phase.Ended
     current_round: number | null, // null for Phase.Open | Phase.Starting
     current_phase: Phase | null, // null for Phase.Open | Phase.Starting
     started_timestamp: number, // Unix epoch timestamp in milliseconds
@@ -15,6 +16,28 @@ export enum Status {
     Starting, // Creator started the game; Countdown until start
     InPlay,
     Ended,
+}
+
+export function status_to_label(status: Status): string {
+    let label;
+    switch (status) {
+        case Status.Open:
+            label = "✅ Offen"
+            break;
+
+        case Status.Starting:
+            label = "⌛ Startet"
+            break;
+
+        case Status.InPlay:
+            label = "🎲 Im Spiel"
+            break;
+
+        case Status.Ended:
+            label = "🏁 Beendet"
+            break;
+    }
+    return label;
 }
 
 export enum Phase {
@@ -73,6 +96,7 @@ export function mockup_open_game(): GameInfo {
         creator_name: "Markus",
         map_name: "Berlin",
         status: Status.Open,
+        players: 2,
         current_round: null,
         current_phase: null,
         started_timestamp: 1792334940123,
@@ -88,6 +112,7 @@ export function mockup_starting_game(): GameInfo {
         creator_name: "Matthias",
         map_name: "Stuttgart",
         status: Status.Starting,
+        players: 4,
         current_round: null,
         current_phase: null,
         started_timestamp: 1792334980123,
@@ -103,6 +128,7 @@ export function mockup_inplay_game(): GameInfo {
         creator_name: "Gustav",
         map_name: "München",
         status: Status.InPlay,
+        players: 6,
         current_round: 4,
         current_phase: Phase.Detectives,
         started_timestamp: 1792336000123,
@@ -118,7 +144,8 @@ export function mockup_ended_game(): GameInfo {
         creator_name: "Leon",
         map_name: "Düsseldorf",
         status: Status.Ended,
-        current_round: 24,
+        players: null,
+        current_round: 22,
         current_phase: Phase.PhaseEnd,
         started_timestamp: 1792336000123,
         ended_timestamp: 1792334910123,
@@ -139,7 +166,7 @@ export function mockup_game_lobby(): GameInfo[] {
 export function mockup_active_gamestate(role: Role): GameState {
     const info = mockup_inplay_game();
 
-    var tickets = [];
+    var tickets: Ticket[] = [];
     var starting_node = null;
     var current_node = null;
     if (role == Role.Detective) {
@@ -151,7 +178,7 @@ export function mockup_active_gamestate(role: Role): GameState {
     const john: Player = {
         name: "John",
         role,
-        tickets: [],
+        tickets,
         starting_node,
         current_node,
     };

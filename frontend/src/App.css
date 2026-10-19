@@ -1,19 +1,61 @@
-span {
-  margin-left: 1em;
-}
-
-.board {
+.App {
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: stretch;
 }
 
-.row {
+.Lobby {
+  font-size: 15px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+
+  .LobbyGameList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    text-align: start;
+    padding: 0;
+
+    .LobbyGame {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      color: black;
+      background-color: rgb(163, 163, 163);
+      border: black 1px solid;
+      border-radius: 1em;
+      padding: 1em 2em;
+      gap: 4em;
+    }
+
+    .RoomName {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      word-wrap: break-word;
+    }
+
+    .RoomStatus {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+  }
 }
 
-.field {
-  font-size: 30px;
-  width: 2em;
-  height: 2em;
+
+.Chat {
+  padding: 2em;
+}
+
+
+@media screen and (width <=1100px) {
+  .Lobby {
+    font-size: 12px;
+  }
 }

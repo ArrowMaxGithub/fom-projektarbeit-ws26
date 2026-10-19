@@ -35,7 +35,7 @@ class JoinQuery(Query):
             "chat", {"sender": "Server", "content": f"{self.player.player_name} joined"}
         )
         # Events can pass responses back to the user as ACK
-        return True
+        return self.player.player_id
 
 
 class LeaveQuery(Query):
