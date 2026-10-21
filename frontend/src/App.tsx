@@ -6,6 +6,7 @@ import Lobby from './components/Lobby.tsx'
 import type { GameInfo } from './mockup.tsx';
 import { mockup_game_lobby } from './mockup.tsx';
 import Chat from './components/Chat.tsx'
+import InGame from './components/InGame.tsx';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
@@ -17,6 +18,7 @@ function App() {
     player_id: -1,
   });
   const [rooms, setRooms] = useState<Array<GameInfo>>(mockup_game_lobby());
+  const [current_room, setCurrentRoom] = useState<string | null>("Raum C");
 
   // Define any callbacks to events sent by the server here
   useEffect(() => {
@@ -88,10 +90,19 @@ function App() {
 
   function handleRoomJoin(room_code: string) {
     console.log(`${player.player_name} joining room: ${room_code}`);
+    setCurrentRoom(room_code);
+  }
+
+  function handleRoomLeave() {
+    console.log(`${player.player_name} left room: ${current_room}`);
+    setCurrentRoom(null);
   }
 
   return <div className="App">
-    <Lobby rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
+    <Lobby active={current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
+    <hr />
+    <InGame active={current_room !== null} socket={socket} handleRoomLeave={handleRoomLeave}></InGame>
+    <hr />
     <Chat socket={socket} isConnected={isConnected} player={player} handleNameChange={handleNameChange} handleConnect={handleConnect} handleDiconnect={handleDiconnect}></Chat>
   </div>
 }
