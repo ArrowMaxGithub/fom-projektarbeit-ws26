@@ -45,7 +45,6 @@ export default function ChatProps({ socket, isConnected, player, handleNameChang
 
 
     return <div className="Chat">
-        <hr />
         <input disabled={isConnected} onChange={current => handleNameChange(current.target.value)} placeholder={"Anon"} />
         <button disabled={isConnected} onClick={() => handleConnect()}>Connect</button>
         <button disabled={!isConnected} onClick={() => handleDiconnect()}>Disconnect</button>

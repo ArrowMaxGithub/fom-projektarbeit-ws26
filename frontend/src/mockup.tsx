@@ -206,12 +206,12 @@ export function mockup_active_gamestate(role: Role): GameState {
     const players: Player[] = [john, gustav, louis, viktor];
 
     const nodes: MapNode[] = [
-        { index: 0, position_x: 10.0, position_y: 40.0 },
-        { index: 1, position_x: 50.0, position_y: 10.0 },
-        { index: 2, position_x: 90.0, position_y: 40.0 },
-        { index: 3, position_x: 90.0, position_y: 90.0 },
-        { index: 4, position_x: 10.0, position_y: 90.0 },
-        { index: 5, position_x: 50.0, position_y: 65.0 },
+        { index: 0, position_x: 100.0, position_y: 400.0 },
+        { index: 1, position_x: 500.0, position_y: 100.0 },
+        { index: 2, position_x: 900.0, position_y: 400.0 },
+        { index: 3, position_x: 900.0, position_y: 900.0 },
+        { index: 4, position_x: 100.0, position_y: 900.0 },
+        { index: 5, position_x: 500.0, position_y: 650.0 },
     ];
 
     const vehicles: Vehicle[] = [
@@ -234,7 +234,7 @@ export function mockup_active_gamestate(role: Role): GameState {
         { from: 4, to: 5, vehicle: 0 },
 
         // Bus
-        { from: 0, to: 3, vehicle: 1 },
+        // { from: 0, to: 3, vehicle: 1 },
         { from: 2, to: 4, vehicle: 1 },
 
         // Subway

@@ -1,0 +1,21 @@
+export enum NodeState {
+    Current,
+    LegalDst,
+    IllegalDst,
+}
+
+export function nodeStateToClassName(state: NodeState): string {
+    let result = "";
+    switch (state) {
+        case NodeState.Current:
+            result = "CurrentNode";
+            break;
+        case NodeState.LegalDst:
+            result = "LegalDstNode";
+            break;
+        case NodeState.IllegalDst:
+            result = "IllegalDstNode";
+            break;
+    }
+    return result;
+}
