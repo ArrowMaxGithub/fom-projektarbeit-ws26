@@ -2,6 +2,7 @@ export enum NodeState {
     Current,
     LegalDst,
     IllegalDst,
+    GameOver,
 }
 
 export function nodeStateToClassName(state: NodeState): string {
@@ -15,6 +16,9 @@ export function nodeStateToClassName(state: NodeState): string {
             break;
         case NodeState.IllegalDst:
             result = "IllegalDstNode";
+            break;
+        case NodeState.GameOver:
+            result = "GameOver";
             break;
     }
     return result;
