@@ -3,6 +3,7 @@ export type GameInfo = {
     room_code: string,
     creator_name: string,
     map_name: string,
+    map_dimensions: number[],
     status: Status,
     players: number | null, // null for Phase.Ended
     current_round: number | null, // null for Phase.Open | Phase.Starting
@@ -18,26 +19,22 @@ export enum Status {
     Ended,
 }
 
-export function status_to_label(status: Status): string {
-    let label;
+export function status_to_label(status: Status | undefined): string {
     switch (status) {
         case Status.Open:
-            label = "✅ Offen"
-            break;
+            return "✅ Offen";
 
         case Status.Starting:
-            label = "⌛ Startet"
-            break;
+            return "⌛ Startet";
 
         case Status.InPlay:
-            label = "🎲 Im Spiel"
-            break;
+            return "🎲 Im Spiel";
 
         case Status.Ended:
-            label = "🏁 Beendet"
-            break;
+            return "🏁 Beendet";
     }
-    return label;
+
+    return ""
 }
 
 export enum Phase {
@@ -49,6 +46,8 @@ export enum Phase {
 // State of an active game, transmitted as response to on_enter
 export interface GameState {
     info: GameInfo,
+    active_player: string,
+    turn_order: string[],
     players: Player[], // Players with their respective role, tickets and nodes; Index 0: Me
     nodes: MapNode[], // All nodes which make up the map
     connections: Connection[], // Connections between nodes
@@ -69,6 +68,21 @@ export enum Role {
     Spectator,
 }
 
+export function RoleToLabel(role: Role | undefined): string {
+    switch (role) {
+        case Role.MisterX:
+            return "Mister X";
+
+        case Role.Detective:
+            return "Detective";
+
+        case Role.Spectator:
+            return "Spectator";
+    }
+
+    return ""
+}
+
 export interface MapNode {
     index: number,
     position_x: number,
@@ -86,7 +100,6 @@ export interface Vehicle {
 }
 
 export interface Ticket {
-    vehicle: number,
     count: number,
 }
 
@@ -95,6 +108,7 @@ export function mockup_open_game(): GameInfo {
         room_code: "Raum A",
         creator_name: "Markus",
         map_name: "Berlin",
+        map_dimensions: [1000, 1000],
         status: Status.Open,
         players: 2,
         current_round: null,
@@ -111,6 +125,7 @@ export function mockup_starting_game(): GameInfo {
         room_code: "Raum B",
         creator_name: "Matthias",
         map_name: "Stuttgart",
+        map_dimensions: [1000, 1000],
         status: Status.Starting,
         players: 4,
         current_round: null,
@@ -127,6 +142,7 @@ export function mockup_inplay_game(): GameInfo {
         room_code: "Raum C",
         creator_name: "Gustav",
         map_name: "München",
+        map_dimensions: [1000, 1000],
         status: Status.InPlay,
         players: 6,
         current_round: 4,
@@ -143,6 +159,7 @@ export function mockup_ended_game(): GameInfo {
         room_code: "Raum D",
         creator_name: "Leon",
         map_name: "Düsseldorf",
+        map_dimensions: [1000, 1000],
         status: Status.Ended,
         players: null,
         current_round: 22,
@@ -163,36 +180,36 @@ export function mockup_game_lobby(): GameInfo[] {
     return [open_game, starting_game, inplay_game, ended_game];
 }
 
-export function mockup_active_gamestate(role: Role): GameState {
+export function mockup_active_gamestate(local_player_role: Role): GameState {
     const info = mockup_inplay_game();
 
     var tickets: Ticket[] = [];
     var starting_node = null;
     var current_node = null;
-    if (role == Role.Detective) {
-        tickets = [{ vehicle: 0, count: 12 }, { vehicle: 1, count: 4 }, { vehicle: 2, count: 3 }, { vehicle: 3, count: 5 }];
+    if (local_player_role == Role.Detective || local_player_role === Role.MisterX) {
+        tickets = [{ count: 12 }, { count: 4 }, { count: 3 }, { count: 5 }];
         starting_node = 3;
         current_node = 3;
     }
 
     const john: Player = {
         name: "John",
-        role,
+        role: local_player_role,
         tickets,
         starting_node,
         current_node,
     };
     const gustav: Player = {
         name: "Gustav",
-        role: Role.MisterX,
-        tickets: [{ vehicle: 0, count: 12 }, { vehicle: 1, count: 4 }, { vehicle: 2, count: 3 }, { vehicle: 3, count: 5 }],
+        role: local_player_role !== Role.MisterX ? Role.MisterX : Role.Detective,
+        tickets: [{ count: 12 }, { count: 4 }, { count: 3 }, { count: 5 }],
         starting_node: 0,
         current_node: 5,
     };
     const louis: Player = {
         name: "Louis",
         role: Role.Detective,
-        tickets: [{ vehicle: 0, count: 10 }, { vehicle: 1, count: 2 }, { vehicle: 2, count: 2 }],
+        tickets: [{ count: 10 }, { count: 2 }, { count: 2 }, { count: 0 }],
         starting_node: 3,
         current_node: 4,
     };
@@ -234,7 +251,7 @@ export function mockup_active_gamestate(role: Role): GameState {
         { from: 4, to: 5, vehicle: 0 },
 
         // Bus
-        // { from: 0, to: 3, vehicle: 1 },
+        { from: 0, to: 3, vehicle: 1 },
         { from: 2, to: 4, vehicle: 1 },
 
         // Subway
@@ -246,8 +263,19 @@ export function mockup_active_gamestate(role: Role): GameState {
         { from: 0, to: 2, vehicle: 3 },
     ];
 
+    let turn_order;
+    if (local_player_role === Role.Detective) {
+        turn_order = ["Gustav", "Louis", "John"];
+    } else if (local_player_role === Role.MisterX) {
+        turn_order = ["John", "Gustav", "Louis"];
+    } else {
+        turn_order = ["Gustav", "Louis"];
+    }
+
     const gamestate: GameState = {
         info,
+        active_player: "Gustav",
+        turn_order,
         players,
         nodes,
         vehicles,

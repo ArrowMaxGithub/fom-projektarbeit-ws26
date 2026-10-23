@@ -5,7 +5,7 @@
   --mono: ui-monospace, Consolas, monospace;
   --disabled-filter: grayscale(0.7) brightness(0.7);
 
-  font: 18px var(--font);
+  font: 25px var(--font);
   color-scheme: only dark;
   color: var(--text);
   background: var(--bg);

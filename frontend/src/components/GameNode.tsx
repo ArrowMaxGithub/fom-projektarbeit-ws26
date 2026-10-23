@@ -1,16 +1,32 @@
-import type { MapNode } from "../mockup";
+import { Role, RoleToLabel, type MapNode, type Player } from "../mockup";
 import { NodeState, nodeStateToClassName } from "./NodeState";
 
 type GameNodeProps = {
-    setCurrentNode: (index: number) => void;
+    makeMove: (to: number) => void;
+    foundAt: (at: number) => void;
     index: number,
-    scale: number,
+    gameover: boolean,
+    scale_x: number,
+    scale_y: number,
     node: MapNode,
     state: NodeState,
+    player_at: Player | undefined,
+    active_player: string,
 }
 
-export default function GameNode({ setCurrentNode, index, scale, node, state }: GameNodeProps) {
+export default function GameNode({ makeMove, foundAt, index, gameover, scale_x, scale_y, node, state, player_at, active_player }: GameNodeProps) {
     function handleClick(state: NodeState, index: number) {
+        if (player_at) {
+            if (player_at.role === Role.MisterX && state === NodeState.LegalDst) {
+                makeMove(index);
+                foundAt(index);
+                return;
+            } else {
+                console.log(`Node ${index} is occupied by: ${player_at.name}`);
+                return;
+            }
+        }
+
         switch (state) {
             case NodeState.Current:
                 console.log(`Node ${index} is already the current node`);
@@ -21,11 +37,16 @@ export default function GameNode({ setCurrentNode, index, scale, node, state }: 
                 break;
 
             case NodeState.LegalDst:
-                console.log(`Node ${index} clicked`);
-                setCurrentNode(index);
+                makeMove(index);
                 break;
         }
     }
 
-    return <button className={"MapNode " + nodeStateToClassName(state)} key={index} style={{ left: node.position_x * scale - 15, top: node.position_y * scale - 15 }} onClick={() => handleClick(state, index)}>{index}</button>
+    return <div className="MapNode" style={{ left: node.position_x * scale_x - 20, top: node.position_y * scale_y - 20 }}>
+        <button className={"MapNodeButton " + nodeStateToClassName(state)} disabled={gameover} key={index} onClick={() => handleClick(state, index)}>{index}</button>
+        <div className={active_player === player_at?.name ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
+            <span className="PlayerAt">{player_at?.name}</span>
+            <span className="PlayerRole">{RoleToLabel(player_at?.role)}</span>
+        </div>
+    </div>
 }
