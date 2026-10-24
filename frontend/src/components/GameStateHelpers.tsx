@@ -85,22 +85,31 @@ export function setNextActivePlayer(gamestate: GameState): boolean {
     return new_round;
 }
 
-export function moveActivePlayer(gamestate: GameState, to: number) {
-    const active_player_name = getActivePlayer(gamestate)?.name;
+export function moveActivePlayer(gamestate: GameState, to: number): boolean {
+    const active_player = getActivePlayer(gamestate);
+    const active_player_name = active_player?.name;
+    const active_player_role = active_player?.role;
     const active_player_index = getActivePlayerIndex(gamestate);
 
     const from = gamestate.players[active_player_index].current_node;
     if (from === null) {
-        return;
+        return false;
     }
 
     const conn = getConnection(gamestate, from, to);
     if (!conn) {
         console.error(`Invalid move from ${from} to ${to}`);
-        return;
+        return false;
     }
 
     console.log(`${active_player_name} moves to ${to} via ${gamestate.vehicles[conn.vehicle].name}`);
     gamestate.players[active_player_index].tickets[conn.vehicle].count -= 1;
     gamestate.players[active_player_index].current_node = to;
+
+    const misterX = getMisterX(gamestate);
+    if (!misterX) {
+        return false;
+    }
+
+    return (active_player_role === Role.Detective && to === misterX.current_node);
 }

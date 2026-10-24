@@ -20,7 +20,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
 
-
+    const max_round = 4; // TODO: Replace with actual max_round
 
     const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
     const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
@@ -65,12 +65,23 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         }
 
         let new_gamestate: GameState = gamestate;
-        moveActivePlayer(new_gamestate, to);
+        let misterXfound = moveActivePlayer(new_gamestate, to);
+        if (misterXfound) {
+            detectivesWon(new_gamestate);
+            return;
+        }
 
         const new_round = setNextActivePlayer(new_gamestate);
+
+        // TODO: Replace with gamestate.info.current_round
         if (new_round) {
             const next_round = round + 1;
-            setRound(next_round);
+            if (next_round > max_round) {
+                misterXWon(new_gamestate);
+                return;
+            } else {
+                setRound(next_round);
+            }
         }
 
         const new_node_states = getNodeStates(new_gamestate);
@@ -78,22 +89,39 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         setGameState(new_gamestate);
     }
 
-    function foundAt(to: number) {
-        if (!gamestate) {
+    function detectivesWon(new_gamestate: GameState) {
+        if (!new_gamestate) {
             return;
         }
 
-        console.log(`Mister X was found at ${to}`);
-        let new_gamestate: GameState = gamestate;
-        let misterX = getMisterX(new_gamestate);
+        const misterX = getMisterX(new_gamestate);
         if (!misterX) {
-            console.error("No Mister X found in players");
             return;
         }
 
+        const pos = misterX.current_node;
+        console.log(`Mister X was found at ${pos}`);
         misterX.current_node = null;
 
-        setNodeStates(gamestate.nodes.map(_node => NodeState.GameOver));
+        setNodeStates(new_gamestate.nodes.map(_node => NodeState.GameOver));
+        setGameState(new_gamestate);
+        setGameOver(true);
+    }
+
+    function misterXWon(new_gamestate: GameState) {
+        if (!new_gamestate) {
+            return;
+        }
+
+        const misterX = getMisterX(new_gamestate);
+        if (!misterX) {
+            return;
+        }
+
+        const pos = misterX.current_node;
+        console.log(`Mister X won and is currently at ${pos}`);
+
+        setNodeStates(new_gamestate.nodes.map(_node => NodeState.GameOver));
         setGameState(new_gamestate);
         setGameOver(true);
     }
@@ -125,7 +153,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
             <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
             {
                 gamestate?.nodes.map((node, index) =>
-                    <GameNode key={index} makeMove={makeMove} foundAt={foundAt} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player}></GameNode>
+                    <GameNode key={index} makeMove={makeMove} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player}></GameNode>
                 )
             }
         </div>
