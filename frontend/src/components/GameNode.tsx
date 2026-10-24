@@ -11,9 +11,10 @@ type GameNodeProps = {
     state: NodeState,
     player_at: Player | undefined,
     active_player: string,
+    is_last_mister_x_pos: boolean,
 }
 
-export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, node, state, player_at, active_player }: GameNodeProps) {
+export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, node, state, player_at, active_player, is_last_mister_x_pos }: GameNodeProps) {
     function handleClick(state: NodeState, index: number) {
         if (player_at) {
             if (player_at.role === Role.MisterX && state === NodeState.LegalDst) {
@@ -43,6 +44,7 @@ export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, 
     return <div className="MapNode" style={{ left: node.position_x * scale_x - 20, top: node.position_y * scale_y - 20 }}>
         <button className={"MapNodeButton " + nodeStateToClassName(state)} disabled={gameover} key={index} onClick={() => handleClick(state, index)}>{index}</button>
         <div className={active_player === player_at?.name ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
+            {is_last_mister_x_pos ? <span className="LastMisterXPos">🔍</span> : null}
             <span className="PlayerAt">{player_at?.name}</span>
             <span className="PlayerRole">{RoleToLabel(player_at?.role)}</span>
         </div>

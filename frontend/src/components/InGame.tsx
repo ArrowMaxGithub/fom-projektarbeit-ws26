@@ -19,8 +19,10 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
+    const [lastMisterXPos, setlastMisterXPos] = useState<number | null>(null);
 
     const max_round = 4; // TODO: Replace with actual max_round
+    const mister_x_show = [2, 4]; // TODO: Replace with actual show-rounds
 
     const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
     const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
@@ -81,6 +83,9 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
                 return;
             } else {
                 setRound(next_round);
+                if (mister_x_show.includes(next_round)) {
+                    revealMisterX(new_gamestate);
+                }
             }
         }
 
@@ -126,6 +131,21 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         setGameOver(true);
     }
 
+    function revealMisterX(new_gamestate: GameState) {
+        if (!new_gamestate) {
+            return;
+        }
+
+        const misterX = getMisterX(new_gamestate);
+        if (!misterX) {
+            return;
+        }
+
+        const pos = misterX.current_node;
+        console.log(`Mister X is currently at ${pos}`);
+        setlastMisterXPos(pos);
+    }
+
     function handleRoomReset() {
         console.log("Resetting room");
 
@@ -135,6 +155,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         setGameOver(false);
         const new_node_states = getNodeStates(new_gamestate);
         setNodeStates(new_node_states);
+        setlastMisterXPos(null);
     }
 
     function handleWheel(event: any) {
@@ -153,7 +174,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
             <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
             {
                 gamestate?.nodes.map((node, index) =>
-                    <GameNode key={index} makeMove={makeMove} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player}></GameNode>
+                    <GameNode key={index} makeMove={makeMove} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={index === lastMisterXPos}></GameNode>
                 )
             }
         </div>
