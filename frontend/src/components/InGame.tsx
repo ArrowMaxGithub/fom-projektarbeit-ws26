@@ -4,6 +4,8 @@ import { mockup_active_gamestate, Role, type GameState } from "../mockup.tsx";
 import GameNode from './GameNode.tsx';
 import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getMisterX, getNodeStates, getPlayerAt, moveActivePlayer, setNextActivePlayer } from './GameStateHelpers.tsx';
+import Tickets from './Tickets.tsx';
+import GameInfo from './GameInfo.tsx';
 
 type InGameProps = {
     active: boolean,
@@ -180,20 +182,8 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         </div>
         <button onClick={handleRoomLeave}>Raum verlassen</button>
         <button onClick={handleRoomReset}>Reset Game</button>
-        <p>Active Player: {gameover ? "Game Over" : gamestate?.active_player}</p>
-        <p>Tickets:</p>
-        <ul>
-            {
-                gamestate ?
-
-                    getActivePlayer(gamestate)?.tickets.map((ticket, index) => {
-                        return <li key={index}>{gamestate.vehicles[index].name}: {ticket.count}</li>;
-                    })
-
-                    : null
-            }
-        </ul>
-        <p>Turn Order: {gamestate?.turn_order.join(" -> ")}</p>
-        <p>Runde: {round}</p>
-    </div>
+        <p>{gameover ? "Game Over" : "Active Player: " + gamestate?.active_player}</p>
+        <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []} vehicles={gamestate?.vehicles ?? []}></Tickets>
+        <GameInfo gameover={gameover} turn_order={gamestate?.turn_order ?? []} round={round} mister_x_show={mister_x_show}></GameInfo>
+    </div >
 }
