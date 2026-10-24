@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
 import type { Socket } from "socket.io-client";
-import { mockup_active_gamestate, Role, type Connection, type GameState, type Player } from "../mockup.tsx";
+import { mockup_active_gamestate, Role, type GameState } from "../mockup.tsx";
 import GameNode from './GameNode.tsx';
 import { NodeState } from './NodeState.tsx';
+import { getActivePlayer, getMisterX, getNodeStates, getPlayerAt, moveActivePlayer, setNextActivePlayer } from './GameStateHelpers.tsx';
 
 type InGameProps = {
     active: boolean,
@@ -19,11 +20,17 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
 
+
+
+    const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
+    const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
+
     useEffect(() => {
         function onGameState(new_gamestate: GameState) {
             console.log(`Gamestate update: ${new_gamestate}`);
+            const new_node_states = getNodeStates(new_gamestate);
+            setNodeStates(new_node_states);
             setGameState(new_gamestate);
-            updateNodeStates(new_gamestate);
         }
 
         socket.on('gamestate', onGameState);
@@ -52,85 +59,23 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         return null;
     }
 
-    const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
-    const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
-
-    function updateNodeStates(new_gamestate: GameState) {
-        const active_player = getActivePlayer(new_gamestate);
-        if (!active_player) {
-            return;
-        }
-
-        const current_node = active_player.current_node;
-        const player_positions = new_gamestate.players.map(player => player.current_node);
-        const misterX_pos = new_gamestate.players.find(player => player.role === Role.MisterX)?.current_node;
-
-        console.log(`Connections for ${active_player.name}`);
-        const new_node_states: NodeState[] = new_gamestate.nodes.map((node, _index) => {
-            if (current_node === null) {
-                return NodeState.IllegalDst; // Spectators have no valid target nodes
-            }
-
-            if (node.index === current_node) {
-                return NodeState.Current;
-            }
-
-            const conn = getConnection(new_gamestate, current_node, node.index);
-
-            if (!conn) {
-                return NodeState.IllegalDst;
-            }
-
-            const hasTicket = active_player.tickets[conn.vehicle].count > 0;
-            if (!hasTicket) {
-                return NodeState.IllegalDst;
-            }
-
-            const occupied = player_positions.includes(node.index);
-            const isMisterXPos = misterX_pos === node.index;
-
-            let state: NodeState;
-            if ((!occupied && conn) || (isMisterXPos && conn)) { state = NodeState.LegalDst } else { state = NodeState.IllegalDst }
-
-            if (state === NodeState.LegalDst) {
-                console.log(`From ${current_node} to ${node.index} via ${conn ? new_gamestate.vehicles[conn.vehicle].name : "None"}`);
-            }
-
-            return state;
-        });
-
-        setNodeStates(new_node_states);
-    }
-
     function makeMove(to: number) {
         if (!gamestate) {
             return;
         }
 
         let new_gamestate: GameState = gamestate;
+        moveActivePlayer(new_gamestate, to);
 
-        const active_player_name = getActivePlayer(gamestate)?.name;
-        const active_player_index = getActivePlayerIndex(new_gamestate);
-
-        const from = new_gamestate.players[active_player_index].current_node;
-        if (from === null) {
-            return;
+        const new_round = setNextActivePlayer(new_gamestate);
+        if (new_round) {
+            const next_round = round + 1;
+            setRound(next_round);
         }
 
-        const conn = getConnection(new_gamestate, from, to);
-        if (!conn) {
-            console.error(`Invalid move from ${from} to ${to}`);
-            return;
-        }
-
-        console.log(`${active_player_name} moves to ${to} via ${new_gamestate.vehicles[conn.vehicle].name}`);
-        new_gamestate.players[active_player_index].tickets[conn.vehicle].count -= 1;
-        new_gamestate.players[active_player_index].current_node = to;
-
-
-        setNextActivePlayer(new_gamestate);
+        const new_node_states = getNodeStates(new_gamestate);
+        setNodeStates(new_node_states);
         setGameState(new_gamestate);
-        updateNodeStates(new_gamestate);
     }
 
     function foundAt(to: number) {
@@ -153,46 +98,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         setGameOver(true);
     }
 
-    function setNextActivePlayer(new_gamestate: GameState) {
-        const active_player_index = getActivePlayerIndex(new_gamestate);
-        const next_active_player_index = (active_player_index + 1) % new_gamestate.turn_order.length;
-        new_gamestate.active_player = new_gamestate.players[next_active_player_index].name;
-
-        if (new_gamestate.players[next_active_player_index].role === Role.MisterX) {
-            const next_round = round + 1;
-            setRound(next_round);
-            console.log();
-            console.log(`New Round: ${next_round}`);
-        }
-
-        console.log();
-        console.log(`Next Player: ${new_gamestate.active_player}`);
-    }
-
-    function getActivePlayerIndex(gamestate: GameState): number {
-        return gamestate.players.findIndex(player => player.name === gamestate.active_player)
-    }
-
-    function getActivePlayer(gamestate: GameState): Player | undefined {
-        return gamestate.players.find(player => player.name === gamestate.active_player)
-    }
-
-    function getPlayerAt(node_index: number): Player | undefined {
-        return gamestate?.players.find(player => player.current_node === node_index)
-    }
-
-    function getMisterX(gamestate: GameState | null): Player | undefined {
-        return gamestate?.players.find(player => player.role === Role.MisterX);
-    }
-
-    function getConnection(gamestate: GameState, from: number, to: number): Connection | undefined {
-        const connections: Connection[] = gamestate.connections
-            .filter(conn => conn.from === from || conn.to === from)
-            .map(conn => { if (conn.from === from) { return conn } else { return { from: conn.to, to: conn.from, vehicle: conn.vehicle } } });
-
-        return connections.find(conn => conn.to === to);
-    }
-
     function handleRoomReset() {
         console.log("Resetting room");
 
@@ -200,7 +105,8 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         setRound(1);
         setGameState(new_gamestate);
         setGameOver(false);
-        updateNodeStates(new_gamestate);
+        const new_node_states = getNodeStates(new_gamestate);
+        setNodeStates(new_node_states);
     }
 
     function handleWheel(event: any) {
@@ -219,7 +125,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
             <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
             {
                 gamestate?.nodes.map((node, index) =>
-                    <GameNode key={index} makeMove={makeMove} foundAt={foundAt} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(index)} active_player={gamestate.active_player}></GameNode>
+                    <GameNode key={index} makeMove={makeMove} foundAt={foundAt} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player}></GameNode>
                 )
             }
         </div>
