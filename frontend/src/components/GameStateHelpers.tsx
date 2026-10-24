@@ -5,8 +5,8 @@ export function getActivePlayerIndex(gamestate: GameState): number {
     return gamestate.players.findIndex(player => player.name === gamestate.active_player)
 }
 
-export function getActivePlayer(gamestate: GameState): Player | undefined {
-    return gamestate.players.find(player => player.name === gamestate.active_player)
+export function getActivePlayer(gamestate: GameState | null): Player | undefined {
+    return gamestate?.players.find(player => player.name === gamestate?.active_player)
 }
 
 export function getPlayerAt(gamestate: GameState, node_index: number): Player | undefined {
