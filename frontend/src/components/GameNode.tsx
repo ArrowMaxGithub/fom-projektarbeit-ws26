@@ -3,7 +3,6 @@ import { NodeState, nodeStateToClassName } from "./NodeState";
 
 type GameNodeProps = {
     makeMove: (to: number) => void;
-    foundAt: (at: number) => void;
     index: number,
     gameover: boolean,
     scale_x: number,
@@ -14,12 +13,11 @@ type GameNodeProps = {
     active_player: string,
 }
 
-export default function GameNode({ makeMove, foundAt, index, gameover, scale_x, scale_y, node, state, player_at, active_player }: GameNodeProps) {
+export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, node, state, player_at, active_player }: GameNodeProps) {
     function handleClick(state: NodeState, index: number) {
         if (player_at) {
             if (player_at.role === Role.MisterX && state === NodeState.LegalDst) {
-                makeMove(index);
-                foundAt(index);
+                makeMove(index); // Detectives can move unto Mister-X
                 return;
             } else {
                 console.log(`Node ${index} is occupied by: ${player_at.name}`);
