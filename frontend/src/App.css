@@ -87,6 +87,11 @@ hr {
     color: red;
   }
 
+  .LastMisterXPos {
+    font-size: 30px;
+    color: grey;
+  }
+
   .MapNodeButton {
     width: 100%;
     height: 100%;
