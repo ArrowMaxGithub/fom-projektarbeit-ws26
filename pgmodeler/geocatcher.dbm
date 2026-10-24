@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAUTION: Do not modify this file unless you know what you are doing.
+ Unexpected results may occur if the code is changed deliberately.
+-->
+<dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="20"
+	 gen-disabled-objs-code="false" show-sys-schemas-rects="true"
+	 last-position="0,0" last-zoom="0.8" scene-rect="-20,-40,2111.85,1162.92"
+	 default-schema="public" default-owner="postgres"
+	 layers="Default layer"
+	 active-layers="0"
+	 layer-name-colors="#000000"
+	 layer-rect-colors="#b4b4b4"
+	 show-layer-names="false" show-layer-rects="false">
+<database name="new_database" is-template="false" allow-conns="true">
+</database>
+
+<schema name="public" layers="0" fill-color="#e1e1e1" name-color="#000000" sql-disabled="true">
+</schema>
+
+<tag name="spieler_und_spielverwaltung">
+	<style id="table-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-ext-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-name" colors="#000000"/>
+	<style id="table-schema-name" colors="#000000"/>
+	<style id="table-title" colors="#3275b0,#6ec0ff,#77cbff"/>
+	<style id="table-toggler-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-toggler-btns" colors="#3275b0,#6ec0ff,#77cbff"/>
+</tag>
+<tag name="karte_und_verkehrsnetz">
+	<style id="table-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-ext-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-name" colors="#000000"/>
+	<style id="table-schema-name" colors="#000000"/>
+	<style id="table-title" colors="#86ff98,#89ffa7,#cfffde"/>
+	<style id="table-toggler-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-toggler-btns" colors="#55ff7f,#89ffa7,#cfffde"/>
+</tag>
+<tag name="tickets">
+	<style id="table-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-ext-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-name" colors="#000000"/>
+	<style id="table-schema-name" colors="#000000"/>
+	<style id="table-title" colors="#ffff7f,#ffffa9,#fdffcf"/>
+	<style id="table-toggler-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-toggler-btns" colors="#ffff7f,#ffffa9,#fdffcf"/>
+</tag>
+<tag name="spielverlauf">
+	<style id="table-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-ext-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-name" colors="#000000"/>
+	<style id="table-schema-name" colors="#000000"/>
+	<style id="table-title" colors="#ff557f,#ff7797,#ffb5bf"/>
+	<style id="table-toggler-body" colors="#474f56,#474f56,#595e61"/>
+	<style id="table-toggler-btns" colors="#ff557f,#ff7797,#ffb5bf"/>
+</tag>
+<table name="benutzer" layers="0" collapse-mode="1" max-obj-count="3" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="spieler_und_spielverwaltung"/>
+	<position x="0" y="420"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="benutzername" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="erstellt_am" not-null="true" default-value="now()">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<constraint name="benutzer_pk" type="pk-constr" table="public.benutzer">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="unq_benutzer_benutzername" type="uq-constr" table="public.benutzer">
+		<columns names="benutzername" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_benutzer_benutzername_leerzeichen" type="ck-constr" table="public.benutzer">
+			<expression> <![CDATA[length(btrim(benutzername)) > 0]]> </expression>
+	</constraint>
+</table>
+
+<table name="partie" layers="0" collapse-mode="1" max-obj-count="9" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="spieler_und_spielverwaltung"/>
+	<position x="0" y="0"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="status" not-null="true" default-value="'lobby'">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="aktuelle_runde" not-null="true" default-value="0">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="aktuelle_phase" default-value="NULL">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="gewinner" default-value="NULL">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="ende_grund" default-value="NULL">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="partie_pk" type="pk-constr" table="public.partie">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_partie_status" type="ck-constr" table="public.partie">
+			<expression> <![CDATA[status IN (
+	'lobby',
+	'laufend',
+	'beendet',
+	'abgebrochen'
+)]]> </expression>
+	</constraint>
+	<constraint name="chk_partie_aktuelle_phase" type="ck-constr" table="public.partie">
+			<expression> <![CDATA[aktuelle_phase IN (
+	'mister_x',
+	'detektive'
+)]]> </expression>
+	</constraint>
+	<constraint name="chk_partie_gewinner" type="ck-constr" table="public.partie">
+			<expression> <![CDATA[gewinner IN (
+	'mister_x',
+	'detektive'
+)]]> </expression>
+	</constraint>
+	<constraint name="chk_partie_aktuelle_runde" type="ck-constr" table="public.partie">
+			<expression> <![CDATA[aktuelle_runde BETWEEN 0 AND 22]]> </expression>
+	</constraint>
+	<constraint name="chk_partie_ende_grund" type="ck-constr" table="public.partie">
+			<expression> <![CDATA[ ende_grund IN (
+	'gefangen',
+	'mr_x_blockiert',
+	'mr_x_entkommen',
+	'detektive_blockiert'
+)]]> </expression>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_benutzer" index="1"/>
+		<object name="id_karte" index="2"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="benutzer_fk" index="1"/>
+		<object name="karte_fk" index="2"/>
+	</customidxs></table>
+
+<relationship name="benutzer_erstellt_many_partie" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#be8ddb"
+	 src-table="public.benutzer"
+	 dst-table="public.partie"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="6.6562" y="-31.753"/>
+	</label>
+</relationship>
+
+<table name="ticketart" layers="0" collapse-mode="1" max-obj-count="3" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="tickets"/>
+	<position x="0" y="960"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="ticketart_pk" type="pk-constr" table="public.ticketart">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="unq_ticketart_name" type="uq-constr" table="public.ticketart">
+		<columns names="name" ref-type="src-columns"/>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_verkehrsmittel" index="1"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="verkehrsmittel_fk" index="1"/>
+	</customidxs></table>
+
+<table name="teilnehmer" layers="0" collapse-mode="1" max-obj-count="10" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="spieler_und_spielverwaltung"/>
+	<position x="680" y="280"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="teilnehmertyp" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="spielerrolle">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="aktiv" not-null="true" default-value="TRUE">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="teilnehmer_pk" type="pk-constr" table="public.teilnehmer">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_teilnehmer_teilnehmertyp" type="ck-constr" table="public.teilnehmer">
+			<expression> <![CDATA[teilnehmertyp IN (
+	'spieler',
+	'bobby',
+	'zuschauer'
+)]]> </expression>
+	</constraint>
+	<constraint name="chk_teilnehmer_spielerrolle" type="ck-constr" table="public.teilnehmer">
+			<expression> <![CDATA[spielerrolle IN (
+	'mister_x',
+	'detektiv'
+)]]> </expression>
+	</constraint>
+	<constraint name="chk_teilnehmer_rollenkombinationen" type="ck-constr" table="public.teilnehmer">
+			<expression> <![CDATA[(
+	teilnehmertyp = 'spieler'
+	AND id_benutzer IS NOT NULL
+	AND (spielerrolle IS NULL OR spielerrolle IN ('mister_x', 'detektiv'))
+)
+OR
+(
+	teilnehmertyp = 'bobby'
+	AND id_benutzer IS NULL
+	AND spielerrolle IS NOT NULL
+	AND spielerrolle = 'detektiv'
+)
+OR
+(
+	teilnehmertyp = 'zuschauer'
+	AND id_benutzer IS NOT NULL
+	AND spielerrolle IS NULL
+)
+]]> </expression>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_aktueller_knoten" index="3"/>
+		<object name="id_benutzer" index="1"/>
+		<object name="id_partie" index="2"/>
+		<object name="id_startknoten" index="4"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="benutzer_fk" index="2"/>
+		<object name="fk_teilnehmer_aktueller_knoten" index="3"/>
+		<object name="fk_teilnehmer_startknoten" index="4"/>
+		<object name="partie_fk" index="1"/>
+	</customidxs></table>
+
+<table name="karte" layers="0" collapse-mode="1" max-obj-count="6" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="karte_und_verkehrsnetz"/>
+	<position x="680" y="0"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="version" not-null="true" default-value="1">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="breite" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="hoehe" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="karte_pk" type="pk-constr" table="public.karte">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="unq_karte_name_und_version" type="uq-constr" table="public.karte">
+		<columns names="name,version" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_karte_version" type="ck-constr" table="public.karte">
+			<expression> <![CDATA[version > 0]]> </expression>
+	</constraint>
+	<constraint name="chk_karte_breite_und_hoehe" type="ck-constr" table="public.karte">
+			<expression> <![CDATA[breite > 0 AND hoehe > 0]]> </expression>
+	</constraint>
+</table>
+
+<table name="knoten" layers="0" collapse-mode="1" max-obj-count="6" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="karte_und_verkehrsnetz"/>
+	<position x="1340" y="0"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="nummer" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="position_x" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="position_y" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="knoten_pk" type="pk-constr" table="public.knoten">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_knoten_positionen" type="ck-constr" table="public.knoten">
+			<expression> <![CDATA[position_x >= 0 AND position_y >= 0]]> </expression>
+	</constraint>
+	<constraint name="chk_knoten_nummer" type="ck-constr" table="public.knoten">
+			<expression> <![CDATA[nummer > 0]]> </expression>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_karte" index="1"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="karte_fk" index="1"/>
+	</customidxs></table>
+
+<relationship name="karte_has_many_knoten" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#d7dc5f"
+	 src-table="public.karte"
+	 dst-table="public.knoten"
+	 src-required="true" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="-13.1447" y="-37.853"/>
+	</label>
+</relationship>
+
+<table name="verkehrsmittel" layers="0" collapse-mode="1" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="karte_und_verkehrsnetz"/>
+	<position x="1340" y="960"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="verkehrsmittel_pk" type="pk-constr" table="public.verkehrsmittel">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="unq_verkehrsmittel_name" type="uq-constr" table="public.verkehrsmittel">
+		<columns names="name" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="verbindung" layers="0" collapse-mode="1" max-obj-count="6" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="karte_und_verkehrsnetz"/>
+	<position x="1280" y="460"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="verbindung_pk" type="pk-constr" table="public.verbindung">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_verbindung_selbstverbindung" type="ck-constr" table="public.verbindung">
+			<expression> <![CDATA[id_startknoten <> id_zielknoten]]> </expression>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_startknoten" index="1"/>
+		<object name="id_verkehrsmittel" index="3"/>
+		<object name="id_zielknoten" index="2"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="fk_verbindung_startknoten" index="1"/>
+		<object name="fk_verbindung_zielknoten" index="2"/>
+		<object name="verkehrsmittel_fk" index="3"/>
+	</customidxs></table>
+
+<relationship name="knoten_gibt_startknoten" type="rel1n" layers="0"
+	 src-col-pattern="id_startknoten"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="fk_teilnehmer_startknoten"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#ffe2e2"
+	 src-table="public.knoten"
+	 dst-table="public.teilnehmer"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="-1.17184" y="-69.3181"/>
+	</label>
+</relationship>
+
+<relationship name="knoten_gibt_aktuellen_knoten" type="rel1n" layers="0"
+	 src-col-pattern="id_aktueller_knoten"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="fk_teilnehmer_aktueller_knoten"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#0f9255"
+	 src-table="public.knoten"
+	 dst-table="public.teilnehmer"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT"/>
+
+<relationship name="partie_has_many_teilnehmer" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#5541ee"
+	 src-table="public.partie"
+	 dst-table="public.teilnehmer"
+	 src-required="true" dst-required="false"
+	del-action="CASCADE">
+	<label ref-type="name-label">
+		<position x="0" y="0"/>
+	</label>
+</relationship>
+
+<relationship name="benutzer_has_many_teilnehmer" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#6cec47"
+	 src-table="public.benutzer"
+	 dst-table="public.teilnehmer"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="-19.8088" y="-34.3319"/>
+	</label>
+</relationship>
+
+<relationship name="knoten_gibt_verbindungsstart" type="rel1n" layers="0"
+	 src-col-pattern="id_startknoten"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="fk_verbindung_startknoten"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#08217b"
+	 src-table="public.knoten"
+	 dst-table="public.verbindung"
+	 src-required="true" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="0" y="0"/>
+	</label>
+</relationship>
+
+<relationship name="knoten_gibt_zielknoten" type="rel1n" layers="0"
+	 src-col-pattern="id_zielknoten"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="fk_verbindung_zielknoten"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#509951"
+	 src-table="public.knoten"
+	 dst-table="public.verbindung"
+	 src-required="true" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="-36.0212" y="-63.2778"/>
+	</label>
+</relationship>
+
+<relationship name="verkehrsmittel_has_many_verbindung" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#5cb019"
+	 src-table="public.verkehrsmittel"
+	 dst-table="public.verbindung"
+	 src-required="true" dst-required="false"
+	del-action="RESTRICT"/>
+
+<table name="spielzug" layers="0" collapse-mode="1" max-obj-count="6" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="spielverlauf"/>
+	<position x="960" y="780"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="zugnummer" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="runde" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<constraint name="spielzug_pk" type="pk-constr" table="public.spielzug">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="chk_spielzug_zugnummer" type="ck-constr" table="public.spielzug">
+			<expression> <![CDATA[zugnummer > 0]]> </expression>
+	</constraint>
+	<constraint name="chk_spielzug_runde" type="ck-constr" table="public.spielzug">
+			<expression> <![CDATA[runde BETWEEN 1 AND 22]]> </expression>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_teilnehmer" index="1"/>
+		<object name="id_verbindung" index="2"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="teilnehmer_fk" index="1"/>
+		<object name="verbindung_fk" index="2"/>
+	</customidxs></table>
+
+<relationship name="teilnehmer_has_many_spielzug" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#e022ae"
+	 src-table="public.teilnehmer"
+	 dst-table="public.spielzug"
+	 src-required="true" dst-required="false"
+	del-action="CASCADE">
+	<label ref-type="name-label">
+		<position x="21.8282" y="-40.1466"/>
+	</label>
+</relationship>
+
+<relationship name="verbindung_has_many_spielzug" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#eb1ca3"
+	 src-table="public.verbindung"
+	 dst-table="public.spielzug"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="-17.1254" y="-46.553"/>
+	</label>
+</relationship>
+
+<table name="ticketbestand" layers="0" collapse-mode="1" max-obj-count="4" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="tickets"/>
+	<position x="0" y="640"/>
+	<column name="anzahl" not-null="true" default-value="0">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="chk_ticketbestand_anzahl" type="ck-constr" table="public.ticketbestand">
+			<expression> <![CDATA[anzahl >= 0]]> </expression>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_teilnehmer" index="0"/>
+		<object name="id_ticketart" index="1"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="teilnehmer_fk" index="0"/>
+		<object name="ticketart_fk" index="1"/>
+		<object name="ticketbestand_pk" index="2"/>
+	</customidxs></table>
+
+<relationship name="teilnehmer_has_many_ticketbestand" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#46434e"
+	 src-table="public.teilnehmer"
+	 dst-table="public.ticketbestand"
+	 src-required="false" dst-required="false"
+	del-action="CASCADE">
+	<label ref-type="name-label">
+		<position x="-11.224" y="5.65714"/>
+	</label>
+	<special-pk-cols indexes="0"/>
+</relationship>
+
+<relationship name="ticketart_has_many_ticketbestand" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#59817c"
+	 src-table="public.ticketart"
+	 dst-table="public.ticketbestand"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="19.5807" y="-35.253"/>
+	</label>
+	<constraint name="ticketbestand_pk" type="pk-constr" alias="ticketbestand_pk" protected="true" table="public.ticketbestand">
+		</constraint>
+	<special-pk-cols indexes="0"/>
+</relationship>
+
+<relationship name="verkehrsmittel_has_many_ticketart" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#a441fc"
+	 src-table="public.verkehrsmittel"
+	 dst-table="public.ticketart"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="38.3553" y="-29.4401"/>
+	</label>
+</relationship>
+
+<table name="ticketverbrauch" layers="0" collapse-mode="1" max-obj-count="4" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tag name="tickets"/>
+	<position x="480" y="760"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="ticketverbrauch_pk" type="pk-constr" table="public.ticketverbrauch">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_spielzug" index="1"/>
+		<object name="id_ticketart" index="2"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="spielzug_fk" index="1"/>
+		<object name="ticketart_fk" index="2"/>
+	</customidxs></table>
+
+<relationship name="spielzug_has_many_ticketverbrauch" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#645514"
+	 src-table="public.spielzug"
+	 dst-table="public.ticketverbrauch"
+	 src-required="true" dst-required="false"
+	del-action="CASCADE">
+	<label ref-type="name-label">
+		<position x="-4.88026" y="-76.4784"/>
+	</label>
+</relationship>
+
+<relationship name="ticketart_has_many_ticketverbrauch" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#d75ba0"
+	 src-table="public.ticketart"
+	 dst-table="public.ticketverbrauch"
+	 src-required="true" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="48.127" y="12.0245"/>
+	</label>
+</relationship>
+
+<relationship name="karte_has_many_partie" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_{st}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 fk-idx-pattern="{st}_idx"
+	 custom-color="#603a27"
+	 src-table="public.karte"
+	 dst-table="public.partie"
+	 src-required="false" dst-required="false"
+	del-action="RESTRICT">
+	<label ref-type="name-label">
+		<position x="73.4432" y="-44.6986"/>
+	</label>
+</relationship>
+
+<constraint name="unq_teilnehmer_ein_benutzer_pro_partie" type="uq-constr" table="public.teilnehmer">
+	<columns names="id_partie,id_benutzer" ref-type="src-columns"/>
+</constraint>
+
+<constraint name="unq_knoten_karte_und_nummer" type="uq-constr" table="public.knoten">
+	<columns names="id_karte,nummer" ref-type="src-columns"/>
+</constraint>
+
+<constraint name="unq_ticketverbrauch_ein_ticket_pro_spielzug" type="uq-constr" table="public.ticketverbrauch">
+	<columns names="id_spielzug,id_ticketart" ref-type="src-columns"/>
+</constraint>
+
+<index name="unq_teilnehmer_nur_ein_mr_x_pro_partie" table="public.teilnehmer"
+	 concurrent="false" unique="true" fast-update="false" buffering="false" nulls-not-distinct="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="id_partie"/>
+		</idxelement>
+	<predicate> <![CDATA[spielerrolle = 'mister_x']]> </predicate>
+</index>
+
+<index name="unq_teilnehmer_detektiv_nicht_gleiche_position" table="public.teilnehmer"
+	 concurrent="false" unique="true" fast-update="false" buffering="false" nulls-not-distinct="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<column name="id_partie"/>
+		</idxelement>
+		<idxelement use-sorting="false">
+			<column name="id_aktueller_knoten"/>
+		</idxelement>
+	<predicate> <![CDATA[spielerrolle = 'detektiv' AND id_aktueller_knoten IS NOT NULL]]> </predicate>
+</index>
+
+<index name="unq_verbindung_doppellungen_entfernen" table="public.verbindung"
+	 concurrent="false" unique="true" fast-update="false" buffering="false" nulls-not-distinct="false"
+	 index-type="btree" factor="0">
+		<idxelement use-sorting="false">
+			<expression> <![CDATA[LEAST(id_startknoten, id_zielknoten)]]> </expression>
+		</idxelement>
+		<idxelement use-sorting="false">
+			<expression> <![CDATA[GREATEST(id_startknoten, id_zielknoten)]]> </expression>
+		</idxelement>
+		<idxelement use-sorting="false">
+			<column name="id_verkehrsmittel"/>
+		</idxelement>
+</index>
+
+</dbmodel>

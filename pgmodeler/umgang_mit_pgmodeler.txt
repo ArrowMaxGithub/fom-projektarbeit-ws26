@@ -1,0 +1,31 @@
+Kurz die wichtigstens Workflows, die ich bei der Erstellung genutzt habe:
+
+Neue Tabelle: Rechtsklich -> New -> Schema-Object -> Table
+
+Beziehung:
+- Tabellen mit STRG gedrückt halten markieren und dann (OHNE STRG) Taste n drücken
+- Bei 1 zu n Beziehungen, zuerst die Tabelle anklicken, bei der das n stehen würde
+- Fremdschlüssel werden automatisch durch Anlegen der Beziehung erstellt
+
+Beziehungen:
+ - Doppelklick auf Beziehung, unter Reiter Settings kann ON DELETE eingstellt werden
+ - auch unter Settings Namensgebung Attribute (relevant bei mehr als einer Beziehung zu anderer Tabelle)
+ - unter Reiter Generel Kästchen "is required" bestimmt, ob der FK bei der n-Tabelle NOT NULL oder
+ halt NULL sein darf (standardmäißg kein Hacken drin, also NULL erlaubt)
+
+Attribute:
+ - Doppelklick Tabelle, Reiter Columns
+ - vorhandene bearbeiten oder neue mit Butten erzeugen
+ - Attribut kann dort direkt u.a. Datentyp zugewiesen werden und Default Expression
+
+Constraints:
+ - für Sachen wie Unique oder Chekcs über Reiter Constraints
+
+Indizes:
+ - für komplexere Konstelationen der Attribute innerhalb Tabelle über Reiter Index
+
+WICHTIG:
+
+Generierung der sql-Datei über Export -> SQL
+Generierung der SVG-Datei über Export -> SVG
+Die sql-Datei müssen wir für unsere DB-Initalisierung entsprechend abändern bzw. aufteilen.
