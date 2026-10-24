@@ -14,6 +14,7 @@ type InGameProps = {
 export default function InGame({ active, socket, handleRoomLeave }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
     const [gameover, setGameOver] = useState<boolean>(false);
+    const [round, setRound] = useState<number>(1);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
@@ -156,8 +157,16 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         const active_player_index = getActivePlayerIndex(new_gamestate);
         const next_active_player_index = (active_player_index + 1) % new_gamestate.turn_order.length;
         new_gamestate.active_player = new_gamestate.players[next_active_player_index].name;
+
+        if (new_gamestate.players[next_active_player_index].role === Role.MisterX) {
+            const next_round = round + 1;
+            setRound(next_round);
+            console.log();
+            console.log(`New Round: ${next_round}`);
+        }
+
         console.log();
-        console.log("New Round");
+        console.log(`Next Player: ${new_gamestate.active_player}`);
     }
 
     function getActivePlayerIndex(gamestate: GameState): number {
@@ -188,6 +197,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         console.log("Resetting room");
 
         const new_gamestate = mockup_active_gamestate(Role.Detective);
+        setRound(1);
         setGameState(new_gamestate);
         setGameOver(false);
         updateNodeStates(new_gamestate);
@@ -229,5 +239,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
             }
         </ul>
         <p>Turn Order: {gamestate?.turn_order.join(" -> ")}</p>
+        <p>Runde: {round}</p>
     </div>
 }
