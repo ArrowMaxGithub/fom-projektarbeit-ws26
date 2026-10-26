@@ -1,6 +1,6 @@
 Version 1
 
---Grundlagen-
+--Grundlagen--
 
 Aufteilung in drei bzw. vier Dimensionen
  - Spieler und Spielerverwaltung
@@ -8,17 +8,17 @@ Aufteilung in drei bzw. vier Dimensionen
  - Tickets
  - Spielzug (könnte auch zur Spielerverwaltung gehören)
 
-Datenbank soll säntliche fpr die Spiellogik benötigten Informationen persistent speichern können und
-möglich normalisiert aufgebaut sein, um Redundanzen zu vermeiden und Erweiterung/Änderung zu erleichtern.
-Grundlegenee Integritätsregln (z.B. negativer Ticketbestand, maximal ein Mr. X pro Partie) werden durch
-Constraints abgesichert, eigentlich logik im Python-Backend.
+Datenbank soll sämtliche für die Spiellogik benötigten Informationen persistent speichern können und
+möglichst normalisiert aufgebaut sein, um Redundanzen zu vermeiden und Erweiterung/Änderung zu erleichtern.
+Grundlegende Integritätsregln (z.B. negativer Ticketbestand, maximal ein Mr. X pro Partie) werden durch
+Constraints abgesichert, eigentlich Logik im Python-Backend.
 
 --Erläuterung zu den Tabellen--
 
-Das Meiste sollte relativ selbsterklärend sein. Ein paar Designentscheidungen und Zweck Attribute sind aber
-nicht direkt erkennbar:
+Das Meiste sollte relativ selbsterklärend sein. Ein paar Designentscheidungen und der Zweck mancher Attribute 
+sind aber nicht direkt erkennbar:
 
-Tabelle benutzer_
+Tabelle benutzer:
  - selbsterklärend
 
 Tabelle partie:
@@ -39,22 +39,28 @@ Tabelle teilnehmer:
 Tabelle karte:
  - selbsterklärend, jedoch weiß ich nichtm wie genau die Kartendimension gespeichert wird (Pixel?)
 
-Tabelle Knoten:
+Tabelle knoten:
  - selbsterklärend
 
 Tabelle verbindung
- - Es handelt sich um ungerichtete Knoten, da die Verbindung ja in beide Richtungen funktioniren soll
- - Über einen Index wird eine Doppelung der Verbindung bereits abgefangen, daher sind die Einträge:
- id_startknoten: 12 - id_zielknotne: 26 - id_verkehrsmittel: 2 (Bus) und
+ - Es handelt sich um ungerichtete Knoten, da die Verbindung ja in beide Richtungen funktionieren soll
+ - Über einen Index wird eine Doppelung der Verbindung bereits abgefangen, daher sind die Einträge
+
+ id_startknoten: 12 - id_zielknotne: 26 - id_verkehrsmittel: 2 (Bus) 
+
+ und
+
  id_startknoten: 26 - id_zielknotne: 12 - id_verkehrsmittel: 2 (Bus)
- spieltechnisch die gleichen. Tabelle verhindert automatisch Einfügeversuch dieser zweite Verbindung.
+
+ spieltechnisch die gleichen. 
+ - Tabelle verhindert automatisch Einfügeversuch dieser zweite Verbindung.
 
 
 Tabelle verkehrsmittel:
  - speichert nur das Verkehrsmittel -> wie kann ich mich auf dem Spielplan fortbewegen
- - dazu gehört auch die nur durch Blackticket befahrbaren Routen (Black-Routs)
+ - dazu gehört auch die nur durch Blacktickets befahrbaren Routen (Black-Routs)
  - Ausgliederung, um (Sonder)tickets über Tabelle ticketart abzubilden (Welche Berechtigung hat Spieler)
- - durch diese Trennung z.B. kann Busverbindung mit Blackticket befahren werden ohne die tatsächliche
+ - durch diese Trennung kann z.B. Busverbindung mit Blackticket befahren werden ohne die tatsächliche
  Verbindungsart zu verändern
 
 Tabelle ticketart:
@@ -72,6 +78,6 @@ Tabelle spielzug:
  - zugnummer nummeriert und protokolliert Aktionen innerhalb einer Partie fortlaufend
  - bei einem Doppelzug von Mr X entstehen zwei spielzug-Einträge innerhalb derselben Runde, jeweils
  mit unterschiedlichen Zugnummern
- - das ist wichtig für die Erscheinungszüge von Mister X und kann aus der Historie ermittelt werden
+ - das ist wichtig für die Erscheinungszüge von Mr. X und kann aus der Historie ermittelt werden
 
 
