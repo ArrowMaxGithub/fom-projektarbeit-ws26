@@ -13,19 +13,51 @@
         }
       }
     },
-    "op_join_receive_root_9d3055653192c35e_channel": {
+    "op_gamestate_send_root_468f8dc1224789e8_channel": {
       "address": "/",
       "messages": {
-        "op_join_receive_root_9d3055653192c35e_message": {
-          "$ref": "#/components/messages/op_join_receive_root_9d3055653192c35e_message"
+        "op_gamestate_send_root_468f8dc1224789e8_message": {
+          "$ref": "#/components/messages/op_gamestate_send_root_468f8dc1224789e8_message"
         }
       }
     },
-    "op_leave_receive_root_363790e9482e4ad5_channel": {
+    "op_get_gamestate_receive_root_70f37a0a2dbd45f7_channel": {
       "address": "/",
       "messages": {
-        "op_leave_receive_root_363790e9482e4ad5_message": {
-          "$ref": "#/components/messages/op_leave_receive_root_363790e9482e4ad5_message"
+        "op_get_gamestate_receive_root_70f37a0a2dbd45f7_message": {
+          "$ref": "#/components/messages/op_get_gamestate_receive_root_70f37a0a2dbd45f7_message"
+        }
+      }
+    },
+    "op_get_lobby_receive_root_db4190aec472d3eb_channel": {
+      "address": "/",
+      "messages": {
+        "op_get_lobby_receive_root_db4190aec472d3eb_message": {
+          "$ref": "#/components/messages/op_get_lobby_receive_root_db4190aec472d3eb_message"
+        }
+      }
+    },
+    "op_lobby_send_root_2d2ded8990480b7a_channel": {
+      "address": "/",
+      "messages": {
+        "op_lobby_send_root_2d2ded8990480b7a_message": {
+          "$ref": "#/components/messages/op_lobby_send_root_2d2ded8990480b7a_message"
+        }
+      }
+    },
+    "op_login_receive_root_0f1bb0239960c810_channel": {
+      "address": "/",
+      "messages": {
+        "op_login_receive_root_0f1bb0239960c810_message": {
+          "$ref": "#/components/messages/op_login_receive_root_0f1bb0239960c810_message"
+        }
+      }
+    },
+    "op_logout_receive_root_bdb2210e75771cdd_channel": {
+      "address": "/",
+      "messages": {
+        "op_logout_receive_root_bdb2210e75771cdd_message": {
+          "$ref": "#/components/messages/op_logout_receive_root_bdb2210e75771cdd_message"
         }
       }
     }
@@ -46,30 +78,90 @@
         "ack": "unspecified"
       }
     },
-    "op_join_receive_root_9d3055653192c35e": {
-      "summary": "Receive join (/)",
-      "action": "receive",
+    "op_gamestate_send_root_468f8dc1224789e8": {
+      "summary": "Send gamestate (/)",
+      "action": "send",
       "channel": {
-        "$ref": "#/channels/op_join_receive_root_9d3055653192c35e_channel"
+        "$ref": "#/channels/op_gamestate_send_root_468f8dc1224789e8_channel"
       },
       "messages": [
         {
-          "$ref": "#/channels/op_join_receive_root_9d3055653192c35e_channel/messages/op_join_receive_root_9d3055653192c35e_message"
+          "$ref": "#/channels/op_gamestate_send_root_468f8dc1224789e8_channel/messages/op_gamestate_send_root_468f8dc1224789e8_message"
         }
       ],
       "x-pydantic-socketio": {
         "ack": "unspecified"
       }
     },
-    "op_leave_receive_root_363790e9482e4ad5": {
-      "summary": "Receive leave (/)",
+    "op_get_gamestate_receive_root_70f37a0a2dbd45f7": {
+      "summary": "Receive get_gamestate (/)",
       "action": "receive",
       "channel": {
-        "$ref": "#/channels/op_leave_receive_root_363790e9482e4ad5_channel"
+        "$ref": "#/channels/op_get_gamestate_receive_root_70f37a0a2dbd45f7_channel"
       },
       "messages": [
         {
-          "$ref": "#/channels/op_leave_receive_root_363790e9482e4ad5_channel/messages/op_leave_receive_root_363790e9482e4ad5_message"
+          "$ref": "#/channels/op_get_gamestate_receive_root_70f37a0a2dbd45f7_channel/messages/op_get_gamestate_receive_root_70f37a0a2dbd45f7_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_get_lobby_receive_root_db4190aec472d3eb": {
+      "summary": "Receive get_lobby (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_get_lobby_receive_root_db4190aec472d3eb_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_get_lobby_receive_root_db4190aec472d3eb_channel/messages/op_get_lobby_receive_root_db4190aec472d3eb_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_lobby_send_root_2d2ded8990480b7a": {
+      "summary": "Send lobby (/)",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/op_lobby_send_root_2d2ded8990480b7a_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_lobby_send_root_2d2ded8990480b7a_channel/messages/op_lobby_send_root_2d2ded8990480b7a_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_login_receive_root_0f1bb0239960c810": {
+      "summary": "Receive login (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_login_receive_root_0f1bb0239960c810_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_login_receive_root_0f1bb0239960c810_channel/messages/op_login_receive_root_0f1bb0239960c810_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_logout_receive_root_bdb2210e75771cdd": {
+      "summary": "Receive logout (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_logout_receive_root_bdb2210e75771cdd_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_logout_receive_root_bdb2210e75771cdd_channel/messages/op_logout_receive_root_bdb2210e75771cdd_message"
         }
       ],
       "x-pydantic-socketio": {
@@ -115,35 +207,69 @@
           "maxItems": 1
         }
       },
-      "op_join_receive_root_9d3055653192c35e_message": {
-        "name": "join",
+      "op_gamestate_send_root_468f8dc1224789e8_message": {
+        "name": "gamestate",
         "x-pydantic-socketio": {
-          "event": "join",
-          "arguments": [
-            {
-              "name": "player"
-            }
-          ]
+          "event": "gamestate"
         },
         "payload": {
           "type": "array",
           "prefixItems": [
             {
               "properties": {
-                "player_id": {
-                  "title": "Player Id",
-                  "type": "integer"
+                "info": {
+                  "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_GameInfo"
                 },
-                "player_name": {
-                  "title": "Player Name",
+                "active_player": {
+                  "title": "Active Player",
                   "type": "string"
+                },
+                "turn_order": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Turn Order",
+                  "type": "array"
+                },
+                "players": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Player"
+                  },
+                  "title": "Players",
+                  "type": "array"
+                },
+                "nodes": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_MapNode"
+                  },
+                  "title": "Nodes",
+                  "type": "array"
+                },
+                "connections": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Connection"
+                  },
+                  "title": "Connections",
+                  "type": "array"
+                },
+                "vehicles": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Vehicle"
+                  },
+                  "title": "Vehicles",
+                  "type": "array"
                 }
               },
               "required": [
-                "player_id",
-                "player_name"
+                "info",
+                "active_player",
+                "turn_order",
+                "players",
+                "nodes",
+                "connections",
+                "vehicles"
               ],
-              "title": "Player",
+              "title": "GameState",
               "type": "object"
             }
           ],
@@ -151,13 +277,56 @@
           "maxItems": 1
         }
       },
-      "op_leave_receive_root_363790e9482e4ad5_message": {
-        "name": "leave",
+      "op_get_gamestate_receive_root_70f37a0a2dbd45f7_message": {
+        "name": "get_gamestate",
         "x-pydantic-socketio": {
-          "event": "leave",
+          "event": "get_gamestate"
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [],
+          "minItems": 0,
+          "maxItems": 0
+        }
+      },
+      "op_get_lobby_receive_root_db4190aec472d3eb_message": {
+        "name": "get_lobby",
+        "x-pydantic-socketio": {
+          "event": "get_lobby"
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [],
+          "minItems": 0,
+          "maxItems": 0
+        }
+      },
+      "op_lobby_send_root_2d2ded8990480b7a_message": {
+        "name": "lobby",
+        "x-pydantic-socketio": {
+          "event": "lobby"
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "items": {
+                "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_GameInfo"
+              },
+              "type": "array"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "op_login_receive_root_0f1bb0239960c810_message": {
+        "name": "login",
+        "x-pydantic-socketio": {
+          "event": "login",
           "arguments": [
             {
-              "name": "player"
+              "name": "player_name"
             }
           ]
         },
@@ -165,22 +334,28 @@
           "type": "array",
           "prefixItems": [
             {
-              "properties": {
-                "player_id": {
-                  "title": "Player Id",
-                  "type": "integer"
-                },
-                "player_name": {
-                  "title": "Player Name",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "player_id",
-                "player_name"
-              ],
-              "title": "Player",
-              "type": "object"
+              "type": "string"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "op_logout_receive_root_bdb2210e75771cdd_message": {
+        "name": "logout",
+        "x-pydantic-socketio": {
+          "event": "logout",
+          "arguments": [
+            {
+              "name": "player_id"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer"
             }
           ],
           "minItems": 1,
@@ -188,7 +363,354 @@
         }
       }
     },
-    "schemas": {}
+    "schemas": {
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Connection": {
+        "properties": {
+          "from_node": {
+            "title": "From Node",
+            "type": "integer"
+          },
+          "to_node": {
+            "title": "To Node",
+            "type": "integer"
+          },
+          "vehicle": {
+            "title": "Vehicle",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from_node",
+          "to_node",
+          "vehicle"
+        ],
+        "title": "Connection",
+        "type": "object"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_GameInfo": {
+        "properties": {
+          "room_code": {
+            "title": "Room Code",
+            "type": "string"
+          },
+          "creator_name": {
+            "title": "Creator Name",
+            "type": "string"
+          },
+          "map_name": {
+            "title": "Map Name",
+            "type": "string"
+          },
+          "map_dimensions": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Map Dimensions",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Status"
+          },
+          "players": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Players"
+          },
+          "current_round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Round"
+          },
+          "current_phase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Phase"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "started_timestamp": {
+            "title": "Started Timestamp",
+            "type": "integer"
+          },
+          "ended_timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended Timestamp"
+          }
+        },
+        "required": [
+          "room_code",
+          "creator_name",
+          "map_name",
+          "map_dimensions",
+          "status",
+          "players",
+          "current_round",
+          "current_phase",
+          "started_timestamp",
+          "ended_timestamp"
+        ],
+        "title": "GameInfo",
+        "type": "object"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_MapNode": {
+        "properties": {
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "position_x": {
+            "title": "Position X",
+            "type": "integer"
+          },
+          "position_y": {
+            "title": "Position Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "index",
+          "position_x",
+          "position_y"
+        ],
+        "title": "MapNode",
+        "type": "object"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Phase": {
+        "enum": [
+          "mister_x",
+          "detektive"
+        ],
+        "title": "Phase",
+        "type": "string"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Player": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Role"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Ticket"
+            },
+            "title": "Tickets",
+            "type": "array"
+          },
+          "starting_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starting Node"
+          },
+          "current_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Node"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "tickets",
+          "starting_node",
+          "current_node"
+        ],
+        "title": "Player",
+        "type": "object"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Role": {
+        "enum": [
+          "mister_x",
+          "detektiv"
+        ],
+        "title": "Role",
+        "type": "string"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Status": {
+        "enum": [
+          "lobby",
+          "laufend",
+          "beendet",
+          "abgebrochen"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Ticket": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "Ticket",
+        "type": "object"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_Vehicle": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Vehicle",
+        "type": "object"
+      },
+      "op_lobby_send_root_2d2ded8990480b7a_message_0_GameInfo": {
+        "properties": {
+          "room_code": {
+            "title": "Room Code",
+            "type": "string"
+          },
+          "creator_name": {
+            "title": "Creator Name",
+            "type": "string"
+          },
+          "map_name": {
+            "title": "Map Name",
+            "type": "string"
+          },
+          "map_dimensions": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Map Dimensions",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_Status"
+          },
+          "players": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Players"
+          },
+          "current_round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Round"
+          },
+          "current_phase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_Phase"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "started_timestamp": {
+            "title": "Started Timestamp",
+            "type": "integer"
+          },
+          "ended_timestamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended Timestamp"
+          }
+        },
+        "required": [
+          "room_code",
+          "creator_name",
+          "map_name",
+          "map_dimensions",
+          "status",
+          "players",
+          "current_round",
+          "current_phase",
+          "started_timestamp",
+          "ended_timestamp"
+        ],
+        "title": "GameInfo",
+        "type": "object"
+      },
+      "op_lobby_send_root_2d2ded8990480b7a_message_0_Phase": {
+        "enum": [
+          "mister_x",
+          "detektive"
+        ],
+        "title": "Phase",
+        "type": "string"
+      },
+      "op_lobby_send_root_2d2ded8990480b7a_message_0_Status": {
+        "enum": [
+          "lobby",
+          "laufend",
+          "beendet",
+          "abgebrochen"
+        ],
+        "title": "Status",
+        "type": "string"
+      }
+    }
   },
   "x-pydantic-socketio": {
     "formatVersion": 1,

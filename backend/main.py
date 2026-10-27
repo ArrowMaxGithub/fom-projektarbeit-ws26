@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI
+from mocks import mock_game_state, mock_lobby
 from models import *
 from psycopg_pool import ConnectionPool
 from pydantic_socketio import ASGIApp, AsyncServer
@@ -64,26 +65,39 @@ async def guarded_query(sid, QueryFn):
 
 
 # sid: Socket ID of the calling client
-@sio.on("join")
-async def join(sid, player: Player):
-    print("JOIN")
+@sio.on("login")
+async def login(sid, player_name: str):
     # Get a new connection from the connection pool
     with pool.connection() as conn:
         # Passing query constructor as lambda for error handling and transaction rollback.
         # This return statement will pass data back to the caller as ACK.
-        return await guarded_query(sid, lambda: JoinQuery(conn, sid, player))
+        return await guarded_query(sid, lambda: LoginQuery(conn, sid, player_name))
 
 
-@sio.on("leave")
-async def leave(sid, player: Player):
+@sio.on("logout")
+async def logout(sid, player_id: int):
     with pool.connection() as conn:
-        return await guarded_query(sid, lambda: LeaveQuery(conn, sid, player))
+        return await guarded_query(sid, lambda: LogoutQuery(conn, sid, player_id))
 
 
 @sio.on("chat")
 async def chat(sid, message: ChatMessage):
     await sio.emit("chat", message)
 
+
+@sio.on("get_lobby")
+async def get_lobby(sid):
+    await sio.emit("lobby", mock_lobby())
+
+
+@sio.on("get_gamestate")
+async def get_gamestate(sid):
+    await sio.emit("gamestate", mock_game_state())
+
+
+# Server-to-client event
+sio.register_emit("lobby", list[GameInfo], namespace="/")
+sio.register_emit("gamestate", GameState, namespace="/")
 
 # Auto-generate asyncapi.json on server start from pydantic-models.
 # Needs to be called at the end of the file after all Socket.IO events.
