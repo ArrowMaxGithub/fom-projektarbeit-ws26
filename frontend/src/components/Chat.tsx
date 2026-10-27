@@ -1,17 +1,17 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
 import ChatHistory from '../components/ChatHistory.tsx'
-import type { ChatMessage, Player } from '../interfaces.tsx';
+import type { ChatMessage } from '../interfaces.tsx';
 
 type ChatProps = {
     socket: any,
     isConnected: boolean,
-    player: Player,
+    playerName: string,
     handleNameChange: (current: string) => void;
-    handleConnect: () => void;
-    handleDiconnect: () => void;
+    handleLogin: () => void;
+    handleLogout: () => void;
 }
 
-export default function ChatProps({ socket, isConnected, player, handleNameChange, handleConnect, handleDiconnect }: ChatProps) {
+export default function ChatProps({ socket, isConnected, playerName, handleNameChange, handleLogin, handleLogout }: ChatProps) {
     const [isSending, setIsSending] = useState(false);
     const [message, setMessage] = useState('');
     const [chatHistory, setChatHistory] = useState<Array<ChatMessage>>([]);
@@ -33,7 +33,7 @@ export default function ChatProps({ socket, isConnected, player, handleNameChang
         event.preventDefault();
         setIsSending(true);
         const msg: ChatMessage = {
-            sender: player.player_name,
+            sender: playerName,
             content: message,
         };
 
@@ -46,8 +46,8 @@ export default function ChatProps({ socket, isConnected, player, handleNameChang
 
     return <div className="Chat">
         <input disabled={isConnected} onChange={current => handleNameChange(current.target.value)} placeholder={"Anon"} />
-        <button disabled={isConnected} onClick={() => handleConnect()}>Connect</button>
-        <button disabled={!isConnected} onClick={() => handleDiconnect()}>Disconnect</button>
+        <button disabled={isConnected} onClick={() => handleLogin()}>Login</button>
+        <button disabled={!isConnected} onClick={() => handleLogout()}>Logout</button>
         <form onSubmit={handleSubmitMessage}>
             <input value={message} onChange={current => setMessage(current.target.value)} />
             <button type="submit" disabled={isSending}>Send Message</button>

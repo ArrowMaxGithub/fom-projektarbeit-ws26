@@ -1,4 +1,4 @@
-import { Role, RoleToLabel, type MapNode, type Player } from "../mockup";
+import type { MapNode, Player } from "../interfaces";
 import { NodeState, nodeStateToClassName } from "./NodeState";
 
 type GameNodeProps = {
@@ -17,7 +17,7 @@ type GameNodeProps = {
 export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, node, state, player_at, active_player, is_last_mister_x_pos }: GameNodeProps) {
     function handleClick(state: NodeState, index: number) {
         if (player_at) {
-            if (player_at.role === Role.MisterX && state === NodeState.LegalDst) {
+            if (player_at.role === "mister_x" && state === NodeState.LegalDst) {
                 makeMove(index); // Detectives can move unto Mister-X
                 return;
             } else {
@@ -46,7 +46,7 @@ export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, 
         <div className={active_player === player_at?.name ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
             {is_last_mister_x_pos ? <span className="LastMisterXPos">🔍</span> : null}
             <span className="PlayerAt">{player_at?.name}</span>
-            <span className="PlayerRole">{RoleToLabel(player_at?.role)}</span>
+            <span className="PlayerRole">{player_at?.role}</span>
         </div>
     </div>
 }

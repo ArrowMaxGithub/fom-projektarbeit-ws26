@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client';
 import './App.css'
-import type { Player } from './interfaces.tsx' // Interfaces for Python-defined event input types
 import Lobby from './components/Lobby.tsx'
-import type { GameInfo } from './mockup.tsx';
-import { mockup_game_lobby } from './mockup.tsx';
+import type { GameInfo } from './interfaces.tsx';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx';
 
@@ -13,12 +11,10 @@ export const socket = io(undefined, { autoConnect: false }); // Infer URL from w
 function App() {
   // React states which are affected by UI event handlers
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [player, setPlayer] = useState<Player>({
-    player_name: "Anon",
-    player_id: -1,
-  });
-  const [rooms, setRooms] = useState<Array<GameInfo>>(mockup_game_lobby());
-  const [current_room, setCurrentRoom] = useState<string | null>("Raum C");
+  const [playerName, setPlayerName] = useState<string>("Anon");
+  const [playerId, setPlayerId] = useState<number | null>(null);
+  const [rooms, setRooms] = useState<Array<GameInfo>>([]);
+  const [current_room, setCurrentRoom] = useState<string | null>(null);
 
   // Define any callbacks to events sent by the server here
   useEffect(() => {
@@ -57,53 +53,49 @@ function App() {
   }, []);
 
   // These event handlers are used by the client directly, e.g. as onClick UI handlers
-  function handleConnect() {
-    console.log("Trying to connect");
+  function handleLogin() {
+    console.log("Trying to login");
 
     socket.connect();
     // `ack` is the response from the executed server query and contain the allocated player ID
     // It will be undefined for a failed query
-    socket.emit('join', player, (ack: number) => {
-      if (ack) {
-        console.log(`My player ID: ${ack} | My Name: ${player.player_name}`);
-        player.player_id = ack;
-        setPlayer(player);
+    socket.emit('login', playerName, (player_id: number) => {
+      if (player_id !== undefined) {
+        console.log(`My player ID: ${player_id} | My Name: ${playerName}`);
+        setPlayerId(player_id);
+        socket.emit("get_lobby"); // TODO: Remove once JoinQuery is implemented and returns current lobby rooms
       } else {
-        console.error("Join failed");
+        console.error("Login failed");
       }
     });
   }
 
-  function handleDiconnect() {
-    socket.emit('leave', player);
+  function handleLogout() {
+    socket.emit('logout', playerId);
     socket.disconnect();
-
   }
 
   function handleNameChange(current: string) {
-    const new_player: Player = {
-      player_name: current,
-      player_id: player.player_id,
-    };
-    setPlayer(new_player);
+    setPlayerName(current);
   }
 
   function handleRoomJoin(room_code: string) {
-    console.log(`${player.player_name} joining room: ${room_code}`);
+    console.log(`${playerName} joining room: ${room_code}`);
     setCurrentRoom(room_code);
+    socket.emit("get_gamestate"); // TODO: Remove once RoomJoinQuery is implemented and returns current game state
   }
 
   function handleRoomLeave() {
-    console.log(`${player.player_name} left room: ${current_room}`);
+    console.log(`${playerName} left room: ${current_room}`);
     setCurrentRoom(null);
   }
 
   return <div className="App">
-    <Lobby active={current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
+    <Lobby active={isConnected && current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
     <hr />
-    <InGame active={current_room !== null} socket={socket} handleRoomLeave={handleRoomLeave}></InGame>
+    <InGame active={isConnected && current_room !== null} socket={socket} handleRoomLeave={handleRoomLeave}></InGame>
     <hr />
-    <Chat socket={socket} isConnected={isConnected} player={player} handleNameChange={handleNameChange} handleConnect={handleConnect} handleDiconnect={handleDiconnect}></Chat>
+    <Chat socket={socket} isConnected={isConnected} playerName={playerName} handleNameChange={handleNameChange} handleLogin={handleLogin} handleLogout={handleLogout}></Chat>
   </div>
 }
 
