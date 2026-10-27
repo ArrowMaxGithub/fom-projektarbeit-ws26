@@ -1,4 +1,4 @@
-import { type Ticket, type Vehicle } from "../mockup";
+import { type Ticket, type Vehicle } from "../interfaces";
 
 type TicketProps = {
     gameover: boolean,

@@ -1,11 +1,11 @@
 import { useRef, useEffect, useState } from 'react'
 import type { Socket } from "socket.io-client";
-import { mockup_active_gamestate, Role, type GameState } from "../mockup.tsx";
 import GameNode from './GameNode.tsx';
 import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getMisterX, getNodeStates, getPlayerAt, moveActivePlayer, setNextActivePlayer } from './GameStateHelpers.tsx';
+import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayerAt, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import Tickets from './Tickets.tsx';
-import GameInfo from './GameInfo.tsx';
+import GameInfos from './GameInfos.tsx';
+import type { GameState } from '../interfaces.tsx';
 
 type InGameProps = {
     active: boolean,
@@ -13,18 +13,15 @@ type InGameProps = {
     handleRoomLeave: () => void;
 }
 
-
 export default function InGame({ active, socket, handleRoomLeave }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
-    const [gameover, setGameOver] = useState<boolean>(false);
-    const [round, setRound] = useState<number>(1);
     const [gamestate, setGameState] = useState<GameState | null>(null);
+    const [gameover, setGameover] = useState<boolean>(false);
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
     const [lastMisterXPos, setlastMisterXPos] = useState<number | null>(null);
 
-    const max_round = 4; // TODO: Replace with actual max_round
-    const mister_x_show = [2, 4]; // TODO: Replace with actual show-rounds
+    const mister_x_show = [4, 9, 14, 19];
 
     const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
     const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
@@ -35,6 +32,20 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
             const new_node_states = getNodeStates(new_gamestate);
             setNodeStates(new_node_states);
             setGameState(new_gamestate);
+            setGameover(isGameOver(new_gamestate));
+
+            if (isGameEnded(new_gamestate)) {
+                const mister_x = getMisterX(new_gamestate);
+                const detectives = getDetectives(new_gamestate);
+                revealMisterX(new_gamestate);
+
+                const any_detective_found_mister_x = detectives?.find(detective => detective.current_node === mister_x?.current_node);
+                if (any_detective_found_mister_x) {
+                    detectivesWon(new_gamestate);
+                } else {
+                    misterXWon(new_gamestate);
+                }
+            }
         }
 
         socket.on('gamestate', onGameState);
@@ -46,7 +57,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
 
     useEffect(() => {
         const ingame = ingameRef.current;
-
         if (ingame) {
             ingame.addEventListener('wheel', handleWheel, { passive: false });
         }
@@ -63,37 +73,14 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         return null;
     }
 
-    function makeMove(to: number) {
+    function makeMove(to_node: number) {
         if (!gamestate) {
             return;
         }
 
-        let new_gamestate: GameState = gamestate;
-        let misterXfound = moveActivePlayer(new_gamestate, to);
-        if (misterXfound) {
-            detectivesWon(new_gamestate);
-            return;
-        }
+        // TODO: Emit OnMove Event
+        console.log(`Moving to ${to_node}`);
 
-        const new_round = setNextActivePlayer(new_gamestate);
-
-        // TODO: Replace with gamestate.info.current_round
-        if (new_round) {
-            const next_round = round + 1;
-            if (next_round > max_round) {
-                misterXWon(new_gamestate);
-                return;
-            } else {
-                setRound(next_round);
-                if (mister_x_show.includes(next_round)) {
-                    revealMisterX(new_gamestate);
-                }
-            }
-        }
-
-        const new_node_states = getNodeStates(new_gamestate);
-        setNodeStates(new_node_states);
-        setGameState(new_gamestate);
     }
 
     function detectivesWon(new_gamestate: GameState) {
@@ -109,10 +96,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         const pos = misterX.current_node;
         console.log(`Mister X was found at ${pos}`);
         misterX.current_node = null;
-
-        setNodeStates(new_gamestate.nodes.map(_node => NodeState.GameOver));
-        setGameState(new_gamestate);
-        setGameOver(true);
     }
 
     function misterXWon(new_gamestate: GameState) {
@@ -127,10 +110,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
 
         const pos = misterX.current_node;
         console.log(`Mister X won and is currently at ${pos}`);
-
-        setNodeStates(new_gamestate.nodes.map(_node => NodeState.GameOver));
-        setGameState(new_gamestate);
-        setGameOver(true);
     }
 
     function revealMisterX(new_gamestate: GameState) {
@@ -146,18 +125,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         const pos = misterX.current_node;
         console.log(`Mister X is currently at ${pos}`);
         setlastMisterXPos(pos);
-    }
-
-    function handleRoomReset() {
-        console.log("Resetting room");
-
-        const new_gamestate = mockup_active_gamestate(Role.Detective);
-        setRound(1);
-        setGameState(new_gamestate);
-        setGameOver(false);
-        const new_node_states = getNodeStates(new_gamestate);
-        setNodeStates(new_node_states);
-        setlastMisterXPos(null);
     }
 
     function handleWheel(event: any) {
@@ -181,9 +148,8 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
             }
         </div>
         <button onClick={handleRoomLeave}>Raum verlassen</button>
-        <button onClick={handleRoomReset}>Reset Game</button>
         <p>{gameover ? "Game Over" : "Active Player: " + gamestate?.active_player}</p>
         <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []} vehicles={gamestate?.vehicles ?? []}></Tickets>
-        <GameInfo gameover={gameover} turn_order={gamestate?.turn_order ?? []} round={round} mister_x_show={mister_x_show}></GameInfo>
+        <GameInfos gameover={gameover} turn_order={gamestate?.turn_order ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
     </div >
 }
