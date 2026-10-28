@@ -31,8 +31,6 @@ export interface GameInfo {
   players: number | null;
   current_round: number | null;
   current_phase: Phase | null;
-  started_timestamp: number;
-  ended_timestamp: number | null;
 }
 export interface GameState {
   info: GameInfo;

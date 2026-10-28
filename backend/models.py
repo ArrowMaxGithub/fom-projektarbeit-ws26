@@ -42,10 +42,6 @@ class GameInfo(BaseModel):
     players: int | None  # None for Phase.Ended
     current_round: int | None  # None for Phase.Open | Phase.Starting
     current_phase: Phase | None  # None for Phase.Open | Phase.Starting
-    started_timestamp: int  # Unix epoch timestamp in milliseconds
-    ended_timestamp: (
-        int | None
-    )  # Unix epoch timestamp in milliseconds; None for active game
 
 
 class MapNode(BaseModel):

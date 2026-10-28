@@ -6,8 +6,6 @@ type LobbyGameProps = {
 }
 
 export default function LobbyGame({ info, onClick }: LobbyGameProps) {
-    const ended = info.status === "abgebrochen" || info.status === "beendet";
-
     let map_label = `Karte: ${info.map_name}`;
 
     let player_label = "";
@@ -18,18 +16,6 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
     let round_label = "";
     if (info.status === "laufend") {
         round_label = `Runde: ${info.players} von 22`;
-    };
-
-    let ended_label = "";
-    if (ended) {
-        const value = info.ended_timestamp?.valueOf() ?? Date.now();
-        const date = new Date(value);
-        const now = new Date();
-        const secs_diff = Math.floor(Math.abs(now.getTime() - date.getTime()) / 1000);
-        const hours = Math.floor(secs_diff / 60 / 60);
-        const minutes = Math.floor(secs_diff / 60) % 60;
-        const secs = secs_diff % 60;
-        ended_label = `Geendet vor: ${hours}h:${minutes}m:${secs}s`;
     };
 
     let status_label;
@@ -60,7 +46,6 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
         <div className="RoomStatus">
             <h1>{status_label}</h1>
             <h2>{player_label}</h2>
-            <h3>{ended ? ended_label : round_label}</h3>
         </div>
     </div>
 }

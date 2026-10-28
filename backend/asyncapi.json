@@ -521,21 +521,6 @@
                 "type": "null"
               }
             ]
-          },
-          "started_timestamp": {
-            "title": "Started Timestamp",
-            "type": "integer"
-          },
-          "ended_timestamp": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ended Timestamp"
           }
         },
         "required": [
@@ -546,9 +531,7 @@
           "status",
           "players",
           "current_round",
-          "current_phase",
-          "started_timestamp",
-          "ended_timestamp"
+          "current_phase"
         ],
         "title": "GameInfo",
         "type": "object"
@@ -772,21 +755,6 @@
                 "type": "null"
               }
             ]
-          },
-          "started_timestamp": {
-            "title": "Started Timestamp",
-            "type": "integer"
-          },
-          "ended_timestamp": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ended Timestamp"
           }
         },
         "required": [
@@ -797,9 +765,7 @@
           "status",
           "players",
           "current_round",
-          "current_phase",
-          "started_timestamp",
-          "ended_timestamp"
+          "current_phase"
         ],
         "title": "GameInfo",
         "type": "object"

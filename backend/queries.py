@@ -342,8 +342,6 @@ class MoveQuery(Query):
                 status=status,
                 players=player_count,
                 current_round=current_round,
-                started_timestamp=started_timestamp,
-                ended_timestamp=ended_timestamp,
             )
 
             self.gamestate = GameState(
