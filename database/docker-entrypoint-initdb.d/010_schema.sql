@@ -31,6 +31,7 @@ CREATE TABLE public.partie (
     status varchar NOT NULL DEFAULT 'lobby',
     aktuelle_runde smallint NOT NULL DEFAULT 0,
     aktuelle_phase varchar DEFAULT NULL,
+    aktuelle_reihenfolge smallint,
     gewinner varchar DEFAULT NULL,
     ende_grund varchar DEFAULT NULL,
 
@@ -65,7 +66,10 @@ CREATE TABLE public.partie (
             'mr_x_blockiert',
             'mr_x_entkommen',
             'detektive_blockiert'
-        ))
+        )),
+
+    CONSTRAINT chk_partie_aktuelle_reihenfolge 
+        CHECK (aktuelle_reihenfolge > 0)
 );
 
 ALTER TABLE public.partie
@@ -102,6 +106,7 @@ CREATE TABLE public.teilnehmer (
     teilnehmertyp varchar NOT NULL,
     spielerrolle varchar,
     aktiv boolean NOT NULL DEFAULT TRUE,
+    reihenfolge smallint,
 
     CONSTRAINT teilnehmer_pk PRIMARY KEY (id),
 
@@ -141,7 +146,10 @@ CREATE TABLE public.teilnehmer (
             AND id_benutzer IS NOT NULL
             AND spielerrolle IS NULL
         )
-    )
+    ),
+
+    CONSTRAINT chk_teilnehmer_reihenfolge 
+        CHECK (reihenfolge > 0)
 );
 
 -- ---------
@@ -422,6 +430,10 @@ ALTER TABLE public.knoten
 ALTER TABLE public.ticketverbrauch
     ADD CONSTRAINT unq_ticketverbrauch_ein_ticket_pro_spielzug
     UNIQUE (id_spielzug,id_ticketart);
+
+ALTER TABLE public.teilnehmer 
+    ADD CONSTRAINT unq_teilnehmer_feste_reihenfolge_pro_partie 
+    UNIQUE (id_partie,reihenfolge);
 
 -- ---------
 -- Partielle UNIQUE-Indizes

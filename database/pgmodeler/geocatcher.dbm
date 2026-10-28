@@ -5,7 +5,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 -->
 <dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="20"
 	 gen-disabled-objs-code="false" show-sys-schemas-rects="true"
-	 last-position="0,0" last-zoom="0.8" scene-rect="-20,-40,2111.85,1162.92"
+	 last-position="0,-32" last-zoom="0.8" scene-rect="-20,-40,2111.85,1162.92"
 	 default-schema="public" default-owner="postgres"
 	 layers="Default layer"
 	 active-layers="0"
@@ -80,7 +80,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="partie" layers="0" collapse-mode="1" max-obj-count="9" z-value="0">
+<table name="partie" layers="0" collapse-mode="1" max-obj-count="10" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<tag name="spieler_und_spielverwaltung"/>
@@ -97,6 +97,9 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</column>
 	<column name="aktuelle_phase" default-value="NULL">
 		<type name="varchar" length="0"/>
+	</column>
+	<column name="aktuelle_reihenfolge">
+		<type name="smallint" length="0"/>
 	</column>
 	<column name="gewinner" default-value="NULL">
 		<type name="varchar" length="0"/>
@@ -137,6 +140,9 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	'mr_x_entkommen',
 	'detektive_blockiert'
 )]]> </expression>
+	</constraint>
+	<constraint name="chk_partie_aktuelle_reihenfolge" type="ck-constr" table="public.partie">
+			<expression> <![CDATA[aktuelle_reihenfolge > 0]]> </expression>
 	</constraint>
 
 	<customidxs object-type="column">
@@ -189,7 +195,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 		<object name="verkehrsmittel_fk" index="1"/>
 	</customidxs></table>
 
-<table name="teilnehmer" layers="0" collapse-mode="1" max-obj-count="10" z-value="0">
+<table name="teilnehmer" layers="0" collapse-mode="1" max-obj-count="13" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<tag name="spieler_und_spielverwaltung"/>
@@ -206,6 +212,9 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</column>
 	<column name="aktiv" not-null="true" default-value="TRUE">
 		<type name="boolean" length="0"/>
+	</column>
+	<column name="reihenfolge">
+		<type name="smallint" length="0"/>
 	</column>
 	<constraint name="teilnehmer_pk" type="pk-constr" table="public.teilnehmer">
 		<columns names="id" ref-type="src-columns"/>
@@ -243,6 +252,9 @@ OR
 	AND spielerrolle IS NULL
 )
 ]]> </expression>
+	</constraint>
+	<constraint name="chk_teilnehmer_reihenfolge" type="ck-constr" table="public.teilnehmer">
+			<expression> <![CDATA[reihenfolge > 0]]> </expression>
 	</constraint>
 
 	<customidxs object-type="column">
@@ -735,5 +747,9 @@ OR
 			<column name="id_verkehrsmittel"/>
 		</idxelement>
 </index>
+
+<constraint name="unq_teilnehmer_feste_reihenfolge_pro_partie" type="uq-constr" table="public.teilnehmer">
+	<columns names="id_partie,reihenfolge" ref-type="src-columns"/>
+</constraint>
 
 </dbmodel>
