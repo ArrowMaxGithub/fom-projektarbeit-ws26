@@ -4,7 +4,7 @@ import LobbyGame from "../components/LobbyGame.tsx";
 type LobbyProps = {
     active: boolean,
     rooms: GameInfo[],
-    handleRoomJoin: (room_code: string) => void;
+    handleRoomJoin: (room_id: number) => void;
 }
 
 export default function Lobby({ active, rooms, handleRoomJoin }: LobbyProps) {
@@ -17,7 +17,7 @@ export default function Lobby({ active, rooms, handleRoomJoin }: LobbyProps) {
         <ul className="LobbyGameList">
             {
                 rooms.map((info, index) =>
-                    <LobbyGame key={index} info={info} onClick={() => handleRoomJoin(info.room_code)} />)
+                    <LobbyGame key={index} info={info} onClick={() => handleRoomJoin(info.room_id)} />)
             }
         </ul>
     </div>

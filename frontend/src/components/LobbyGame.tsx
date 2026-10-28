@@ -51,7 +51,7 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
     return <div className="LobbyGame">
         <div className="RoomName">
             <div>
-                <h1>{info.room_code}</h1>
+                <h1>{info.room_id}</h1>
                 <h2>Ersteller: {info.creator_name}</h2>
                 <h3>{map_label}</h3>
             </div>

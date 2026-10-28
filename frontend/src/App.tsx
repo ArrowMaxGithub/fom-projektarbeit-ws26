@@ -14,7 +14,7 @@ function App() {
   const [playerName, setPlayerName] = useState<string>("Anon");
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
-  const [current_room, setCurrentRoom] = useState<string | null>(null);
+  const [current_room, setCurrentRoom] = useState<number | null>(null);
 
   // Define any callbacks to events sent by the server here
   useEffect(() => {
@@ -79,9 +79,9 @@ function App() {
     setPlayerName(current);
   }
 
-  function handleRoomJoin(room_code: string) {
-    console.log(`${playerName} joining room: ${room_code}`);
-    setCurrentRoom(room_code);
+  function handleRoomJoin(room_id: number) {
+    console.log(`${playerName} joining room: ${room_id}`);
+    setCurrentRoom(room_id);
     socket.emit("get_gamestate"); // TODO: Remove once RoomJoinQuery is implemented and returns current game state
   }
 

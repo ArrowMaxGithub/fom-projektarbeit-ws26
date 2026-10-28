@@ -138,7 +138,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
     }
 
     return <div className="InGame">
-        <h1>{gamestate?.info.room_code}</h1>
+        <h1>{gamestate?.info.room_id}</h1>
         <div ref={ingameRef} className="Gameboard" >
             <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
             {
