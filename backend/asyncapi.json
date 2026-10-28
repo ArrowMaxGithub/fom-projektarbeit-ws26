@@ -60,6 +60,14 @@
           "$ref": "#/components/messages/op_logout_receive_root_bdb2210e75771cdd_message"
         }
       }
+    },
+    "op_move_receive_root_2565dce22e4b31bc_channel": {
+      "address": "/",
+      "messages": {
+        "op_move_receive_root_2565dce22e4b31bc_message": {
+          "$ref": "#/components/messages/op_move_receive_root_2565dce22e4b31bc_message"
+        }
+      }
     }
   },
   "operations": {
@@ -162,6 +170,21 @@
       "messages": [
         {
           "$ref": "#/channels/op_logout_receive_root_bdb2210e75771cdd_channel/messages/op_logout_receive_root_bdb2210e75771cdd_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_move_receive_root_2565dce22e4b31bc": {
+      "summary": "Receive move (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_move_receive_root_2565dce22e4b31bc_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_move_receive_root_2565dce22e4b31bc_channel/messages/op_move_receive_root_2565dce22e4b31bc_message"
         }
       ],
       "x-pydantic-socketio": {
@@ -361,37 +384,93 @@
           "minItems": 1,
           "maxItems": 1
         }
+      },
+      "op_move_receive_root_2565dce22e4b31bc_message": {
+        "name": "move",
+        "x-pydantic-socketio": {
+          "event": "move",
+          "arguments": [
+            {
+              "name": "move"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "player_id": {
+                  "title": "Player Id",
+                  "type": "integer"
+                },
+                "game_id": {
+                  "title": "Game Id",
+                  "type": "integer"
+                },
+                "from_node": {
+                  "title": "From Node",
+                  "type": "integer"
+                },
+                "to_node": {
+                  "title": "To Node",
+                  "type": "integer"
+                },
+                "ticket_type": {
+                  "title": "Ticket Type",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "player_id",
+                "game_id",
+                "from_node",
+                "to_node",
+                "ticket_type"
+              ],
+              "title": "Move",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
       }
     },
     "schemas": {
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Connection": {
         "properties": {
-          "from_node": {
-            "title": "From Node",
+          "connection_id": {
+            "title": "Connection Id",
             "type": "integer"
           },
-          "to_node": {
-            "title": "To Node",
+          "from_node_id": {
+            "title": "From Node Id",
             "type": "integer"
           },
-          "vehicle": {
-            "title": "Vehicle",
+          "to_node_id": {
+            "title": "To Node Id",
+            "type": "integer"
+          },
+          "vehicle_id": {
+            "title": "Vehicle Id",
             "type": "integer"
           }
         },
         "required": [
-          "from_node",
-          "to_node",
-          "vehicle"
+          "connection_id",
+          "from_node_id",
+          "to_node_id",
+          "vehicle_id"
         ],
         "title": "Connection",
         "type": "object"
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_GameInfo": {
         "properties": {
-          "room_code": {
-            "title": "Room Code",
-            "type": "string"
+          "room_id": {
+            "title": "Room Id",
+            "type": "integer"
           },
           "creator_name": {
             "title": "Creator Name",
@@ -460,7 +539,7 @@
           }
         },
         "required": [
-          "room_code",
+          "room_id",
           "creator_name",
           "map_name",
           "map_dimensions",
@@ -476,8 +555,12 @@
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_MapNode": {
         "properties": {
-          "index": {
-            "title": "Index",
+          "node_id": {
+            "title": "Node Id",
+            "type": "integer"
+          },
+          "number": {
+            "title": "Number",
             "type": "integer"
           },
           "position_x": {
@@ -490,7 +573,8 @@
           }
         },
         "required": [
-          "index",
+          "node_id",
+          "number",
           "position_x",
           "position_y"
         ],
@@ -507,6 +591,10 @@
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Player": {
         "properties": {
+          "player_id": {
+            "title": "Player Id",
+            "type": "integer"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -552,6 +640,7 @@
           }
         },
         "required": [
+          "player_id",
           "name",
           "role",
           "tickets",
@@ -581,25 +670,48 @@
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Ticket": {
         "properties": {
+          "ticket_type_id": {
+            "title": "Ticket Type Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
           "count": {
             "title": "Count",
             "type": "integer"
+          },
+          "allowed_vehicles": {
+            "items": {
+              "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Vehicle"
+            },
+            "title": "Allowed Vehicles",
+            "type": "array"
           }
         },
         "required": [
-          "count"
+          "ticket_type_id",
+          "name",
+          "count",
+          "allowed_vehicles"
         ],
         "title": "Ticket",
         "type": "object"
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Vehicle": {
         "properties": {
+          "vehicle_id": {
+            "title": "Vehicle Id",
+            "type": "integer"
+          },
           "name": {
             "title": "Name",
             "type": "string"
           }
         },
         "required": [
+          "vehicle_id",
           "name"
         ],
         "title": "Vehicle",
@@ -607,9 +719,9 @@
       },
       "op_lobby_send_root_2d2ded8990480b7a_message_0_GameInfo": {
         "properties": {
-          "room_code": {
-            "title": "Room Code",
-            "type": "string"
+          "room_id": {
+            "title": "Room Id",
+            "type": "integer"
           },
           "creator_name": {
             "title": "Creator Name",
@@ -678,7 +790,7 @@
           }
         },
         "required": [
-          "room_code",
+          "room_id",
           "creator_name",
           "map_name",
           "map_dimensions",

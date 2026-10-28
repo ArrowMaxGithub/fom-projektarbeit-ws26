@@ -15,6 +15,13 @@ class Status(Enum):
     Aborted = "abgebrochen"
 
 
+class EndCause(Enum):
+    MisterXCaught = "gefangen"
+    MisterXBlocked = "mr_x_blockiert"
+    MisterXEscaped = "mr_x_entkommen"
+    DetectivesBlocked = "detektive_blockiert"
+
+
 class Phase(Enum):
     MisterX = "mister_x"
     Detectives = "detektive"
@@ -27,7 +34,7 @@ class Role(Enum):
 
 # Advertised game in main lobby
 class GameInfo(BaseModel):
-    room_code: str
+    room_id: int
     creator_name: str
     map_name: str
     map_dimensions: list[int]
@@ -42,26 +49,33 @@ class GameInfo(BaseModel):
 
 
 class MapNode(BaseModel):
-    index: int
+    node_id: int
+    number: int
     position_x: int
     position_y: int
 
 
 class Connection(BaseModel):
-    from_node: int
-    to_node: int
-    vehicle: int
+    connection_id: int
+    from_node_id: int
+    to_node_id: int
+    vehicle_id: int
 
 
 class Vehicle(BaseModel):
+    vehicle_id: int
     name: str
 
 
 class Ticket(BaseModel):
+    ticket_type_id: int
+    name: str
     count: int
+    allowed_vehicles: list[Vehicle]
 
 
 class Player(BaseModel):
+    player_id: int
     name: str
     role: Role | None  # None for spectators
     tickets: list[Ticket]  # Remaining tickets per vehicle; empty for spectators
@@ -74,9 +88,15 @@ class GameState(BaseModel):
     info: GameInfo
     active_player: str
     turn_order: list[str]
-    players: list[
-        Player
-    ]  # Players with their respective role tickets and nodes; Index 0: Me
+    players: list[Player]  # Players with their respective role tickets and nodes
     nodes: list[MapNode]  # All nodes which make up the map
     connections: list[Connection]  # Connections between nodes
     vehicles: list[Vehicle]  # All used vehicles for this map
+
+
+class Move(BaseModel):
+    player_id: int
+    game_id: int
+    from_node: int
+    to_node: int
+    ticket_type: int
