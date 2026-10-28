@@ -80,6 +80,12 @@ async def logout(sid, player_id: int):
         return await guarded_query(sid, lambda: LogoutQuery(conn, sid, player_id))
 
 
+@sio.on("move")
+async def move(sid, move: Move):
+    with pool.connection() as conn:
+        return await guarded_query(sid, lambda: MoveQuery(conn, sid, move))
+
+
 @sio.on("chat")
 async def chat(sid, message: ChatMessage):
     await sio.emit("chat", message)
