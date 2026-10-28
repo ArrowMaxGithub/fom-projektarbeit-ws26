@@ -13,8 +13,21 @@ from models import (
 
 
 def mock_game_state() -> GameState:
+    vehicles = {
+        0: Vehicle(vehicle_id=0, name="Taxi"),
+        1: Vehicle(vehicle_id=1, name="Bus"),
+        2: Vehicle(vehicle_id=2, name="Subway"),
+        3: Vehicle(vehicle_id=3, name="Black Route"),
+    }
+    allowed_vehicles_per_ticket_type = {
+        0: [vehicles[0]],
+        1: [vehicles[1]],
+        2: [vehicles[2]],
+        3: [vehicles[0], vehicles[1], vehicles[2], vehicles[3]],
+    }
+
     info = GameInfo(
-        room_code="Raum B",
+        room_id=2,
         creator_name="string",
         map_name="München",
         map_dimensions=[1000, 1000],
@@ -27,27 +40,106 @@ def mock_game_state() -> GameState:
     )
 
     john = Player(
+        player_id=0,
         name="John",
         role=Role.Detective,
-        tickets=[Ticket(count=12), Ticket(count=4), Ticket(count=3), Ticket(count=0)],
+        tickets=[
+            Ticket(
+                ticket_type_id=0,
+                name="Taxi Ticket",
+                count=12,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[0],
+            ),
+            Ticket(
+                ticket_type_id=1,
+                name="Bus Ticket",
+                count=4,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[1],
+            ),
+            Ticket(
+                ticket_type_id=2,
+                name="Subway Ticket",
+                count=3,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[2],
+            ),
+            Ticket(
+                ticket_type_id=3,
+                name="Black Route Ticket",
+                count=0,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[3],
+            ),
+        ],
         starting_node=3,
         current_node=3,
     )
     matthias = Player(
+        player_id=1,
         name="Matthias",
         role=Role.MisterX,
-        tickets=[Ticket(count=12), Ticket(count=4), Ticket(count=3), Ticket(count=5)],
+        tickets=[
+            Ticket(
+                ticket_type_id=0,
+                name="Taxi Ticket",
+                count=12,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[0],
+            ),
+            Ticket(
+                ticket_type_id=1,
+                name="Bus Ticket",
+                count=4,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[1],
+            ),
+            Ticket(
+                ticket_type_id=2,
+                name="Subway Ticket",
+                count=3,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[2],
+            ),
+            Ticket(
+                ticket_type_id=3,
+                name="Black Route Ticket",
+                count=5,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[3],
+            ),
+        ],
         starting_node=0,
         current_node=5,
     )
     louis = Player(
+        player_id=2,
         name="Louis",
         role=Role.Detective,
-        tickets=[Ticket(count=10), Ticket(count=2), Ticket(count=2), Ticket(count=0)],
+        tickets=[
+            Ticket(
+                ticket_type_id=0,
+                name="Taxi Ticket",
+                count=10,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[0],
+            ),
+            Ticket(
+                ticket_type_id=1,
+                name="Bus Ticket",
+                count=2,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[1],
+            ),
+            Ticket(
+                ticket_type_id=2,
+                name="Subway Ticket",
+                count=2,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[2],
+            ),
+            Ticket(
+                ticket_type_id=3,
+                name="Black Route Ticket",
+                count=0,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[3],
+            ),
+        ],
         starting_node=3,
         current_node=4,
     )
     viktor = Player(
+        player_id=3,
         name="Viktor",
         role=None,
         tickets=[],
@@ -58,41 +150,41 @@ def mock_game_state() -> GameState:
     players = [john, matthias, louis, viktor]
 
     nodes = [
-        MapNode(index=0, position_x=100.0, position_y=400.0),
-        MapNode(index=1, position_x=500.0, position_y=100.0),
-        MapNode(index=2, position_x=900.0, position_y=400.0),
-        MapNode(index=3, position_x=900.0, position_y=900.0),
-        MapNode(index=4, position_x=100.0, position_y=900.0),
-        MapNode(index=5, position_x=500.0, position_y=650.0),
+        MapNode(node_id=0, number=0, position_x=100.0, position_y=400.0),
+        MapNode(node_id=1, number=1, position_x=500.0, position_y=100.0),
+        MapNode(node_id=2, number=2, position_x=900.0, position_y=400.0),
+        MapNode(node_id=3, number=3, position_x=900.0, position_y=900.0),
+        MapNode(node_id=4, number=4, position_x=100.0, position_y=900.0),
+        MapNode(node_id=5, number=5, position_x=500.0, position_y=650.0),
     ]
 
     vehicles = [
-        Vehicle(name="Taxi"),
-        Vehicle(name="Bus"),
-        Vehicle(name="Subway"),
-        Vehicle(name="Black Route"),
+        Vehicle(vehicle_id=0, name="Taxi"),
+        Vehicle(vehicle_id=1, name="Bus"),
+        Vehicle(vehicle_id=2, name="Subway"),
+        Vehicle(vehicle_id=3, name="Black Route"),
     ]
 
     connections = [
         # Taxi
-        Connection(from_node=0, to_node=1, vehicle=0),
-        Connection(from_node=0, to_node=4, vehicle=0),
-        Connection(from_node=0, to_node=5, vehicle=0),
-        Connection(from_node=1, to_node=2, vehicle=0),
-        Connection(from_node=2, to_node=3, vehicle=0),
-        Connection(from_node=2, to_node=5, vehicle=0),
-        Connection(from_node=3, to_node=4, vehicle=0),
-        Connection(from_node=3, to_node=5, vehicle=0),
-        Connection(from_node=4, to_node=5, vehicle=0),
+        Connection(connection_id=0, from_node_id=0, to_node_id=1, vehicle_id=0),
+        Connection(connection_id=1, from_node_id=0, to_node_id=4, vehicle_id=0),
+        Connection(connection_id=2, from_node_id=0, to_node_id=5, vehicle_id=0),
+        Connection(connection_id=3, from_node_id=1, to_node_id=2, vehicle_id=0),
+        Connection(connection_id=4, from_node_id=2, to_node_id=3, vehicle_id=0),
+        Connection(connection_id=5, from_node_id=2, to_node_id=5, vehicle_id=0),
+        Connection(connection_id=6, from_node_id=3, to_node_id=4, vehicle_id=0),
+        Connection(connection_id=7, from_node_id=3, to_node_id=5, vehicle_id=0),
+        Connection(connection_id=8, from_node_id=4, to_node_id=5, vehicle_id=0),
         # Bus
-        Connection(from_node=0, to_node=3, vehicle=1),
-        Connection(from_node=2, to_node=4, vehicle=1),
+        Connection(connection_id=9, from_node_id=0, to_node_id=3, vehicle_id=1),
+        Connection(connection_id=10, from_node_id=2, to_node_id=4, vehicle_id=1),
         # Subway
-        Connection(from_node=1, to_node=3, vehicle=2),
-        Connection(from_node=1, to_node=4, vehicle=2),
-        Connection(from_node=3, to_node=4, vehicle=2),
+        Connection(connection_id=11, from_node_id=1, to_node_id=3, vehicle_id=2),
+        Connection(connection_id=12, from_node_id=1, to_node_id=4, vehicle_id=2),
+        Connection(connection_id=13, from_node_id=3, to_node_id=4, vehicle_id=2),
         # Black route
-        Connection(from_node=0, to_node=2, vehicle=3),
+        Connection(connection_id=14, from_node_id=0, to_node_id=2, vehicle_id=3),
     ]
 
     gamestate = GameState(
@@ -110,7 +202,7 @@ def mock_game_state() -> GameState:
 
 def mock_lobby() -> list[GameInfo]:
     room_a = GameInfo(
-        room_code="Raum A",
+        room_id=0,
         creator_name="Markus",
         map_name="Berlin",
         map_dimensions=[1000, 1000],
@@ -123,7 +215,7 @@ def mock_lobby() -> list[GameInfo]:
     )
 
     room_b = GameInfo(
-        room_code="Raum B",
+        room_id=1,
         creator_name="Matthias",
         map_name="Stuttgart",
         map_dimensions=[1000, 1000],
@@ -136,7 +228,7 @@ def mock_lobby() -> list[GameInfo]:
     )
 
     room_c = GameInfo(
-        room_code="Raum C",
+        room_id=2,
         creator_name="Gustav",
         map_name="München",
         map_dimensions=[1000, 1000],
@@ -149,7 +241,7 @@ def mock_lobby() -> list[GameInfo]:
     )
 
     room_d = GameInfo(
-        room_code="Raum D",
+        room_id=3,
         creator_name="Leon",
         map_name="Düsseldorf",
         map_dimensions=[1000, 1000],
