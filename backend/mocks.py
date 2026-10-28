@@ -35,8 +35,6 @@ def mock_game_state() -> GameState:
         players=3,
         current_round=4,
         current_phase="detektive",
-        started_timestamp=1792336000123,
-        ended_timestamp=None,
     )
 
     john = Player(
@@ -210,8 +208,6 @@ def mock_lobby() -> list[GameInfo]:
         players=2,
         current_round=None,
         current_phase=None,
-        started_timestamp=1792334940123,
-        ended_timestamp=None,
     )
 
     room_b = GameInfo(
@@ -223,8 +219,6 @@ def mock_lobby() -> list[GameInfo]:
         players=4,
         current_round=None,
         current_phase=None,
-        started_timestamp=1792334980123,
-        ended_timestamp=None,
     )
 
     room_c = GameInfo(
@@ -236,8 +230,6 @@ def mock_lobby() -> list[GameInfo]:
         players=6,
         current_round=4,
         current_phase=Phase.Detectives,
-        started_timestamp=1792336000123,
-        ended_timestamp=1792334910123,
     )
 
     room_d = GameInfo(
@@ -249,8 +241,6 @@ def mock_lobby() -> list[GameInfo]:
         players=None,
         current_round=22,
         current_phase=None,
-        started_timestamp=1792336000123,
-        ended_timestamp=1792334910123,
     )
 
     return [room_a, room_b, room_c, room_d]
