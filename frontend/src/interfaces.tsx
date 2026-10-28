@@ -4,6 +4,7 @@
 export type Status = "lobby" | "laufend" | "beendet" | "abgebrochen";
 export type Phase = "mister_x" | "detektive";
 export type Role = "mister_x" | "detektiv";
+export type AllowedVehicles = Vehicle[];
 export type Tickets = Ticket[];
 export type Players = Player[];
 export type Nodes = MapNode[];
@@ -16,12 +17,13 @@ export interface ChatMessage {
   content: string;
 }
 export interface Connection {
-  from_node: number;
-  to_node: number;
-  vehicle: number;
+  connection_id: number;
+  from_node_id: number;
+  to_node_id: number;
+  vehicle_id: number;
 }
 export interface GameInfo {
-  room_code: string;
+  room_id: number;
   creator_name: string;
   map_name: string;
   map_dimensions: number[];
@@ -42,6 +44,7 @@ export interface GameState {
   vehicles: Vehicles;
 }
 export interface Player {
+  player_id: number;
   name: string;
   role: Role | null;
   tickets: Tickets;
@@ -49,15 +52,27 @@ export interface Player {
   current_node: number | null;
 }
 export interface Ticket {
+  ticket_type_id: number;
+  name: string;
   count: number;
+  allowed_vehicles: AllowedVehicles;
+}
+export interface Vehicle {
+  vehicle_id: number;
+  name: string;
 }
 export interface MapNode {
-  index: number;
+  node_id: number;
+  number: number;
   position_x: number;
   position_y: number;
 }
-export interface Vehicle {
-  name: string;
+export interface Move {
+  player_id: number;
+  game_id: number;
+  from_node: number;
+  to_node: number;
+  ticket_type: number;
 }
 export namespace Root {
   export const path = "/";
@@ -67,6 +82,7 @@ export namespace Root {
     "get_lobby": (...args: [...[], ack?: (...args: unknown[]) => void]) => void;
     "login": (...args: [...[player_name: string], ack?: (...args: unknown[]) => void]) => void;
     "logout": (...args: [...[player_id: number], ack?: (...args: unknown[]) => void]) => void;
+    "move": (...args: [...[move: Move], ack?: (...args: unknown[]) => void]) => void;
   }
   export interface ServerToClientEvents {
     "gamestate": (...args: [...[GameState], ack?: (...args: unknown[]) => void]) => void;
