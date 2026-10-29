@@ -24,11 +24,17 @@ class LoginQuery(Query):
         # Transacton block start
         with conn.transaction():
             cursor = conn.cursor()
-            # If this failed, the transaction would be rolled back and no changes would be written to the database
-            row = cursor.execute(
-                t"insert into players (name) values ({self.player_name}) returning id;"
+            # Try to get player by name
+            self.player_id = cursor.execute(
+                t"select id from benutzer where benutzername = {self.player_name};"
             ).fetchone()
-            self.player_id = row[0] if row else None
+
+            # Or insert new player
+            # If this failed (e.g. username already taken), the transaction would be rolled back and no changes would be written to the database
+            if self.player_id is None:
+                self.player_id = cursor.execute(
+                    t"insert into benutzer (benutzername) values ({self.player_name}) returning id;"
+                ).fetchone()
 
     # Only called if the constructor (and thus all SQL-transactions) succeed
     async def fullfill(self, sio: FastAPISocketIO):
@@ -49,8 +55,8 @@ class LogoutQuery(Query):
             cursor = conn.cursor()
             # Note the template string t"{value_here}" with t-prefix instead of regular f-string to avoid any SQL-injections
             self.player_name = cursor.execute(
-                t"delete from players where id = {self.player_id} returning name;"
-            )
+                t"select benutzername from benutzer where id = {self.player_id};"
+            ).fetchone()
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
@@ -342,7 +348,7 @@ class MoveQuery(Query):
 
             # TODO: Update game status if game ended
 
-            # Set next player active
+            # TODO: If game has not ended: set next player active. Turn order is missing in db-schema.
             # If this player was the last in the turn order: increment round
             max_turn_order = max(p.turn_order for p in players)
             next_round = (
