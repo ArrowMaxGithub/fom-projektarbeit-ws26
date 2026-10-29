@@ -200,7 +200,7 @@ def mock_game_state() -> GameState:
 
     gamestate = GameState(
         info=info,
-        active_player=0,
+        active_player=1,
         players=players,
         nodes=nodes,
         connections=connections,
@@ -225,18 +225,6 @@ def mock_lobby() -> list[GameInfo]:
 
     room_b = GameInfo(
         room_id=1,
-        creator_name="Matthias",
-        map_name="Stuttgart",
-        map_dimensions=[1000, 1000],
-        status=Status.InProgress,
-        end_cause=None,
-        players=4,
-        current_round=None,
-        current_phase=None,
-    )
-
-    room_c = GameInfo(
-        room_id=2,
         creator_name="Gustav",
         map_name="München",
         map_dimensions=[1000, 1000],
@@ -244,6 +232,18 @@ def mock_lobby() -> list[GameInfo]:
         end_cause=EndCause.MisterXCaught,
         players=6,
         current_round=4,
+        current_phase=Phase.Detectives,
+    )
+
+    room_c = GameInfo(
+        room_id=2,
+        creator_name="Matthias",
+        map_name="Stuttgart",
+        map_dimensions=[1000, 1000],
+        status=Status.InProgress,
+        end_cause=None,
+        players=4,
+        current_round=1,
         current_phase=Phase.Detectives,
     )
 
