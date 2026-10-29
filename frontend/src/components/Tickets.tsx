@@ -1,12 +1,11 @@
-import { type Ticket, type Vehicle } from "../interfaces";
+import { type Ticket } from "../interfaces";
 
 type TicketProps = {
     gameover: boolean,
     tickets: Ticket[],
-    vehicles: Vehicle[],
 }
 
-export default function GameNode({ gameover, tickets, vehicles }: TicketProps) {
+export default function GameNode({ gameover, tickets }: TicketProps) {
     if (gameover) {
         return null;
     }
@@ -16,7 +15,7 @@ export default function GameNode({ gameover, tickets, vehicles }: TicketProps) {
         <ul>
             {
                 tickets.map((ticket, index) => {
-                    return <li key={index}>{vehicles[index].name}: {ticket.count}</li>;
+                    return <li key={index}>{ticket.name}: {ticket.count}</li>;
                 })
             }
         </ul>

@@ -458,6 +458,16 @@
         "title": "Connection",
         "type": "object"
       },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_EndCause": {
+        "enum": [
+          "gefangen",
+          "mr_x_blockiert",
+          "mr_x_entkommen",
+          "detektive_blockiert"
+        ],
+        "title": "EndCause",
+        "type": "string"
+      },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_GameInfo": {
         "properties": {
           "room_id": {
@@ -481,6 +491,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Status"
+          },
+          "end_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_EndCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "players": {
             "anyOf": [
@@ -521,6 +541,7 @@
           "map_name",
           "map_dimensions",
           "status",
+          "end_cause",
           "players",
           "current_round",
           "current_phase"
@@ -704,6 +725,16 @@
         "title": "Vehicle",
         "type": "object"
       },
+      "op_lobby_send_root_2d2ded8990480b7a_message_0_EndCause": {
+        "enum": [
+          "gefangen",
+          "mr_x_blockiert",
+          "mr_x_entkommen",
+          "detektive_blockiert"
+        ],
+        "title": "EndCause",
+        "type": "string"
+      },
       "op_lobby_send_root_2d2ded8990480b7a_message_0_GameInfo": {
         "properties": {
           "room_id": {
@@ -727,6 +758,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_Status"
+          },
+          "end_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_EndCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "players": {
             "anyOf": [
@@ -767,6 +808,7 @@
           "map_name",
           "map_dimensions",
           "status",
+          "end_cause",
           "players",
           "current_round",
           "current_phase"

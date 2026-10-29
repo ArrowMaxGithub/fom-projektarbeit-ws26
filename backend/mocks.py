@@ -1,40 +1,31 @@
-from models import (
-    Connection,
-    GameInfo,
-    GameState,
-    MapNode,
-    Phase,
-    Player,
-    Role,
-    Status,
-    Ticket,
-    Vehicle,
-)
+from models import *
 
 
 def mock_game_state() -> GameState:
     vehicles = {
         0: Vehicle(vehicle_id=0, name="Taxi"),
         1: Vehicle(vehicle_id=1, name="Bus"),
-        2: Vehicle(vehicle_id=2, name="Subway"),
-        3: Vehicle(vehicle_id=3, name="Black Route"),
+        2: Vehicle(vehicle_id=2, name="U-Bahn"),
+        3: Vehicle(vehicle_id=3, name="Schwarze Route"),
     }
     allowed_vehicles_per_ticket_type = {
         0: [vehicles[0]],
         1: [vehicles[1]],
         2: [vehicles[2]],
         3: [vehicles[0], vehicles[1], vehicles[2], vehicles[3]],
+        4: [vehicles[0], vehicles[1], vehicles[2], vehicles[3]],
     }
 
     info = GameInfo(
         room_id=2,
-        creator_name="string",
+        creator_name="Matthias",
         map_name="München",
         map_dimensions=[1000, 1000],
-        status="laufend",
+        status=Status.InProgress,
+        end_cause=None,
         players=3,
         current_round=4,
-        current_phase="detektive",
+        current_phase=Phase.Detectives,
     )
 
     john = Player(
@@ -44,27 +35,33 @@ def mock_game_state() -> GameState:
         tickets=[
             Ticket(
                 ticket_type_id=0,
-                name="Taxi Ticket",
+                name="Taxiticket",
                 count=12,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[0],
             ),
             Ticket(
                 ticket_type_id=1,
-                name="Bus Ticket",
+                name="Busticket",
                 count=4,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[1],
             ),
             Ticket(
                 ticket_type_id=2,
-                name="Subway Ticket",
+                name="Undergroundticket",
                 count=3,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[2],
             ),
             Ticket(
                 ticket_type_id=3,
-                name="Black Route Ticket",
+                name="Blackticket",
                 count=0,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[3],
+            ),
+            Ticket(
+                ticket_type_id=4,
+                name="Doppelzugticket",
+                count=0,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[4],
             ),
         ],
         starting_node=3,
@@ -78,27 +75,33 @@ def mock_game_state() -> GameState:
         tickets=[
             Ticket(
                 ticket_type_id=0,
-                name="Taxi Ticket",
+                name="Taxiticket",
                 count=12,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[0],
             ),
             Ticket(
                 ticket_type_id=1,
-                name="Bus Ticket",
+                name="Busticket",
                 count=4,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[1],
             ),
             Ticket(
                 ticket_type_id=2,
-                name="Subway Ticket",
+                name="Undergroundticket",
                 count=3,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[2],
             ),
             Ticket(
                 ticket_type_id=3,
-                name="Black Route Ticket",
+                name="Blackticket",
                 count=5,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[3],
+            ),
+            Ticket(
+                ticket_type_id=4,
+                name="Doppelzugticket",
+                count=0,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[4],
             ),
         ],
         starting_node=0,
@@ -112,27 +115,33 @@ def mock_game_state() -> GameState:
         tickets=[
             Ticket(
                 ticket_type_id=0,
-                name="Taxi Ticket",
+                name="Taxiticket",
                 count=10,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[0],
             ),
             Ticket(
                 ticket_type_id=1,
-                name="Bus Ticket",
+                name="Busticket",
                 count=2,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[1],
             ),
             Ticket(
                 ticket_type_id=2,
-                name="Subway Ticket",
+                name="Undergroundticket",
                 count=2,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[2],
             ),
             Ticket(
                 ticket_type_id=3,
-                name="Black Route Ticket",
+                name="Blackticket",
                 count=0,
                 allowed_vehicles=allowed_vehicles_per_ticket_type[3],
+            ),
+            Ticket(
+                ticket_type_id=4,
+                name="Doppelzugticket",
+                count=0,
+                allowed_vehicles=allowed_vehicles_per_ticket_type[4],
             ),
         ],
         starting_node=3,
@@ -208,6 +217,7 @@ def mock_lobby() -> list[GameInfo]:
         map_name="Berlin",
         map_dimensions=[1000, 1000],
         status=Status.Open,
+        end_cause=None,
         players=2,
         current_round=None,
         current_phase=None,
@@ -219,6 +229,7 @@ def mock_lobby() -> list[GameInfo]:
         map_name="Stuttgart",
         map_dimensions=[1000, 1000],
         status=Status.InProgress,
+        end_cause=None,
         players=4,
         current_round=None,
         current_phase=None,
@@ -230,6 +241,7 @@ def mock_lobby() -> list[GameInfo]:
         map_name="München",
         map_dimensions=[1000, 1000],
         status=Status.Ended,
+        end_cause=EndCause.MisterXCaught,
         players=6,
         current_round=4,
         current_phase=Phase.Detectives,
@@ -241,6 +253,7 @@ def mock_lobby() -> list[GameInfo]:
         map_name="Düsseldorf",
         map_dimensions=[1000, 1000],
         status=Status.Aborted,
+        end_cause=None,
         players=None,
         current_round=22,
         current_phase=None,

@@ -1,6 +1,7 @@
 // Generated from a Pydantic-SocketIO AsyncAPI contract. Do not edit.
 // Client: Socket<ServerToClientEvents, ClientToServerEvents>.
 // Server: Server<ClientToServerEvents, ServerToClientEvents> for /; Namespace<...> for other paths.
+export type EndCause = "gefangen" | "mr_x_blockiert" | "mr_x_entkommen" | "detektive_blockiert";
 export type Status = "lobby" | "laufend" | "beendet" | "abgebrochen";
 export type Phase = "mister_x" | "detektive";
 export type Role = "mister_x" | "detektiv";
@@ -28,6 +29,7 @@ export interface GameInfo {
   map_name: string;
   map_dimensions: number[];
   status: Status;
+  end_cause: EndCause | null;
   players: number | null;
   current_round: number | null;
   current_phase: Phase | null;
