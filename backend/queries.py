@@ -1,5 +1,5 @@
 from models import *
-from psycopg import Connection
+from psycopg import Connection as DBConnection
 from pydantic_socketio import FastAPISocketIO
 
 
@@ -7,7 +7,7 @@ class Query:
     # conn: PostgreSQL-connection
     # sid: Socket ID of the calling client
     # input: Any pydantic input model from models.py
-    def __init__(self, conn: Connection, sid, *input): ...
+    def __init__(self, conn: DBConnection, sid, *input): ...
 
     # sio: Socket.IO Server
     async def fullfill(self, sio: FastAPISocketIO): ...
@@ -16,7 +16,7 @@ class Query:
 class LoginQuery(Query):
     # Queries are constructed using SQL-transactions
     # On any encountered exception inside the transaction block, the transaction is rolled back
-    def __init__(self, conn: Connection, sid, player_name: str):
+    def __init__(self, conn: DBConnection, sid, player_name: str):
         self.player_id = None
         self.player_name = player_name
         self.sid = sid
@@ -46,7 +46,7 @@ class LoginQuery(Query):
 
 
 class LogoutQuery(Query):
-    def __init__(self, conn: Connection, sid, player_id: int):
+    def __init__(self, conn: DBConnection, sid, player_id: int):
         self.player_id = player_id
         self.player_name = None
         self.sid = sid
@@ -65,7 +65,7 @@ class LogoutQuery(Query):
 
 
 class MoveQuery(Query):
-    def __init__(self, conn: Connection, sid, move: Move):
+    def __init__(self, conn: DBConnection, sid, move: Move):
         self.sid = sid
         self.move = move
         self.player_name = None
@@ -344,9 +344,62 @@ class MoveQuery(Query):
             # Check if Mister-X escaped
             mister_x_escaped = current_round == 22 and not mister_x_caught
 
-            # TODO: Check for blocked mister_x or blocked detectives
-            mister_x_blocked = False
-            detectives_blocked = False
+            # Filter available connections based on held tickets
+            def get_ticket_conns(
+                conns: list[Connection], player: Player
+            ) -> list[Connection]:
+                player_vehicles = {  # Set of all allowed vehicles for held tickets
+                    v for v in t.allowed_vehicles for t in player.tickets if t.count > 0
+                }
+                return [
+                    c
+                    for c in conns
+                    if c.vehicle in player_vehicles
+                    and (  # connections starts from or points to player.current_node
+                        c.from_node_id == player.current_node
+                        or c.to_node_id == player.current_node
+                    )
+                ]
+
+            # Reverse connection pointing towards instead of away from player.current_node
+            def reverse_conns(
+                conns: list[Connection], player: Player
+            ) -> list[Connection]:
+                return [
+                    Connection(
+                        connection_id=c.connection_id,
+                        vehicle_id=c.vehicle_id,
+                        from_node_id=c.from_node_id
+                        if c.from_node_id == player.current_node
+                        else c.to_node_id,
+                        to_node_id=c.to_node_id
+                        if c.to_node_id == player.current_node
+                        else c.from_node_id,
+                    )
+                    for c in conns
+                ]
+
+            # Filter connections ending on nodes blocked by players
+            def filter_player_pos(
+                conns: list[Connection], players: list[Player]
+            ) -> list[Connection]:
+                player_positions = [p.current_node for p in players]
+                return [c for c in conns if c.to_node_id not in player_positions]
+
+            # Gets all legal moves per player as a dict indexed by player name
+            def get_legal_moves(conns: list[Connection], players: list[Player]) -> dict:
+                return {
+                    p.name: filter_player_pos(
+                        reverse_conns(get_ticket_conns(conns, p), p),
+                        players,
+                    )
+                    for p in players
+                }
+
+            # TODO: Legal moves could be sent to clients directly instead of being recalculated by the frontend
+            legal_moves = get_legal_moves(connections, players)
+            mister_x_blocked = len(legal_moves[mister_x.name]) == 0
+            detectives_blocked = all(len(legal_moves[d.name]) == 0 for d in detectives)
 
             # Update game status if game ended
             if mister_x_escaped:
