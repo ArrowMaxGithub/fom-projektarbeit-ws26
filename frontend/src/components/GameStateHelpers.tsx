@@ -6,11 +6,11 @@ export function getPlayer(gamestate: GameState, player_id: number): Player | und
 }
 
 export function getActivePlayerIndex(gamestate: GameState): number {
-    return gamestate.players.findIndex(player => player.name === gamestate.active_player)
+    return gamestate.players.findIndex(player => player.turn_order === gamestate.active_player)
 }
 
 export function getActivePlayer(gamestate: GameState | null): Player | undefined {
-    return gamestate?.players.find(player => player.name === gamestate?.active_player)
+    return gamestate?.players.find(player => player.turn_order === gamestate?.active_player)
 }
 
 export function getPlayerAt(gamestate: GameState, node_index: number): Player | undefined {
@@ -23,6 +23,13 @@ export function getMisterX(gamestate: GameState | null): Player | undefined {
 
 export function getDetectives(gamestate: GameState | null): Player[] | undefined {
     return gamestate?.players.filter(player => player.role === "detektiv");
+}
+
+export function getTurnOrderLabels(gamestate: GameState | null): string[] | undefined {
+    return gamestate?.players
+        .filter(p => p.turn_order !== null)
+        .sort((a, b) => (a.turn_order ?? 0) - (b.turn_order ?? 0))
+        .map(p => p.name);
 }
 
 export function getConnection(gamestate: GameState, from_node_id: number, to_node_id: number): Connection | undefined {

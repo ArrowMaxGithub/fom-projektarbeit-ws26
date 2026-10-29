@@ -69,6 +69,7 @@ def mock_game_state() -> GameState:
         ],
         starting_node=3,
         current_node=3,
+        turn_order=1,
     )
     matthias = Player(
         player_id=1,
@@ -102,6 +103,7 @@ def mock_game_state() -> GameState:
         ],
         starting_node=0,
         current_node=5,
+        turn_order=0,
     )
     louis = Player(
         player_id=2,
@@ -135,6 +137,7 @@ def mock_game_state() -> GameState:
         ],
         starting_node=3,
         current_node=4,
+        turn_order=2,
     )
     viktor = Player(
         player_id=3,
@@ -143,6 +146,7 @@ def mock_game_state() -> GameState:
         tickets=[],
         starting_node=None,
         current_node=None,
+        turn_order=None,
     )
 
     players = [john, matthias, louis, viktor]
@@ -187,8 +191,7 @@ def mock_game_state() -> GameState:
 
     gamestate = GameState(
         info=info,
-        active_player="Matthias",
-        turn_order=["Matthias", "Louis", "John"],
+        active_player=0,
         players=players,
         nodes=nodes,
         connections=connections,

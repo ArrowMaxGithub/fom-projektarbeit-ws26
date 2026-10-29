@@ -245,14 +245,7 @@
                 },
                 "active_player": {
                   "title": "Active Player",
-                  "type": "string"
-                },
-                "turn_order": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Turn Order",
-                  "type": "array"
+                  "type": "integer"
                 },
                 "players": {
                   "items": {
@@ -286,7 +279,6 @@
               "required": [
                 "info",
                 "active_player",
-                "turn_order",
                 "players",
                 "nodes",
                 "connections",
@@ -620,6 +612,17 @@
               }
             ],
             "title": "Current Node"
+          },
+          "turn_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn Order"
           }
         },
         "required": [
@@ -628,7 +631,8 @@
           "role",
           "tickets",
           "starting_node",
-          "current_node"
+          "current_node",
+          "turn_order"
         ],
         "title": "Player",
         "type": "object"

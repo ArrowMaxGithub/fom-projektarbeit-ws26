@@ -10,7 +10,7 @@ type GameNodeProps = {
     node: MapNode,
     state: NodeState,
     player_at: Player | undefined,
-    active_player: string,
+    active_player: number,
     is_last_mister_x_pos: boolean,
 }
 
@@ -43,7 +43,7 @@ export default function GameNode({ makeMove, index, gameover, scale_x, scale_y, 
 
     return <div className="MapNode" style={{ left: node.position_x * scale_x - 20, top: node.position_y * scale_y - 20 }}>
         <button className={"MapNodeButton " + nodeStateToClassName(state)} disabled={gameover} key={index} onClick={() => handleClick(state, index)}>{index}</button>
-        <div className={active_player === player_at?.name ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
+        <div className={active_player === player_at?.turn_order ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
             {is_last_mister_x_pos ? <span className="LastMisterXPos">🔍</span> : null}
             <span className="PlayerAt">{player_at?.name}</span>
             <span className="PlayerRole">{player_at?.role}</span>
