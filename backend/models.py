@@ -39,6 +39,7 @@ class GameInfo(BaseModel):
     map_name: str
     map_dimensions: list[int]
     status: Status
+    end_cause: EndCause | None
     players: int | None  # None for Phase.Ended
     current_round: int | None  # None for Phase.Open | Phase.Starting
     current_phase: Phase | None  # None for Phase.Open | Phase.Starting

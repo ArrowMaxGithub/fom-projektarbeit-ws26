@@ -103,12 +103,12 @@ class MoveQuery(Query):
                 map_name,
                 map_width,
                 map_height,
-                status,
+                current_status,
                 current_round,
                 current_phase,
                 active_player_turn_order,
             ) = row if row else None
-            assert status == Status.InProgress, "Game is not in-play"
+            assert current_status == Status.InProgress, "Game is not in-play"
 
             # Check if player is active, matches game's current_phase and actually is at move.from_node
             cursor.execute(
@@ -345,25 +345,42 @@ class MoveQuery(Query):
             mister_x_escaped = current_round == 22 and not mister_x_caught
 
             # TODO: Check for blocked mister_x or blocked detectives
+            mister_x_blocked = False
+            detectives_blocked = False
 
-            # TODO: Update game status if game ended
+            # Update game status if game ended
+            if mister_x_escaped:
+                game_end_cause = EndCause.MisterXEscaped
+            elif detectives_blocked:
+                game_end_cause = EndCause.DetectivesBlocked
+            elif mister_x_blocked:
+                game_end_cause = EndCause.MisterXBlocked
+            elif mister_x_caught:
+                game_end_cause = EndCause.MisterXCaught
+            else:
+                game_end_cause = None
 
-            # TODO: If game has not ended: set next player active. Turn order is missing in db-schema.
+            game_status = (
+                Status.Ended if game_end_cause is not None else Status.InProgress
+            )
+
+            # If game has not ended, set next player active.
             # If this player was the last in the turn order: increment round
-            max_turn_order = max(p.turn_order for p in players)
-            next_round = (
-                current_round + 1
-                if active_player_turn_order == max_turn_order
-                else current_round
-            )
-            next_active_player = (active_player_turn_order + 1) % max_turn_order
-            cursor.execute(
-                t"""
-                update partie
-                set aktuelle_reihenfolge = {next_active_player}, next_round = {next_round}
-                where id = {move.game_id};
-                """
-            )
+            if game_status != Status.InProgress:
+                max_turn_order = max(p.turn_order for p in players)
+                next_round = (
+                    current_round + 1
+                    if active_player_turn_order == max_turn_order
+                    else current_round
+                )
+                next_active_player = (active_player_turn_order + 1) % max_turn_order
+                cursor.execute(
+                    t"""
+                    update partie
+                    set aktuelle_reihenfolge = {next_active_player}, next_round = {next_round}
+                    where id = {move.game_id};
+                    """
+                )
 
             # Construct gamestate for event broacast
             info = GameInfo(
@@ -371,11 +388,11 @@ class MoveQuery(Query):
                 creator_name=creator_name,
                 map_name=map_name,
                 map_dimensions=[map_width, map_height],
-                status=status,
+                status=game_status,
                 players=player_count,
                 current_round=current_round,
+                end_cause=game_end_cause,
             )
-
             self.gamestate = GameState(
                 info=info,
                 active_player=active_player_turn_order,

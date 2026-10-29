@@ -149,7 +149,7 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         </div>
         <button onClick={handleRoomLeave}>Raum verlassen</button>
         <p>{gameover ? "Game Over" : "Active Player: " + gamestate?.active_player}</p>
-        <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []} vehicles={gamestate?.vehicles ?? []}></Tickets>
+        <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []}></Tickets>
         <GameInfos gameover={gameover} turn_order={getTurnOrderLabels(gamestate) ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
     </div >
 }
