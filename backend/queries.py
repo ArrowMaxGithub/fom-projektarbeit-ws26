@@ -83,11 +83,11 @@ class MoveQuery(Query):
             # Check if game is active and query game parameters for gamestate
             cursor.execute(
                 t"""
-                select id_karte, benutzername, karte.name, karte.breite, karte.hoehe, status, aktuelle_runde, aktuelle_phase
+                select id_karte, benutzername, karte.name, karte.breite, karte.hoehe, status, aktuelle_runde, aktuelle_phase, aktuelle_reihenfolge
                 from partie 
+                where id = {self.move.game_id}
                 join benutzer on partie.id_benutzer = benutzer.id
-                join karte on partie.id_karte = karte.id
-                where id = {self.move.game_id};
+                join karte on partie.id_karte = karte.id;
                 """
             )
             row = cursor.fetchone()
@@ -100,13 +100,14 @@ class MoveQuery(Query):
                 status,
                 current_round,
                 current_phase,
+                active_player_turn_order,
             ) = row if row else None
             assert status == Status.InProgress, "Game is not in-play"
 
             # Check if player is active, matches game's current_phase and actually is at move.from_node
             cursor.execute(
                 t"""
-                select id, id_aktueller_knoten, teilnehmertyp, spielerrolle, aktiv 
+                select id, id_aktueller_knoten, teilnehmertyp, spielerrolle, aktiv, reihenfolge
                 from teilnehmer 
                 where 
                     id_partie = {self.move.game_id} and
@@ -114,10 +115,18 @@ class MoveQuery(Query):
                 """
             )
             row = cursor.fetchone()
-            (ingame_player_id, current_node, player_type, player_role, is_active) = (
-                row if row else None
+            (
+                ingame_player_id,
+                current_node,
+                player_type,
+                player_role,
+                player_is_active,
+                player_turn_order,
+            ) = row if row else None
+            assert player_is_active, "You are not an active player"
+            assert player_turn_order == active_player_turn_order, (
+                f"It's not your turn. {active_player_turn_order} is active and you are {player_turn_order} in turn order"
             )
-            assert is_active, "You are not an active player"
             assert player_type == "spieler", (
                 f"You are not an active human player, You are {player_type}"
             )
@@ -262,7 +271,7 @@ class MoveQuery(Query):
             mister_x_caught = False
             cursor.execute(
                 t"""
-                select benutzername, id_ticketart, anzahl, verkehrsmittel.name, spielerrolle, id_startknoten, id_aktueller_knoten
+                select benutzername, id_ticketart, anzahl, verkehrsmittel.name, spielerrolle, id_startknoten, id_aktueller_knoten, reihenfolge
                 from teilnehmer
                 where id_partie = {move.game_id}
                 join benutzer on teilenhmer.id_benutzer == benutzer.id 
@@ -279,6 +288,7 @@ class MoveQuery(Query):
                     "role": role,
                     "start": start,
                     "current": current,
+                    "turn_order": turn_order,
                     "tickets": {  # Set
                         Ticket(
                             ticket_type=ticket_type,
@@ -299,6 +309,7 @@ class MoveQuery(Query):
                     role,
                     start,
                     current,
+                    turn_order,
                 ) in rows
             }
 
@@ -310,6 +321,7 @@ class MoveQuery(Query):
                     tickets=list(v["tickets"]),
                     starting_node=v["start"],
                     current_node=v["current"],
+                    turn_order=v["turn_order"],
                 )
                 for (k, v) in player_dict.items()
             ]
@@ -330,8 +342,22 @@ class MoveQuery(Query):
 
             # TODO: Update game status if game ended
 
-            # TODO: If game has not ended: set next player active. Turn order is missing in db-schema.
+            # Set next player active
             # If this player was the last in the turn order: increment round
+            max_turn_order = max(p.turn_order for p in players)
+            next_round = (
+                current_round + 1
+                if active_player_turn_order == max_turn_order
+                else current_round
+            )
+            next_active_player = (active_player_turn_order + 1) % max_turn_order
+            cursor.execute(
+                t"""
+                update partie
+                set aktuelle_reihenfolge = {next_active_player}, next_round = {next_round}
+                where id = {move.game_id};
+                """
+            )
 
             # Construct gamestate for event broacast
             info = GameInfo(
@@ -346,7 +372,7 @@ class MoveQuery(Query):
 
             self.gamestate = GameState(
                 info=info,
-                active_player=active_player,
+                active_player=active_player_turn_order,
                 turn_order=turn_order,
                 players=players,
                 nodes=nodes,

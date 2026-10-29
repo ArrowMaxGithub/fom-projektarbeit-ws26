@@ -77,13 +77,13 @@ class Player(BaseModel):
     tickets: list[Ticket]  # Remaining tickets per vehicle; empty for spectators
     starting_node: int | None  # None for spectators
     current_node: int | None  # None for spectators
+    turn_order: int | None  # None for spectators
 
 
 # State of an active game transmitted as response to on_enter
 class GameState(BaseModel):
     info: GameInfo
-    active_player: str
-    turn_order: list[str]
+    active_player: int
     players: list[Player]  # Players with their respective role tickets and nodes
     nodes: list[MapNode]  # All nodes which make up the map
     connections: list[Connection]  # Connections between nodes

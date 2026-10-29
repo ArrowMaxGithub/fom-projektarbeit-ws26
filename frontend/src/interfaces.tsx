@@ -34,8 +34,7 @@ export interface GameInfo {
 }
 export interface GameState {
   info: GameInfo;
-  active_player: string;
-  turn_order: string[];
+  active_player: number;
   players: Players;
   nodes: Nodes;
   connections: Connections;
@@ -48,6 +47,7 @@ export interface Player {
   tickets: Tickets;
   starting_node: number | null;
   current_node: number | null;
+  turn_order: number | null;
 }
 export interface Ticket {
   ticket_type_id: number;

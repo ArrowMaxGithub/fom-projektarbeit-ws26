@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import type { Socket } from "socket.io-client";
 import GameNode from './GameNode.tsx';
 import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayerAt, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
+import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayerAt, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import Tickets from './Tickets.tsx';
 import GameInfos from './GameInfos.tsx';
 import type { GameState } from '../interfaces.tsx';
@@ -150,6 +150,6 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         <button onClick={handleRoomLeave}>Raum verlassen</button>
         <p>{gameover ? "Game Over" : "Active Player: " + gamestate?.active_player}</p>
         <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []} vehicles={gamestate?.vehicles ?? []}></Tickets>
-        <GameInfos gameover={gameover} turn_order={gamestate?.turn_order ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
+        <GameInfos gameover={gameover} turn_order={getTurnOrderLabels(gamestate) ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
     </div >
 }
