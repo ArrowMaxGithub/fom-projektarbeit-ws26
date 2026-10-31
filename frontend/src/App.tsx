@@ -93,7 +93,13 @@ function App() {
   return <div className="App">
     <Lobby active={isConnected && current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
     <hr />
-    <InGame active={isConnected && current_room !== null} socket={socket} handleRoomLeave={handleRoomLeave}></InGame>
+    <InGame
+      active={isConnected && current_room !== null}
+      socket={socket}
+      handleRoomLeave={handleRoomLeave}
+      gameId={current_room}
+      playerId={playerId}
+    />
     <hr />
     <Chat socket={socket} isConnected={isConnected} playerName={playerName} handleNameChange={handleNameChange} handleLogin={handleLogin} handleLogout={handleLogout}></Chat>
   </div>

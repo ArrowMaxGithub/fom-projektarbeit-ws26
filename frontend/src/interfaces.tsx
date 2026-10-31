@@ -74,6 +74,10 @@ export interface Move {
   to_node: number;
   ticket_type: number;
 }
+export interface StartGame {
+  player_id: number;
+  game_id: number;
+}
 export namespace Root {
   export const path = "/";
   export interface ClientToServerEvents {
@@ -83,6 +87,7 @@ export namespace Root {
     "login": (...args: [...[player_name: string], ack?: (...args: unknown[]) => void]) => void;
     "logout": (...args: [...[player_id: number], ack?: (...args: unknown[]) => void]) => void;
     "move": (...args: [...[move: Move], ack?: (...args: unknown[]) => void]) => void;
+    "start_game": (...args: [...[start: StartGame], ack?: (...args: unknown[]) => void]) => void;
   }
   export interface ServerToClientEvents {
     "gamestate": (...args: [...[GameState], ack?: (...args: unknown[]) => void]) => void;
