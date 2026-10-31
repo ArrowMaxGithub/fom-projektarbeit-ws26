@@ -783,3 +783,85 @@ class StartGameQuery(Query):
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit("gamestate", self.gamestate)
         return {"game_id": self.start.game_id, "status": "laufend"}
+
+
+class ChooseRoleQuery(Query):
+    def __init__(self, conn: DBConnection, sid, choice: ChooseRole):
+        self.choice = choice
+
+        with conn.transaction():
+            cursor = conn.cursor()
+
+            # 1 Check game status
+            cursor.execute(
+                """
+                SELECT status
+                FROM partie
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (choice.game_id,),
+            )
+            game = cursor.fetchone()
+
+            if game is None:
+                raise ValueError("Partie existiert nicht.")
+
+            if game[0] != Status.Open.value:
+                raise ValueError("Rollenauswahl nur in der Lobby möglich")
+
+            # 2 Check participant
+            cursor.execute(
+                """
+                SELECT t.id, b.benutzername
+                FROM teilnehmer AS t
+                JOIN benutzer AS b on b.id = t.id_benutzer
+                WHERE t.id_partie = %s AND t.id_benutzer = %s AND t.teilnehmertyp = 'spieler' AND t.aktiv = TRUE
+                """,
+                (choice.game_id, choice.player_id),
+            )
+            player = cursor.fetchone()
+
+            if player is None:
+                raise ValueError("Spieler ist kein aktiver Teilnehmer")
+
+            participant_id, self.player_name = player
+
+            # 3 Check wether Mister X is already taken
+            if choice.role == Role.MisterX:
+                cursor.execute(
+                    """
+                    SELECT 1
+                    FROM teilnehmer
+                    WHERE id_partie = %s AND spielerrolle = 'mister_x' AND id != %s
+                    """,
+                    (choice.game_id, participant_id),
+                )
+
+                if cursor.fetchone() is not None:
+                    raise ValueError("Mister X ist bereits vergeben")
+
+            # 4 Assign selected Role
+            cursor.execute(
+                """
+                UPDATE teilnehmer
+                SET spielerrolle = %s
+                WHERE id = %s
+                """,
+                (choice.role.value, participant_id),
+            )
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        await sio.emit(
+            "chat",
+            {
+                "sender": "Server",
+                "content": f"{self.player_name} hat die Rolle {self.choice.role.value} gewählt.",
+            },
+            room=str(self.choice.game_id),
+        )
+
+        return {
+            "player_id": self.choice.player_id,
+            "role": self.choice.role.value,
+        }
