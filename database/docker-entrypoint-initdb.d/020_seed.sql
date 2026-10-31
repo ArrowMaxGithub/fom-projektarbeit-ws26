@@ -587,4 +587,26 @@ VALUES (
         NULL
     );
 
+-- ---------
+-- Testzustand für StartGameQuery und ChooseRoleQuery
+-- ---------
+
+UPDATE public.partie
+SET status = 'lobby',
+    aktuelle_runde = 0,
+    aktuelle_phase = NULL,
+    aktuelle_reihenfolge = NULL
+WHERE id = 3;
+
+UPDATE public.teilnehmer
+SET spielerrolle = CASE
+        WHEN id_benutzer = 2 THEN NULL
+        ELSE spielerrolle
+    END,
+    id_startknoten = NULL,
+    id_aktueller_knoten = NULL,
+    reihenfolge = NULL
+WHERE id_partie = 3 AND teilnehmertyp = 'spieler';
+
+
 COMMIT;

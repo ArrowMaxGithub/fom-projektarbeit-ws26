@@ -15,7 +15,7 @@ type InGameProps = {
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, handleRoomLeave, gameId, playerId }: InGameProps) {
+export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [gameover, setGameover] = useState<boolean>(false);
@@ -24,6 +24,8 @@ export default function InGame({ active, socket, handleRoomLeave, gameId, player
     const [lastMisterXPos, setlastMisterXPos] = useState<number | null>(null);
 
     const mister_x_show = [4, 9, 14, 19];
+
+    const TEST_GAME_ID = 3;
 
     const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
     const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
@@ -140,13 +142,13 @@ export default function InGame({ active, socket, handleRoomLeave, gameId, player
     }
 
     function chooseRole(role: "mister_x" | "detektiv") {
-        if (gameId === null || playerId === null) return;
+        if (playerId === null) return;
 
         socket.emit("choose_role", {
-            game_id: gameId,
+            game_id: TEST_GAME_ID,
             player_id: playerId,
             role: role
-        });
+        }, (response: unknown) => { console.log("ChooseRole Ergebnis:", response) });
     }
 
     return <div className="InGame">
@@ -164,11 +166,15 @@ export default function InGame({ active, socket, handleRoomLeave, gameId, player
         <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []}></Tickets>
         <GameInfos gameover={gameover} turn_order={getTurnOrderLabels(gamestate) ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
         <button
-            disabled={gameId === null || playerId === null}
-            onClick={() => socket.emit("Start_game", {
-                game_id: gameId,
-                player_id: playerId
-            })}
+            disabled={playerId === null}
+            onClick={() => {
+                socket.emit("start_game", {
+                    game_id: TEST_GAME_ID,
+                    player_id: playerId
+                }, (response: unknown) => {
+                    console.log("StartGame: Ergebnis:", response);
+                });
+            }}
         >
             Spiel starten
         </button>
