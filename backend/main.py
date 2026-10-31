@@ -86,6 +86,18 @@ async def move(sid, move: Move):
         return await guarded_query(sid, lambda: MoveQuery(conn, sid, move))
 
 
+@sio.on("start_game")
+async def start_game(sid, start: StartGame):
+    with pool.connection() as conn:
+        return await guarded_query(sid, lambda: StartGameQuery(conn, sid, start))
+
+
+@sio.on("choose_role")
+async def choose_role(sid, choice: ChooseRole):
+    with pool.connection() as conn:
+        return await guarded_query(sid, lambda: ChooseRoleQuery(conn, sid, choice))
+
+
 @sio.on("chat")
 async def chat(sid, message: ChatMessage):
     await sio.emit("chat", message)

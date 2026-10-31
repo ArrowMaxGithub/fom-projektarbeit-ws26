@@ -1,10 +1,10 @@
 // Generated from a Pydantic-SocketIO AsyncAPI contract. Do not edit.
 // Client: Socket<ServerToClientEvents, ClientToServerEvents>.
 // Server: Server<ClientToServerEvents, ServerToClientEvents> for /; Namespace<...> for other paths.
+export type Role = "mister_x" | "detektiv";
 export type EndCause = "gefangen" | "mr_x_blockiert" | "mr_x_entkommen" | "detektive_blockiert";
 export type Status = "lobby" | "laufend" | "beendet" | "abgebrochen";
 export type Phase = "mister_x" | "detektive";
-export type Role = "mister_x" | "detektiv";
 export type AllowedVehicles = Vehicle[];
 export type Tickets = Ticket[];
 export type Players = Player[];
@@ -16,6 +16,11 @@ export type RootLobbyPayloadArgument1 = GameInfo[];
 export interface ChatMessage {
   sender: string;
   content: string;
+}
+export interface ChooseRole {
+  player_id: number;
+  game_id: number;
+  role: Role;
 }
 export interface Connection {
   connection_id: number;
@@ -74,15 +79,21 @@ export interface Move {
   to_node: number;
   ticket_type: number;
 }
+export interface StartGame {
+  player_id: number;
+  game_id: number;
+}
 export namespace Root {
   export const path = "/";
   export interface ClientToServerEvents {
     "chat": (...args: [...[message: ChatMessage], ack?: (...args: unknown[]) => void]) => void;
+    "choose_role": (...args: [...[choice: ChooseRole], ack?: (...args: unknown[]) => void]) => void;
     "get_gamestate": (...args: [...[], ack?: (...args: unknown[]) => void]) => void;
     "get_lobby": (...args: [...[], ack?: (...args: unknown[]) => void]) => void;
     "login": (...args: [...[player_name: string], ack?: (...args: unknown[]) => void]) => void;
     "logout": (...args: [...[player_id: number], ack?: (...args: unknown[]) => void]) => void;
     "move": (...args: [...[move: Move], ack?: (...args: unknown[]) => void]) => void;
+    "start_game": (...args: [...[start: StartGame], ack?: (...args: unknown[]) => void]) => void;
   }
   export interface ServerToClientEvents {
     "gamestate": (...args: [...[GameState], ack?: (...args: unknown[]) => void]) => void;
