@@ -97,3 +97,8 @@ class Move(BaseModel):
     from_node: int
     to_node: int
     ticket_type: int
+
+
+class StartGame(BaseModel):
+    player_id: int
+    game_id: int

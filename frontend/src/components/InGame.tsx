@@ -10,10 +10,12 @@ import type { GameState } from '../interfaces.tsx';
 type InGameProps = {
     active: boolean,
     socket: Socket,
-    handleRoomLeave: () => void;
+    handleRoomLeave: () => void,
+    gameId: number | null,
+    playerId: number | null,
 }
 
-export default function InGame({ active, socket, handleRoomLeave }: InGameProps) {
+export default function InGame({ active, socket, handleRoomLeave, gameId, playerId }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [gameover, setGameover] = useState<boolean>(false);
@@ -151,5 +153,14 @@ export default function InGame({ active, socket, handleRoomLeave }: InGameProps)
         <p>{gameover ? "Game Over" : "Active Player: " + gamestate?.active_player}</p>
         <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []}></Tickets>
         <GameInfos gameover={gameover} turn_order={getTurnOrderLabels(gamestate) ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
+        <button
+            disabled={gameId === null || playerId === null}
+            onClick={() => socket.emit("Start_game", {
+                game_id: gameId,
+                player_id: playerId
+            })}
+        >
+            Spiel starten
+        </button>
     </div >
 }
