@@ -139,6 +139,16 @@ export default function InGame({ active, socket, handleRoomLeave, gameId, player
         setViewport(viewport - event.deltaY * 0.1);
     }
 
+    function chooseRole(role: "mister_x" | "detektiv") {
+        if (gameId === null || playerId === null) return;
+
+        socket.emit("choose_role", {
+            game_id: gameId,
+            player_id: playerId,
+            role: role
+        });
+    }
+
     return <div className="InGame">
         <h1>{gamestate?.info.room_id}</h1>
         <div ref={ingameRef} className="Gameboard" >
@@ -161,6 +171,12 @@ export default function InGame({ active, socket, handleRoomLeave, gameId, player
             })}
         >
             Spiel starten
+        </button>
+        <button onClick={() => chooseRole("mister_x")}>
+            Mister X wählen
+        </button>
+        <button onClick={() => chooseRole("detektiv")}>
+            Detektiv wählen
         </button>
     </div >
 }

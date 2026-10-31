@@ -102,3 +102,9 @@ class Move(BaseModel):
 class StartGame(BaseModel):
     player_id: int
     game_id: int
+
+
+class ChooseRole(BaseModel):
+    player_id: int
+    game_id: int
+    role: Role
