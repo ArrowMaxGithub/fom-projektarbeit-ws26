@@ -42,7 +42,7 @@ class LoginQuery(Query):
             "chat", {"sender": "Server", "content": f"{self.player_name} logged in"}
         )
         # Events can pass responses back to the user as ACK
-        return self.player_id
+        return self.player_id[0]
 
 
 class LogoutQuery(Query):
