@@ -1,6 +1,7 @@
 from models import *
 from psycopg import Connection as DBConnection
 from pydantic_socketio import FastAPISocketIO
+from mocks import mock_game_state, mock_lobby
 
 
 class Query:
@@ -62,6 +63,74 @@ class LogoutQuery(Query):
         await sio.emit(
             "chat", {"sender": "Server", "content": f"{self.player_name} logged out"}
         )
+
+
+class ChatQuery(Query):
+    def __init__(self, sid, message: ChatMessage):
+        self.sid = sid
+        self.message = message
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        await sio.rooms(self.sid)
+        room = next((room for room in rooms if room != self.sid), None)
+        assert room is not None, "Player is not in a room"
+
+        await sio.emit("chat", self.message, room=room)
+        return True
+
+class RoomJoinQuery(Query):
+    def __init__(self, sid, player_name: str, room_id: int):
+        self-sid = sid
+        self.player_name = player_name
+        self.room_id = room_id
+
+        self.room = next(
+            (room for room in mock_lobby() if room.room_id == room_id), None
+        )
+        assert self.room is not None, "Unknown room ID"
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        room = str(self.room_id)
+        await sio.enter_room(self.sid, room)
+        await sio.leave_room(self.sid, "lobby")
+
+        gamestate = mock_game_state()
+        gamestate.info = self.room
+        await sio.emit(
+            "chat",
+            {"sender": "Server", "content": f"{self.player_name} joined room {self.room_id}"},
+            room=room,
+            skip_sid=self.sid,
+        )
+        return self.room_id
+
+
+class RoomLeaveQuery(Query):
+    def __init__(self, sid, player_name: str, room_id: int):
+        self.sid = sid
+        self.player_name = player_name
+        self.room_id = room_id
+
+        self.room = next(
+            (room for room in mock_lobby() if room.room_id == room_id), None
+        )
+        assert self.room is not None, "Unknown room ID"
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        room = str(self.room_id)
+
+        await sio.emit(
+            "chat",
+            {"sender": "Server", "content": f"{self.player_name} left room {self.room_id}"},
+            room=room,
+            skip_sid=self.sid,
+        )
+
+        await sio.leave_room(self.sid, room)
+        await sio.enter_room(self.sid, "lobby")
+
+        await sio.emit("lobby", mock_lobby(), room=self.sid)
+        return True
 
 
 class MoveQuery(Query):
