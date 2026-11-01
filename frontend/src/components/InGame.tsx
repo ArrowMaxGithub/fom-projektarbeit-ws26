@@ -10,12 +10,13 @@ import type { GameState } from '../interfaces.tsx';
 type InGameProps = {
     active: boolean,
     socket: Socket,
+    gamestateFromJoin: GameState | null,
     handleRoomLeave: () => void,
     gameId: number | null,
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
+export default function InGame({ active, socket, gamestateFromJoin, handleRoomLeave, playerId }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [gameover, setGameover] = useState<boolean>(false);
@@ -53,11 +54,21 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         }
 
         socket.on('gamestate', onGameState);
+        //Processing initial gamestate received via room_join ACK
+        if (gamestateFromJoin !== null) {
+            onGameState(gamestateFromJoin);
+        } else {
+            // Reset state if no Room is selected
+            setGameState(null);
+            setNodeStates([]);
+            setGameover(false);
+            setlastMisterXPos(null);
+        }
 
         return () => {
             socket.off('gamestate', onGameState);
         };
-    }, []);
+    }, [socket, gamestateFromJoin]);
 
     useEffect(() => {
         const ingame = ingameRef.current;

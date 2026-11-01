@@ -13,6 +13,14 @@
         }
       }
     },
+    "op_choose_role_receive_root_547aafb7a7a63308_channel": {
+      "address": "/",
+      "messages": {
+        "op_choose_role_receive_root_547aafb7a7a63308_message": {
+          "$ref": "#/components/messages/op_choose_role_receive_root_547aafb7a7a63308_message"
+        }
+      }
+    },
     "op_gamestate_send_root_468f8dc1224789e8_channel": {
       "address": "/",
       "messages": {
@@ -68,6 +76,30 @@
           "$ref": "#/components/messages/op_move_receive_root_2565dce22e4b31bc_message"
         }
       }
+    },
+    "op_room_join_receive_root_482dc0317868e5a4_channel": {
+      "address": "/",
+      "messages": {
+        "op_room_join_receive_root_482dc0317868e5a4_message": {
+          "$ref": "#/components/messages/op_room_join_receive_root_482dc0317868e5a4_message"
+        }
+      }
+    },
+    "op_room_leave_receive_root_dbb2b9a770c09d56_channel": {
+      "address": "/",
+      "messages": {
+        "op_room_leave_receive_root_dbb2b9a770c09d56_message": {
+          "$ref": "#/components/messages/op_room_leave_receive_root_dbb2b9a770c09d56_message"
+        }
+      }
+    },
+    "op_start_game_receive_root_cc45838fc42ea17d_channel": {
+      "address": "/",
+      "messages": {
+        "op_start_game_receive_root_cc45838fc42ea17d_message": {
+          "$ref": "#/components/messages/op_start_game_receive_root_cc45838fc42ea17d_message"
+        }
+      }
     }
   },
   "operations": {
@@ -80,6 +112,21 @@
       "messages": [
         {
           "$ref": "#/channels/op_chat_receive_root_31380286d0f757e7_channel/messages/op_chat_receive_root_31380286d0f757e7_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_choose_role_receive_root_547aafb7a7a63308": {
+      "summary": "Receive choose_role (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_choose_role_receive_root_547aafb7a7a63308_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_choose_role_receive_root_547aafb7a7a63308_channel/messages/op_choose_role_receive_root_547aafb7a7a63308_message"
         }
       ],
       "x-pydantic-socketio": {
@@ -190,6 +237,51 @@
       "x-pydantic-socketio": {
         "ack": "unspecified"
       }
+    },
+    "op_room_join_receive_root_482dc0317868e5a4": {
+      "summary": "Receive room_join (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_room_join_receive_root_482dc0317868e5a4_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_room_join_receive_root_482dc0317868e5a4_channel/messages/op_room_join_receive_root_482dc0317868e5a4_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_room_leave_receive_root_dbb2b9a770c09d56": {
+      "summary": "Receive room_leave (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_room_leave_receive_root_dbb2b9a770c09d56_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_room_leave_receive_root_dbb2b9a770c09d56_channel/messages/op_room_leave_receive_root_dbb2b9a770c09d56_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_start_game_receive_root_cc45838fc42ea17d": {
+      "summary": "Receive start_game (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_start_game_receive_root_cc45838fc42ea17d_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_start_game_receive_root_cc45838fc42ea17d_channel/messages/op_start_game_receive_root_cc45838fc42ea17d_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
     }
   },
   "components": {
@@ -223,6 +315,46 @@
                 "content"
               ],
               "title": "ChatMessage",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "op_choose_role_receive_root_547aafb7a7a63308_message": {
+        "name": "choose_role",
+        "x-pydantic-socketio": {
+          "event": "choose_role",
+          "arguments": [
+            {
+              "name": "choice"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "player_id": {
+                  "title": "Player Id",
+                  "type": "integer"
+                },
+                "game_id": {
+                  "title": "Game Id",
+                  "type": "integer"
+                },
+                "role": {
+                  "$ref": "#/components/schemas/op_choose_role_receive_root_547aafb7a7a63308_message_0_Role"
+                }
+              },
+              "required": [
+                "player_id",
+                "game_id",
+                "role"
+              ],
+              "title": "ChooseRole",
               "type": "object"
             }
           ],
@@ -427,9 +559,107 @@
           "minItems": 1,
           "maxItems": 1
         }
+      },
+      "op_room_join_receive_root_482dc0317868e5a4_message": {
+        "name": "room_join",
+        "x-pydantic-socketio": {
+          "event": "room_join",
+          "arguments": [
+            {
+              "name": "player_id"
+            },
+            {
+              "name": "room_id"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "op_room_leave_receive_root_dbb2b9a770c09d56_message": {
+        "name": "room_leave",
+        "x-pydantic-socketio": {
+          "event": "room_leave",
+          "arguments": [
+            {
+              "name": "player_id"
+            },
+            {
+              "name": "room_id"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "op_start_game_receive_root_cc45838fc42ea17d_message": {
+        "name": "start_game",
+        "x-pydantic-socketio": {
+          "event": "start_game",
+          "arguments": [
+            {
+              "name": "start"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "player_id": {
+                  "title": "Player Id",
+                  "type": "integer"
+                },
+                "game_id": {
+                  "title": "Game Id",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "player_id",
+                "game_id"
+              ],
+              "title": "StartGame",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
       }
     },
     "schemas": {
+      "op_choose_role_receive_root_547aafb7a7a63308_message_0_Role": {
+        "enum": [
+          "mister_x",
+          "detektiv"
+        ],
+        "title": "Role",
+        "type": "string"
+      },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Connection": {
         "properties": {
           "connection_id": {

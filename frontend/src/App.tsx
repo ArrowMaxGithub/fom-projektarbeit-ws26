@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client';
 import './App.css'
 import Lobby from './components/Lobby.tsx'
-import type { GameInfo } from './interfaces.tsx';
+import type { GameInfo, GameState } from './interfaces.tsx';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx';
 
@@ -15,6 +15,7 @@ function App() {
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
   const [current_room, setCurrentRoom] = useState<number | null>(null);
+  const [currentGameState, setCurrentGameState] = useState<GameState | null>(null);
 
   // Define any callbacks to events sent by the server here
   useEffect(() => {
@@ -80,12 +81,13 @@ function App() {
   }
 
   function handleRoomJoin(room_id: number) {
-    console.log(`${playerName} joining room: ${room_id}`);
     if (playerId === null) return;
 
-    socket.emit("room_join", playerName, room_id, (joined_room_id: number) => {
-      if (joined_room_id !== undefined) {
-        setCurrentRoom(joined_room_id);
+    console.log(`${playerName} joining room: ${room_id}`);
+    socket.emit("room_join", playerId, room_id, (response: {room_id: number, gamestate: GameState}) => {
+      if (response !== undefined) {
+        setCurrentGameState(response.gamestate);
+        setCurrentRoom(response.room_id);
       } else {
         console.error("Room join failed");
       }
@@ -93,11 +95,13 @@ function App() {
   }
 
   function handleRoomLeave() {
-    if (current_room === null) return;
+    if (current_room === null || playerId === null) return;
 
     console.log(`${playerName} leaving room: ${current_room}`);
-    socket.emit("room_leave", playerName, current_room, (success: boolean) => {
-      if (success) {
+    socket.emit("room_leave", playerId, current_room, (rooms: GameInfo[]) => {
+      if (rooms !== undefined) {
+        setRooms(rooms);
+        setCurrentGameState(null);
         setCurrentRoom(null);
       } else {
         console.error("Failed to leave room");
@@ -110,7 +114,8 @@ function App() {
     <hr />
     <InGame
       active={isConnected && current_room !== null}
-      socket={socket}
+      socket={socket} 
+      gamestateFromJoin={currentGameState}
       handleRoomLeave={handleRoomLeave}
       gameId={current_room}
       playerId={playerId}
