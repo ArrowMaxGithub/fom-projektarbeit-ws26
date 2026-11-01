@@ -39,6 +39,7 @@ class LoginQuery(Query):
 
     # Only called if the constructor (and thus all SQL-transactions) succeed
     async def fullfill(self, sio: FastAPISocketIO):
+        await sio.enter_room(self.sid, "lobby")
         await sio.emit(
             "chat", {"sender": "Server", "content": f"{self.player_name} logged in"}
         )
@@ -71,7 +72,7 @@ class ChatQuery(Query):
         self.message = message
 
     async def fullfill(self, sio: FastAPISocketIO):
-        await sio.rooms(self.sid)
+        rooms = sio.rooms(self.sid)
         room = next((room for room in rooms if room != self.sid), None)
         assert room is not None, "Player is not in a room"
 
@@ -79,16 +80,25 @@ class ChatQuery(Query):
         return True
 
 class RoomJoinQuery(Query):
-    def __init__(self, sid, player_name: str, room_id: int):
-        self-sid = sid
-        self.player_name = player_name
+    def __init__(self, conn: DBConnection, sid, player_id: int, room_id: int):
+        self.sid = sid
+        self.player_id = player_id
         self.room_id = room_id
+        self.player_name = None
 
-        self.room = next(
-            (room for room in mock_lobby() if room.room_id == room_id), None
-        )
+        #Get Player Name from DB
+        with conn.transaction():
+            cursor = conn.cursor()
+            row = cursor.execute(
+                t"select benutzername from benutzer where id = {self.player_id};"
+            ).fetchone()
+
+            assert row is not None, "Unknown player ID"
+            self.player_name = row[0]
+
+        self.room = next((room for room in mock_lobby() if room.room_id == self.room_id), None)
         assert self.room is not None, "Unknown room ID"
-
+        
     async def fullfill(self, sio: FastAPISocketIO):
         room = str(self.room_id)
         await sio.enter_room(self.sid, room)
@@ -102,18 +112,26 @@ class RoomJoinQuery(Query):
             room=room,
             skip_sid=self.sid,
         )
-        return self.room_id
+        return {"room_id": self.room_id, "gamestate": gamestate}
 
 
 class RoomLeaveQuery(Query):
-    def __init__(self, sid, player_name: str, room_id: int):
+    def __init__(self, conn: DBConnection, sid, player_id: int, room_id: int):
         self.sid = sid
-        self.player_name = player_name
+        self.player_id = player_id
         self.room_id = room_id
+        self.player_name = None
 
-        self.room = next(
-            (room for room in mock_lobby() if room.room_id == room_id), None
-        )
+        with conn.transaction():
+            cursor = conn.cursor()
+            row = cursor.execute(
+                t"select benutzername from benutzer where id = {self.player_id};"
+            ).fetchone()
+
+            assert row is not None, "Unknown player ID"
+            self.player_name = row[0]
+
+        self.room = next((room for room in mock_lobby() if room.room_id == self.room_id), None)
         assert self.room is not None, "Unknown room ID"
 
     async def fullfill(self, sio: FastAPISocketIO):
@@ -129,8 +147,7 @@ class RoomLeaveQuery(Query):
         await sio.leave_room(self.sid, room)
         await sio.enter_room(self.sid, "lobby")
 
-        await sio.emit("lobby", mock_lobby(), room=self.sid)
-        return True
+        return mock_lobby()
 
 
 class MoveQuery(Query):
