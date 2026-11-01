@@ -71,13 +71,27 @@ async def login(sid, player_name: str):
     with pool.connection() as conn:
         # Passing query constructor as lambda for error handling and transaction rollback.
         # This return statement will pass data back to the caller as ACK.
-        return await guarded_query(sid, lambda: LoginQuery(conn, sid, player_name))
+        player_id = await guarded_query(sid, lambda: LoginQuery(conn, sid, player_name))
+        if player_id is not None:
+            await sio.enter_room(sid, "lobby")
+        return player_id
 
 
 @sio.on("logout")
 async def logout(sid, player_id: int):
     with pool.connection() as conn:
         return await guarded_query(sid, lambda: LogoutQuery(conn, sid, player_id))
+
+
+@sio.on("room_join")
+async def room_join(sid, player_id: int, room_id: int):
+    with pool.connection() as conn:
+        return await guarded_query(sid, lambda: RoomJoinQuery(conn, sid, player_id, room_id))   
+
+
+@sio.on("room_leave")
+async def room_leave(sid, player_name: str, room_id: int):
+    return await guarded_query(sid, lambda: RoomLeaveQuery(sid, player_name, room_id))
 
 
 @sio.on("move")
@@ -100,7 +114,7 @@ async def choose_role(sid, choice: ChooseRole):
 
 @sio.on("chat")
 async def chat(sid, message: ChatMessage):
-    await sio.emit("chat", message)
+    return await guarded_query(sid, lambda: ChatQuery(sid, message))
 
 
 @sio.on("get_lobby")

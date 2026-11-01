@@ -81,13 +81,28 @@ function App() {
 
   function handleRoomJoin(room_id: number) {
     console.log(`${playerName} joining room: ${room_id}`);
-    setCurrentRoom(room_id);
-    socket.emit("get_gamestate"); // TODO: Remove once RoomJoinQuery is implemented and returns current game state
+    if (playerId === null) return;
+
+    socket.emit("room_join", playerName, room_id, (joined_room_id: number) => {
+      if (joined_room_id !== undefined) {
+        setCurrentRoom(joined_room_id);
+      } else {
+        console.error("Room join failed");
+      }
+    });
   }
 
   function handleRoomLeave() {
-    console.log(`${playerName} left room: ${current_room}`);
-    setCurrentRoom(null);
+    if (current_room === null) return;
+
+    console.log(`${playerName} leaving room: ${current_room}`);
+    socket.emit("room_leave", playerName, current_room, (success: boolean) => {
+      if (success) {
+        setCurrentRoom(null);
+      } else {
+        console.error("Failed to leave room");
+      }
+    });
   }
 
   return <div className="App">
