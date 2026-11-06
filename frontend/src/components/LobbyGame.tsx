@@ -21,10 +21,10 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
     let status_label;
     switch (info.status) {
         case "lobby":
-            status_label = "Offen";
+            status_label = "In Bearbeitung";
             break;
         case "laufend":
-            status_label = "Im Spiel";
+            status_label = "Laufende Partie";
             break;
         case "beendet":
             status_label = "Beendet";
