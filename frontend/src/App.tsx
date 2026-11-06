@@ -140,7 +140,7 @@ function App() {
 
     {/*Raum mit eigenem Chat*/}
     {isLoggedIn && current_room !== null && (
-      <div className="LobbyLayout">
+      <div className="LobbyLayout GameLayout">
         <InGame
           active={isLoggedIn && current_room !== null}
           socket={socket}

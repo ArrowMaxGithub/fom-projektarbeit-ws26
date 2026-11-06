@@ -163,37 +163,43 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
     }
 
     return <div className="InGame">
-        <h1>{gamestate?.info.room_id}</h1>
-        <div ref={ingameRef} className="Gameboard" >
-            <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
-            {
-                gamestate?.nodes.map((node, index) =>
-                    <GameNode key={index} makeMove={makeMove} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={index === lastMisterXPos}></GameNode>
-                )
-            }
+        <div className="GameContent">
+            <h1>Raum {gamestate?.info.room_id} - {gamestate?.info.map_name} </h1>
+            <div ref={ingameRef} className="Gameboard" >
+                <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
+                {
+                    gamestate?.nodes.map((node, index) =>
+                        <GameNode key={index} makeMove={makeMove} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={index === lastMisterXPos}></GameNode>
+                    )
+                }
+            </div>
+            <button onClick={handleRoomLeave}>Raum verlassen</button>
+            <button
+                disabled={playerId === null}
+                onClick={() => {
+                    socket.emit("start_game", {
+                        game_id: TEST_GAME_ID,
+                        player_id: playerId
+                    }, (response: unknown) => {
+                        console.log("StartGame: Ergebnis:", response);
+                    });
+                }}
+            >
+                Spiel starten
+            </button>
+            <button onClick={() => chooseRole("mister_x")}>Mister X wählen</button>
+            <button onClick={() => chooseRole("detektiv")}>Detektiv wählen</button>
         </div>
-        <button onClick={handleRoomLeave}>Raum verlassen</button>
-        <p>{gameover ? "Game Over" : "Active Player: " + gamestate?.active_player}</p>
-        <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []}></Tickets>
-        <GameInfos gameover={gameover} turn_order={getTurnOrderLabels(gamestate) ?? []} round={gamestate?.info.current_round ?? 0} mister_x_show={mister_x_show}></GameInfos>
-        <button
-            disabled={playerId === null}
-            onClick={() => {
-                socket.emit("start_game", {
-                    game_id: TEST_GAME_ID,
-                    player_id: playerId
-                }, (response: unknown) => {
-                    console.log("StartGame: Ergebnis:", response);
-                });
-            }}
-        >
-            Spiel starten
-        </button>
-        <button onClick={() => chooseRole("mister_x")}>
-            Mister X wählen
-        </button>
-        <button onClick={() => chooseRole("detektiv")}>
-            Detektiv wählen
-        </button>
+
+        <div className="GameInfosPanel">
+            <p>{gameover ? "Game Over" : "Active Player: " + (getActivePlayer(gamestate)?.name ?? "-")}</p>
+            <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []}></Tickets>
+            <GameInfos
+                gameover={gameover}
+                turn_order={getTurnOrderLabels(gamestate) ?? []}
+                round={gamestate?.info.current_round ?? 0}
+                mister_x_show={mister_x_show}>
+            </GameInfos>
+        </div>
     </div >
 }

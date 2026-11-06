@@ -73,6 +73,26 @@ hr {
   align-items: start;
 }
 
+.GameLayout {
+  grid-template-areas: "game infos" "game chat";
+
+  .InGame {
+    display: contents;
+  }
+
+  .GameContent {
+    grid-area: game;
+  }
+
+  .GameInfosPanel {
+    grid-area: infos;
+  }
+
+  .Chat {
+    grid-area: chat;
+  }
+}
+
 .Gameboard {
   position: relative;
   width: 100%;
