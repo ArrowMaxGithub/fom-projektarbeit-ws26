@@ -4,7 +4,8 @@ import './App.css'
 import Lobby from './components/Lobby.tsx'
 import type { GameInfo, GameState } from './interfaces.tsx';
 import Chat from './components/Chat.tsx'
-import InGame from './components/InGame.tsx';
+import InGame from './components/InGame.tsx'
+import LandingPage from './components/LandingPage.tsx';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
@@ -84,7 +85,7 @@ function App() {
     if (playerId === null) return;
 
     console.log(`${playerName} joining room: ${room_id}`);
-    socket.emit("room_join", playerId, room_id, (response: {room_id: number, gamestate: GameState}) => {
+    socket.emit("room_join", playerId, room_id, (response: { room_id: number, gamestate: GameState }) => {
       if (response !== undefined) {
         setCurrentGameState(response.gamestate);
         setCurrentRoom(response.room_id);
@@ -110,11 +111,12 @@ function App() {
   }
 
   return <div className="App">
+    {!isConnected && <LandingPage />}
     <Lobby active={isConnected && current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
     <hr />
     <InGame
       active={isConnected && current_room !== null}
-      socket={socket} 
+      socket={socket}
       gamestateFromJoin={currentGameState}
       handleRoomLeave={handleRoomLeave}
       gameId={current_room}
