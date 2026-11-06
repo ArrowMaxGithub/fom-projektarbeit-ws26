@@ -10,6 +10,26 @@ hr {
   justify-content: stretch;
 }
 
+.LandingPage {
+  max-widht: 700px;
+  padding: 2rem 1rem;
+  text-align: center;
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  p {
+    line-height: 1.5;
+  }
+
+  button {
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+}
+
 .Lobby {
   font-size: 15px;
   display: flex;

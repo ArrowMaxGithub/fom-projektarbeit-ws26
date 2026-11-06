@@ -79,6 +79,7 @@ class ChatQuery(Query):
         await sio.emit("chat", self.message, room=room)
         return True
 
+
 class RoomJoinQuery(Query):
     def __init__(self, conn: DBConnection, sid, player_id: int, room_id: int):
         self.sid = sid
@@ -86,7 +87,7 @@ class RoomJoinQuery(Query):
         self.room_id = room_id
         self.player_name = None
 
-        #Get Player Name from DB
+        # Get Player Name from DB
         with conn.transaction():
             cursor = conn.cursor()
             row = cursor.execute(
@@ -96,9 +97,11 @@ class RoomJoinQuery(Query):
             assert row is not None, "Unknown player ID"
             self.player_name = row[0]
 
-        self.room = next((room for room in mock_lobby() if room.room_id == self.room_id), None)
+        self.room = next(
+            (room for room in mock_lobby() if room.room_id == self.room_id), None
+        )
         assert self.room is not None, "Unknown room ID"
-        
+
     async def fullfill(self, sio: FastAPISocketIO):
         room = str(self.room_id)
         await sio.enter_room(self.sid, room)
@@ -108,11 +111,14 @@ class RoomJoinQuery(Query):
         gamestate.info = self.room
         await sio.emit(
             "chat",
-            {"sender": "Server", "content": f"{self.player_name} joined room {self.room_id}"},
+            {
+                "sender": "Server",
+                "content": f"{self.player_name} joined room {self.room_id}",
+            },
             room=room,
             skip_sid=self.sid,
         )
-        return {"room_id": self.room_id, "gamestate": gamestate}
+        return {"room_id": self.room_id, "gamestate": gamestate.model_dump(mode="json")}
 
 
 class RoomLeaveQuery(Query):
@@ -131,7 +137,9 @@ class RoomLeaveQuery(Query):
             assert row is not None, "Unknown player ID"
             self.player_name = row[0]
 
-        self.room = next((room for room in mock_lobby() if room.room_id == self.room_id), None)
+        self.room = next(
+            (room for room in mock_lobby() if room.room_id == self.room_id), None
+        )
         assert self.room is not None, "Unknown room ID"
 
     async def fullfill(self, sio: FastAPISocketIO):
@@ -139,7 +147,10 @@ class RoomLeaveQuery(Query):
 
         await sio.emit(
             "chat",
-            {"sender": "Server", "content": f"{self.player_name} left room {self.room_id}"},
+            {
+                "sender": "Server",
+                "content": f"{self.player_name} left room {self.room_id}",
+            },
             room=room,
             skip_sid=self.sid,
         )
@@ -147,7 +158,7 @@ class RoomLeaveQuery(Query):
         await sio.leave_room(self.sid, room)
         await sio.enter_room(self.sid, "lobby")
 
-        return mock_lobby()
+        return [room.model_dump(mode="json") for room in mock_lobby()]
 
 
 class MoveQuery(Query):
