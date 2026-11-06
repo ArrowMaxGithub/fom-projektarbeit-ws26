@@ -46,6 +46,7 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
         <div className="RoomStatus">
             <h1>{status_label}</h1>
             <h2>{player_label}</h2>
+            {info.status === "lobby" && (<button disabled>Löschen</button>)}
         </div>
     </div>
 }
