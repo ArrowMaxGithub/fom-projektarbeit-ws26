@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-export default function LandingPage() {
+type LandingPageProps = {
+    playerName: string;
+    handleNameChange: (name: string) => void;
+    handleLogin: () => void;
+}
+
+export default function LandingPage({ playerName, handleNameChange, handleLogin }: LandingPageProps) {
     const [showInfo, setShowInfo] = useState(false);
 
     return <div className="LandingPage">
@@ -13,5 +19,20 @@ export default function LandingPage() {
         {showInfo && <p>
             Mister X versucht, seinen Verfolgern zu entkommen. Die Detektive müssen ihn innerhalb von 22 Runden aufspühren.
         </p>}
+
+        <form onSubmit={(event) => {
+            event.preventDefault();
+            handleLogin();
+
+        }}>
+            <input
+                value={playerName}
+                onChange={(event) =>
+                    handleNameChange(event.target.value)
+                }
+                placeholder="Benutzername"
+            />
+            <button type="submit">Login</button>
+        </form>
     </div>
 }

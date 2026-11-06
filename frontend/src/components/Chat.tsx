@@ -4,14 +4,10 @@ import type { ChatMessage } from '../interfaces.tsx';
 
 type ChatProps = {
     socket: any,
-    isConnected: boolean,
     playerName: string,
-    handleNameChange: (current: string) => void;
-    handleLogin: () => void;
-    handleLogout: () => void;
 }
 
-export default function ChatProps({ socket, isConnected, playerName, handleNameChange, handleLogin, handleLogout }: ChatProps) {
+export default function ChatProps({ socket, playerName }: ChatProps) {
     const [isSending, setIsSending] = useState(false);
     const [message, setMessage] = useState('');
     const [chatHistory, setChatHistory] = useState<Array<ChatMessage>>([]);
@@ -45,9 +41,6 @@ export default function ChatProps({ socket, isConnected, playerName, handleNameC
 
 
     return <div className="Chat">
-        <input disabled={isConnected} onChange={current => handleNameChange(current.target.value)} placeholder={"Anon"} />
-        <button disabled={isConnected} onClick={() => handleLogin()}>Login</button>
-        <button disabled={!isConnected} onClick={() => handleLogout()}>Logout</button>
         <form onSubmit={handleSubmitMessage}>
             <input value={message} onChange={current => setMessage(current.target.value)} />
             <button type="submit" disabled={isSending}>Send Message</button>

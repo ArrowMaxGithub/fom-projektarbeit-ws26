@@ -28,6 +28,9 @@ function App() {
     function onDisconnect() {
       console.log("Disconnected");
       setIsConnected(false);
+      setPlayerId(null);
+      setCurrentRoom(null);
+      setCurrentGameState(null);
     }
 
     function onError(error: string) {
@@ -109,21 +112,51 @@ function App() {
       }
     });
   }
+  const isLoggedIn = isConnected && playerId !== null;
 
   return <div className="App">
-    {!isConnected && <LandingPage />}
-    <Lobby active={isConnected && current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin}></Lobby>
-    <hr />
-    <InGame
-      active={isConnected && current_room !== null}
-      socket={socket}
-      gamestateFromJoin={currentGameState}
-      handleRoomLeave={handleRoomLeave}
-      gameId={current_room}
-      playerId={playerId}
-    />
-    <hr />
-    <Chat socket={socket} isConnected={isConnected} playerName={playerName} handleNameChange={handleNameChange} handleLogin={handleLogin} handleLogout={handleLogout}></Chat>
+
+    {/*Landingpage vor dem Login*/}
+    {!isLoggedIn && (<LandingPage playerName={playerName} handleNameChange={handleNameChange} handleLogin={handleLogin} />)}
+
+    {/*Header mit Account-Anzeige nach Login*/}
+    {isLoggedIn && (
+      <div className="AccountBar">
+        <h1>GeoCatcher</h1>
+        <div className="Account">
+          <span>Logged in as: {playerName}</span>
+          <button onClick={handleLogout}>Logout</button>
+        </div>
+      </div>
+    )}
+
+    {/*Raumauswahl mit eigenem Chat*/}
+    {isLoggedIn && current_room === null && (
+      <div className="LobbyLayout">
+        <Lobby active={true} rooms={rooms} handleRoomJoin={handleRoomJoin} />
+        <Chat socket={socket} playerName={playerName} />
+      </div>
+    )}
+
+    {/*Raum mit eigenem Chat*/}
+    {isLoggedIn && current_room !== null && (
+      <div className="LobbyLayout">
+        <InGame
+          active={isLoggedIn && current_room !== null}
+          socket={socket}
+          gamestateFromJoin={currentGameState}
+          handleRoomLeave={handleRoomLeave}
+          gameId={current_room}
+          playerId={playerId}
+        />
+        <Chat
+          key={current_room}
+          socket={socket}
+          playerName={playerName}
+        />
+      </div>
+    )}
+
   </div>
 }
 
