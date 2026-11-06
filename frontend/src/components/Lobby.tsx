@@ -14,6 +14,7 @@ export default function Lobby({ active, rooms, handleRoomJoin }: LobbyProps) {
 
     return <div className="Lobby">
         <h1>Aktuelle Spielräume</h1>
+        <button disabled> Raum erstellen</button>
         <ul className="LobbyGameList">
             {
                 rooms.map((info, index) =>
