@@ -38,7 +38,6 @@ function App() {
     }
 
     function onLobby(rooms: GameInfo[]) {
-      console.log(rooms);
       setRooms(rooms);
     }
 
@@ -62,14 +61,12 @@ function App() {
     console.log("Trying to login");
 
     socket.connect();
-    // `ack` is the response from the executed server query and contain the allocated player ID
+    // `ack` is the response from the executed server query
     // It will be undefined for a failed query
-    socket.emit('login', playerName, (player_id: number, rooms: GameInfo[]) => {
+    socket.emit('login', playerName, (player_id: number) => {
       if (player_id !== undefined) {
         console.log(`My player ID: ${player_id} | My Name: ${playerName}`);
         setPlayerId(player_id);
-        console.log(rooms);
-        setRooms(rooms);
       } else {
         console.error("Login failed");
       }
