@@ -29,22 +29,6 @@
         }
       }
     },
-    "op_get_gamestate_receive_root_70f37a0a2dbd45f7_channel": {
-      "address": "/",
-      "messages": {
-        "op_get_gamestate_receive_root_70f37a0a2dbd45f7_message": {
-          "$ref": "#/components/messages/op_get_gamestate_receive_root_70f37a0a2dbd45f7_message"
-        }
-      }
-    },
-    "op_get_lobby_receive_root_db4190aec472d3eb_channel": {
-      "address": "/",
-      "messages": {
-        "op_get_lobby_receive_root_db4190aec472d3eb_message": {
-          "$ref": "#/components/messages/op_get_lobby_receive_root_db4190aec472d3eb_message"
-        }
-      }
-    },
     "op_lobby_send_root_2d2ded8990480b7a_channel": {
       "address": "/",
       "messages": {
@@ -142,36 +126,6 @@
       "messages": [
         {
           "$ref": "#/channels/op_gamestate_send_root_468f8dc1224789e8_channel/messages/op_gamestate_send_root_468f8dc1224789e8_message"
-        }
-      ],
-      "x-pydantic-socketio": {
-        "ack": "unspecified"
-      }
-    },
-    "op_get_gamestate_receive_root_70f37a0a2dbd45f7": {
-      "summary": "Receive get_gamestate (/)",
-      "action": "receive",
-      "channel": {
-        "$ref": "#/channels/op_get_gamestate_receive_root_70f37a0a2dbd45f7_channel"
-      },
-      "messages": [
-        {
-          "$ref": "#/channels/op_get_gamestate_receive_root_70f37a0a2dbd45f7_channel/messages/op_get_gamestate_receive_root_70f37a0a2dbd45f7_message"
-        }
-      ],
-      "x-pydantic-socketio": {
-        "ack": "unspecified"
-      }
-    },
-    "op_get_lobby_receive_root_db4190aec472d3eb": {
-      "summary": "Receive get_lobby (/)",
-      "action": "receive",
-      "channel": {
-        "$ref": "#/channels/op_get_lobby_receive_root_db4190aec472d3eb_channel"
-      },
-      "messages": [
-        {
-          "$ref": "#/channels/op_get_lobby_receive_root_db4190aec472d3eb_channel/messages/op_get_lobby_receive_root_db4190aec472d3eb_message"
         }
       ],
       "x-pydantic-socketio": {
@@ -422,30 +376,6 @@
           ],
           "minItems": 1,
           "maxItems": 1
-        }
-      },
-      "op_get_gamestate_receive_root_70f37a0a2dbd45f7_message": {
-        "name": "get_gamestate",
-        "x-pydantic-socketio": {
-          "event": "get_gamestate"
-        },
-        "payload": {
-          "type": "array",
-          "prefixItems": [],
-          "minItems": 0,
-          "maxItems": 0
-        }
-      },
-      "op_get_lobby_receive_root_db4190aec472d3eb_message": {
-        "name": "get_lobby",
-        "x-pydantic-socketio": {
-          "event": "get_lobby"
-        },
-        "payload": {
-          "type": "array",
-          "prefixItems": [],
-          "minItems": 0,
-          "maxItems": 0
         }
       },
       "op_lobby_send_root_2d2ded8990480b7a_message": {

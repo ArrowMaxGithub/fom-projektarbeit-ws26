@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI
-from mocks import mock_game_state, mock_lobby
 from models import *
 from psycopg_pool import ConnectionPool
 from pydantic_socketio import ASGIApp, AsyncServer
@@ -113,16 +112,6 @@ async def choose_role(sid, choice: ChooseRole):
 @sio.on("chat")
 async def chat(sid, message: ChatMessage):
     return await guarded_query(sid, lambda: ChatQuery(sid, message))
-
-
-@sio.on("get_lobby")
-async def get_lobby(sid):
-    await sio.emit("lobby", mock_lobby())
-
-
-@sio.on("get_gamestate")
-async def get_gamestate(sid):
-    await sio.emit("gamestate", mock_game_state())
 
 
 # Server-to-client event

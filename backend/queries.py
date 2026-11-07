@@ -1,7 +1,6 @@
 from models import *
 from psycopg import Connection as DBConnection
 from pydantic_socketio import FastAPISocketIO
-from mocks import mock_game_state, mock_lobby
 
 
 class Query:
@@ -73,7 +72,9 @@ class ChatQuery(Query):
 
     async def fullfill(self, sio: FastAPISocketIO):
         rooms = sio.rooms(self.sid)
-        room = next((room for room in rooms if room != self.sid), None)
+        room = next(
+            (room for room in rooms if room != self.sid), None
+        )  # TODO: Use all set rooms for event broadcast
         assert room is not None, "Player is not in a room"
 
         await sio.emit("chat", self.message, room=room)
@@ -97,9 +98,7 @@ class RoomJoinQuery(Query):
             assert row is not None, "Unknown player ID"
             self.player_name = row[0]
 
-        self.room = next(
-            (room for room in mock_lobby() if room.room_id == self.room_id), None
-        )
+        self.room = TODO
         assert self.room is not None, "Unknown room ID"
 
     async def fullfill(self, sio: FastAPISocketIO):
@@ -107,7 +106,7 @@ class RoomJoinQuery(Query):
         await sio.enter_room(self.sid, room)
         await sio.leave_room(self.sid, "lobby")
 
-        gamestate = mock_game_state()
+        gamestate = TODO
         gamestate.info = self.room
         await sio.emit(
             "chat",
@@ -137,9 +136,7 @@ class RoomLeaveQuery(Query):
             assert row is not None, "Unknown player ID"
             self.player_name = row[0]
 
-        self.room = next(
-            (room for room in mock_lobby() if room.room_id == self.room_id), None
-        )
+        self.room = TODO
         assert self.room is not None, "Unknown room ID"
 
     async def fullfill(self, sio: FastAPISocketIO):
@@ -158,7 +155,7 @@ class RoomLeaveQuery(Query):
         await sio.leave_room(self.sid, room)
         await sio.enter_room(self.sid, "lobby")
 
-        return [room.model_dump(mode="json") for room in mock_lobby()]
+        return self.room
 
 
 class MoveQuery(Query):

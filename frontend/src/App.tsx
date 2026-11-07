@@ -64,11 +64,12 @@ function App() {
     socket.connect();
     // `ack` is the response from the executed server query and contain the allocated player ID
     // It will be undefined for a failed query
-    socket.emit('login', playerName, (player_id: number) => {
+    socket.emit('login', playerName, (player_id: number, rooms: GameInfo[]) => {
       if (player_id !== undefined) {
         console.log(`My player ID: ${player_id} | My Name: ${playerName}`);
         setPlayerId(player_id);
-        socket.emit("get_lobby"); // TODO: Remove once JoinQuery is implemented and returns current lobby rooms
+        console.log(rooms);
+        setRooms(rooms);
       } else {
         console.error("Login failed");
       }
