@@ -33,9 +33,14 @@ export default function ChatProps({ socket, playerName }: ChatProps) {
             content: message,
         };
 
-        socket.emit('chat', msg, () => {
-            setMessage("");
-            setIsSending(false);
+        socket.emit('chat', msg, (success: boolean) => {
+            if (success){
+                setMessage("");
+                setIsSending(false);
+            } else {
+                console.error("Failed to send chat message");
+                setIsSending(false);
+            }
         });
     }
 
