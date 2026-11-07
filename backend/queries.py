@@ -18,9 +18,9 @@ class LoginQuery(Query):
     # Queries are constructed using SQL-transactions
     # On any encountered exception inside the transaction block, the transaction is rolled back
     def __init__(self, conn: DBConnection, sid, player_name: str):
-        self.player_id = None
-        self.player_name = player_name
         self.sid = sid
+        self.player_name = player_name
+        self.player_id = None
         self.rooms = []
 
         # Transacton block start
@@ -41,7 +41,8 @@ class LoginQuery(Query):
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.enter_room(self.sid, "lobby")
         await sio.emit(
-            "chat", {"sender": "Server", "content": f"{self.player_name} logged in"}
+            "chat", {"sender": "Server", "content": f"{self.player_name} logged in"},
+            skip_id=self.sid
         )
         await sio.emit(
             "lobby", self.rooms
@@ -53,9 +54,9 @@ class LoginQuery(Query):
 
 class LogoutQuery(Query):
     def __init__(self, conn: DBConnection, sid, player_id: int):
+        self.sid = sid
         self.player_id = player_id
         self.player_name = None
-        self.sid = sid
 
         with conn.transaction():
             cursor = conn.cursor()
@@ -63,7 +64,8 @@ class LogoutQuery(Query):
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
-            "chat", {"sender": "Server", "content": f"{self.player_name} logged out"}
+            "chat", {"sender": "Server", "content": f"{self.player_name} logged out"},
+            skip_id=self.sid
         )
 
 
