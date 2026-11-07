@@ -1,3 +1,4 @@
+from helpers import *
 from models import *
 from psycopg import Connection as DBConnection
 from pydantic_socketio import FastAPISocketIO
@@ -20,21 +21,21 @@ class LoginQuery(Query):
         self.player_id = None
         self.player_name = player_name
         self.sid = sid
+        self.rooms = []
 
         # Transacton block start
         with conn.transaction():
             cursor = conn.cursor()
-            # Try to get player by name
-            self.player_id = cursor.execute(
-                t"select id from benutzer where benutzername = {self.player_name};"
-            ).fetchone()
+            # Get existing player by name
+            self.player_id = get_player_id(cursor, player_name) 
 
             # Or insert new player
             # If this failed (e.g. username already taken), the transaction would be rolled back and no changes would be written to the database
             if self.player_id is None:
-                self.player_id = cursor.execute(
-                    t"insert into benutzer (benutzername) values ({self.player_name}) returning id;"
-                ).fetchone()
+                self.player_id = insert_new_player(cursor, player_name)
+
+            self.rooms = get_lobby_rooms(cursor)
+
 
     # Only called if the constructor (and thus all SQL-transactions) succeed
     async def fullfill(self, sio: FastAPISocketIO):
@@ -42,8 +43,12 @@ class LoginQuery(Query):
         await sio.emit(
             "chat", {"sender": "Server", "content": f"{self.player_name} logged in"}
         )
+        await sio.emit(
+            "lobby", self.rooms
+        )
+
         # Events can pass responses back to the user as ACK
-        return self.player_id[0]
+        return self.player_id
 
 
 class LogoutQuery(Query):
@@ -54,10 +59,7 @@ class LogoutQuery(Query):
 
         with conn.transaction():
             cursor = conn.cursor()
-            # Note the template string t"{value_here}" with t-prefix instead of regular f-string to avoid any SQL-injections
-            self.player_name = cursor.execute(
-                t"select benutzername from benutzer where id = {self.player_id};"
-            ).fetchone()
+            self.player_name = get_player_name(cursor, player_id)
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(

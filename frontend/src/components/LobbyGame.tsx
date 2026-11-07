@@ -13,11 +13,6 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
         player_label = `Spieler: ${info.players} von 6`;
     };
 
-    //let round_label = "";
-    //if (info.status === "laufend") {
-    //    round_label = `Runde: ${info.players} von 22`;
-    //};
-
     let status_label;
     switch (info.status) {
         case "lobby":
