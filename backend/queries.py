@@ -86,27 +86,18 @@ class RoomJoinQuery(Query):
         self.player_id = player_id
         self.room_id = room_id
         self.player_name = None
+        self.gamestate = None
 
-        # Get Player Name from DB
         with conn.transaction():
             cursor = conn.cursor()
-            row = cursor.execute(
-                t"select benutzername from benutzer where id = {self.player_id};"
-            ).fetchone()
-
-            assert row is not None, "Unknown player ID"
-            self.player_name = row[0]
-
-        self.room = TODO
-        assert self.room is not None, "Unknown room ID"
+            self.player_name = get_player_name(cursor, player_id)
+            self.gamestate = get_gamestate(cursor, room_id)
 
     async def fullfill(self, sio: FastAPISocketIO):
         room = str(self.room_id)
         await sio.enter_room(self.sid, room)
         await sio.leave_room(self.sid, "lobby")
 
-        gamestate = TODO
-        gamestate.info = self.room
         await sio.emit(
             "chat",
             {
@@ -116,7 +107,7 @@ class RoomJoinQuery(Query):
             room=room,
             skip_sid=self.sid,
         )
-        return {"room_id": self.room_id, "gamestate": gamestate.model_dump(mode="json")}
+        return {"room_id": self.room_id, "gamestate": self.gamestate}
 
 
 class RoomLeaveQuery(Query):
