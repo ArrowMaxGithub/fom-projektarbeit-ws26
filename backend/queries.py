@@ -27,7 +27,7 @@ class LoginQuery(Query):
         with conn.transaction():
             cursor = conn.cursor()
             # Get existing player by name
-            self.player_id = get_player_id(cursor, player_name) 
+            self.player_id = get_player_id(cursor, player_name)
 
             # Or insert new player
             # If this failed (e.g. username already taken), the transaction would be rolled back and no changes would be written to the database
@@ -36,17 +36,15 @@ class LoginQuery(Query):
 
             self.rooms = get_lobby_rooms(cursor)
 
-
     # Only called if the constructor (and thus all SQL-transactions) succeed
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.enter_room(self.sid, "lobby")
         await sio.emit(
-            "chat", {"sender": "Server", "content": f"{self.player_name} logged in"},
-            skip_id=self.sid
+            "chat",
+            {"sender": "Server", "content": f"{self.player_name} logged in"},
+            skip_sid=self.sid,
         )
-        await sio.emit(
-            "lobby", self.rooms
-        )
+        await sio.emit("lobby", self.rooms)
 
         # Events can pass responses back to the user as ACK
         return self.player_id
@@ -64,8 +62,9 @@ class LogoutQuery(Query):
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
-            "chat", {"sender": "Server", "content": f"{self.player_name} logged out"},
-            skip_id=self.sid
+            "chat",
+            {"sender": "Server", "content": f"{self.player_name} logged out"},
+            skip_sid=self.sid,
         )
 
 
@@ -76,12 +75,8 @@ class ChatQuery(Query):
 
     async def fullfill(self, sio: FastAPISocketIO):
         rooms = sio.rooms(self.sid)
-        room = next(
-            (room for room in rooms if room != self.sid), None
-        )  # TODO: Use all set rooms for event broadcast
-        assert room is not None, "Player is not in a room"
+        await sio.emit("chat", self.message, room=rooms)
 
-        await sio.emit("chat", self.message, room=room)
         return True
 
 
