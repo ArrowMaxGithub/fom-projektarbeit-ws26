@@ -88,8 +88,6 @@ export namespace Root {
   export interface ClientToServerEvents {
     "chat": (...args: [...[message: ChatMessage], ack?: (...args: unknown[]) => void]) => void;
     "choose_role": (...args: [...[choice: ChooseRole], ack?: (...args: unknown[]) => void]) => void;
-    "get_gamestate": (...args: [...[], ack?: (...args: unknown[]) => void]) => void;
-    "get_lobby": (...args: [...[], ack?: (...args: unknown[]) => void]) => void;
     "login": (...args: [...[player_name: string], ack?: (...args: unknown[]) => void]) => void;
     "logout": (...args: [...[player_id: number], ack?: (...args: unknown[]) => void]) => void;
     "move": (...args: [...[move: Move], ack?: (...args: unknown[]) => void]) => void;
