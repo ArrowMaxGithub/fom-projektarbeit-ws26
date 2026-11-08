@@ -463,8 +463,8 @@ class StartGameQuery(Query):
             }
 
             ticket_rows = [
-                (pid, ticket_ids[name], count)
-                for pid, role in humans
+                (tid, ticket_ids[name], count)
+                for tid, role in humans
                 for name, count in (
                     mister_x_tickets if role == "mister_x" else detective_tickets
                 ).items()
@@ -546,7 +546,7 @@ class StartGameQuery(Query):
             # 9 Load tickets for GameState
             cursor.execute(
                 t"""
-                    SELECT tb.id_teilnehmer, ta.id, ta.name, ta.id_verkehrsmittel, tb.anzahl
+                    SELECT t.id_benutzer, ta.id, ta.name, ta.id_verkehrsmittel, tb.anzahl
                     FROM ticketbestand AS tb
                     JOIN ticketart AS ta ON ta.id = tb.id_ticketart
                     JOIN teilnehmer AS t ON t.id = tb.id_teilnehmer
