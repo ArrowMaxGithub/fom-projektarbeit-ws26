@@ -79,7 +79,7 @@ export function getNodeStates(new_gamestate: GameState): NodeState[] {
     const misterX_pos = new_gamestate.players.find(player => player.role === "mister_x")?.current_node;
 
     console.log(`Connections for ${active_player.name}`);
-    const new_node_states: NodeState[] = new_gamestate.nodes.map((node, _node_id) => {
+    const new_node_states: NodeState[] = new_gamestate.nodes.map((node, _index) => {
         if (node.node_id === current_node.node_id) {
             return NodeState.Current;
         }
@@ -104,7 +104,7 @@ export function getNodeStates(new_gamestate: GameState): NodeState[] {
 
         const vehicle_name = getVehicle(new_gamestate, conn.vehicle_id)?.name ?? "Unknown";
         if (state === NodeState.LegalDst) {
-            console.log(`From ${current_node} to ${node.number} via ${vehicle_name}`);
+            console.log(`From ${current_node.node_id} to ${node.number} via ${vehicle_name}`);
         }
 
         return state;

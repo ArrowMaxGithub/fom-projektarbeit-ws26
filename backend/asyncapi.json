@@ -300,7 +300,14 @@
                   "type": "integer"
                 },
                 "role": {
-                  "$ref": "#/components/schemas/op_choose_role_receive_root_547aafb7a7a63308_message_0_Role"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/op_choose_role_receive_root_547aafb7a7a63308_message_0_Role"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               },
               "required": [
@@ -330,8 +337,15 @@
                   "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_GameInfo"
                 },
                 "active_player": {
-                  "title": "Active Player",
-                  "type": "integer"
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Active Player"
                 },
                 "players": {
                   "items": {
@@ -469,18 +483,13 @@
                 "to_node": {
                   "title": "To Node",
                   "type": "integer"
-                },
-                "ticket_type": {
-                  "title": "Ticket Type",
-                  "type": "integer"
                 }
               },
               "required": [
                 "player_id",
                 "game_id",
                 "from_node",
-                "to_node",
-                "ticket_type"
+                "to_node"
               ],
               "title": "Move",
               "type": "object"
@@ -652,27 +661,6 @@
           "status": {
             "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_Status"
           },
-          "end_cause": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_EndCause"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "players": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Players"
-          },
           "current_round": {
             "anyOf": [
               {
@@ -693,6 +681,27 @@
                 "type": "null"
               }
             ]
+          },
+          "end_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_EndCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "players": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Players"
           }
         },
         "required": [
@@ -701,10 +710,10 @@
           "map_name",
           "map_dimensions",
           "status",
-          "end_cause",
-          "players",
           "current_round",
-          "current_phase"
+          "current_phase",
+          "end_cause",
+          "players"
         ],
         "title": "GameInfo",
         "type": "object"
@@ -868,6 +877,7 @@
         "type": "object"
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Vehicle": {
+        "description": "Vehicle(*, vehicle_id: int, name: str)",
         "properties": {
           "vehicle_id": {
             "title": "Vehicle Id",
@@ -919,27 +929,6 @@
           "status": {
             "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_Status"
           },
-          "end_cause": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_EndCause"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "players": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Players"
-          },
           "current_round": {
             "anyOf": [
               {
@@ -960,6 +949,27 @@
                 "type": "null"
               }
             ]
+          },
+          "end_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/op_lobby_send_root_2d2ded8990480b7a_message_0_EndCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "players": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Players"
           }
         },
         "required": [
@@ -968,10 +978,10 @@
           "map_name",
           "map_dimensions",
           "status",
-          "end_cause",
-          "players",
           "current_round",
-          "current_phase"
+          "current_phase",
+          "end_cause",
+          "players"
         ],
         "title": "GameInfo",
         "type": "object"

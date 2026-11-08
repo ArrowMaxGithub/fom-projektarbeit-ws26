@@ -160,8 +160,8 @@ INSERT INTO
     )
 VALUES (
         DEFAULT,
-        '4',
-        '1',
+        '2',
+        '3',
         'lobby',
         0,
         DEFAULT,
@@ -481,15 +481,9 @@ INSERT INTO
     )
 VALUES (DEFAULT, '1', '3', '4');
 
-
-
-
-
 -- ---------
 -- Mockdaten: teilnehmer
 -- ---------
-
-
 
 INSERT INTO
     public.teilnehmer (
@@ -588,25 +582,248 @@ VALUES (
     );
 
 -- ---------
--- Testzustand für StartGameQuery und ChooseRoleQuery
+-- Mockdaten: ticketbestand
 -- ---------
 
-UPDATE public.partie
-SET status = 'lobby',
-    aktuelle_runde = 0,
-    aktuelle_phase = NULL,
-    aktuelle_reihenfolge = NULL
-WHERE id = 3;
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    1,
+    1,
+    12
+);
 
-UPDATE public.teilnehmer
-SET spielerrolle = CASE
-        WHEN id_benutzer = 2 THEN NULL
-        ELSE spielerrolle
-    END,
-    id_startknoten = NULL,
-    id_aktueller_knoten = NULL,
-    reihenfolge = NULL
-WHERE id_partie = 3 AND teilnehmertyp = 'spieler';
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    1,
+    2,
+    4
+);
 
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    1,
+    3,
+    3
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    1,
+    4,
+    0
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    1,
+    5,
+    0
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    2,
+    1,
+    12
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    2,
+    2,
+    4
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    2,
+    3,
+    3
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    2,
+    4,
+    5
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    2,
+    5,
+    0
+);
+
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    3,
+    1,
+    12
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    3,
+    2,
+    4
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    3,
+    3,
+    3
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    3,
+    4,
+    0
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    3,
+    5,
+    0
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    4,
+    1,
+    12
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    4,
+    2,
+    4
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    4,
+    3,
+    3
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    4,
+    4,
+    0
+);
+
+INSERT INTO
+    public.ticketbestand(
+        id_teilnehmer,
+        id_ticketart,
+        anzahl
+    )
+VALUES(
+    4,
+    5,
+    0
+);
 
 COMMIT;
