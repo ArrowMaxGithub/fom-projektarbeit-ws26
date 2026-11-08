@@ -2,21 +2,20 @@ import { useRef, useEffect, useState } from 'react'
 import type { Socket } from "socket.io-client";
 import GameNode from './GameNode.tsx';
 import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayerAt, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
+import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayer, getPlayerAt, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import Tickets from './Tickets.tsx';
 import GameInfos from './GameInfos.tsx';
-import type { GameState } from '../interfaces.tsx';
+import type { GameState, Move } from '../interfaces.tsx';
 
 type InGameProps = {
     active: boolean,
     socket: Socket,
-    gamestateFromJoin: GameState | null,
     handleRoomLeave: () => void,
     gameId: number | null,
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, gamestateFromJoin, handleRoomLeave, playerId }: InGameProps) {
+export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [gameover, setGameover] = useState<boolean>(false);
@@ -26,14 +25,12 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
 
     const mister_x_show = [4, 9, 14, 19];
 
-    const TEST_GAME_ID = 3;
-
     const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
     const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
 
     useEffect(() => {
         function onGameState(new_gamestate: GameState) {
-            console.log(`Gamestate update: ${new_gamestate}`);
+            console.log("Gamestate update");
             const new_node_states = getNodeStates(new_gamestate);
             setNodeStates(new_node_states);
             setGameState(new_gamestate);
@@ -54,21 +51,11 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
         }
 
         socket.on('gamestate', onGameState);
-        //Processing initial gamestate received via room_join ACK
-        if (gamestateFromJoin !== null) {
-            onGameState(gamestateFromJoin);
-        } else {
-            // Reset state if no Room is selected
-            setGameState(null);
-            setNodeStates([]);
-            setGameover(false);
-            setlastMisterXPos(null);
-        }
 
         return () => {
             socket.off('gamestate', onGameState);
         };
-    }, [socket, gamestateFromJoin]);
+    }, [socket]);
 
     useEffect(() => {
         const ingame = ingameRef.current;
@@ -89,13 +76,31 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
     }
 
     function makeMove(to_node: number) {
-        if (!gamestate) {
+        if (!gamestate || !playerId) {
+            console.error("Not participating in an active game");
             return;
         }
 
-        // TODO: Emit OnMove Event
-        console.log(`Moving to ${to_node}`);
+        const player = getPlayer(gamestate, playerId);
 
+        if (!player){
+            console.error(`Failed to find player with ID: ${playerId}`);
+            return;
+        }
+
+        if (!player.current_node){
+            console.error(`Player with ID ${playerId} has no current_node`);
+            return;
+        }
+
+        console.log(`Moving to ${to_node}`);
+        const move: Move = {
+            player_id: playerId,
+            game_id: gamestate.info.room_id,
+            from_node: player.current_node,
+            to_node: to_node,
+        }
+        socket.emit("move", move)
     }
 
     function detectivesWon(new_gamestate: GameState) {
@@ -152,14 +157,20 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
         setViewport(viewport - event.deltaY * 0.1);
     }
 
-    function chooseRole(role: "mister_x" | "detektiv") {
+    function chooseRole(role: "mister_x" | "detektiv" | null) {
         if (playerId === null) return;
 
         socket.emit("choose_role", {
-            game_id: TEST_GAME_ID,
+            game_id: gamestate?.info.room_id,
             player_id: playerId,
             role: role
-        }, (response: unknown) => { console.log("ChooseRole Ergebnis:", response) });
+        }, (success: boolean) => { 
+            if (success){
+                console.log("Chosen role: ", role)
+            } else {
+                console.error(`Failed to choose role: ${role}`);
+            }
+         });
     }
 
     return <div className="InGame">
@@ -169,7 +180,7 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
                 <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
                 {
                     gamestate?.nodes.map((node, index) =>
-                        <GameNode key={index} makeMove={makeMove} index={index} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={index === lastMisterXPos}></GameNode>
+                        <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={node.node_id === lastMisterXPos}></GameNode>
                     )
                 }
             </div>
@@ -178,7 +189,7 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
                 disabled={playerId === null}
                 onClick={() => {
                     socket.emit("start_game", {
-                        game_id: TEST_GAME_ID,
+                        game_id: gamestate?.info.room_id,
                         player_id: playerId
                     }, (response: unknown) => {
                         console.log("StartGame: Ergebnis:", response);
@@ -189,6 +200,7 @@ export default function InGame({ active, socket, gamestateFromJoin, handleRoomLe
             </button>
             <button onClick={() => chooseRole("mister_x")}>Mister X wählen</button>
             <button onClick={() => chooseRole("detektiv")}>Detektiv wählen</button>
+            <button onClick={() => chooseRole(null)}>Zuschauer wählen</button>
         </div>
 
         <div className="GameInfosPanel">

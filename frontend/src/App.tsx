@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client';
 import './App.css'
 import Lobby from './components/Lobby.tsx'
-import type { GameInfo, GameState } from './interfaces.tsx';
+import type { GameInfo } from './interfaces.tsx';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
@@ -12,11 +12,10 @@ export const socket = io(undefined, { autoConnect: false }); // Infer URL from w
 function App() {
   // React states which are affected by UI event handlers
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [playerName, setPlayerName] = useState<string>("Anon");
+  const [playerName, setPlayerName] = useState<string>("Matthias");
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
   const [current_room, setCurrentRoom] = useState<number | null>(null);
-  const [currentGameState, setCurrentGameState] = useState<GameState | null>(null);
 
   // Define any callbacks to events sent by the server here
   useEffect(() => {
@@ -38,6 +37,7 @@ function App() {
     }
 
     function onLobby(rooms: GameInfo[]) {
+      console.log("Received lobby rooms");
       setRooms(rooms);
     }
 
@@ -86,10 +86,9 @@ function App() {
     if (playerId === null) return;
 
     console.log(`${playerName} joining room: ${room_id}`);
-    socket.emit("room_join", playerId, room_id, (response: { room_id: number, gamestate: GameState }) => {
-      if (response !== undefined) {
-        setCurrentGameState(response.gamestate);
-        setCurrentRoom(response.room_id);
+    socket.emit("room_join", playerId, room_id, (ack_room_id: number) => {
+      if (ack_room_id !== undefined) {
+        setCurrentRoom(ack_room_id);
       } else {
         console.error("Room join failed");
       }
@@ -100,10 +99,8 @@ function App() {
     if (current_room === null || playerId === null) return;
 
     console.log(`${playerName} leaving room: ${current_room}`);
-    socket.emit("room_leave", playerId, current_room, (rooms: GameInfo[]) => {
-      if (rooms !== undefined) {
-        setRooms(rooms);
-        setCurrentGameState(null);
+    socket.emit("room_leave", playerId, current_room, (success: boolean) => {
+      if (success !== undefined) {
         setCurrentRoom(null);
       } else {
         console.error("Failed to leave room");

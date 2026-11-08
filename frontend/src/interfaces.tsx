@@ -20,7 +20,7 @@ export interface ChatMessage {
 export interface ChooseRole {
   player_id: number;
   game_id: number;
-  role: Role;
+  role: Role | null;
 }
 export interface Connection {
   connection_id: number;
@@ -34,14 +34,14 @@ export interface GameInfo {
   map_name: string;
   map_dimensions: number[];
   status: Status;
-  end_cause: EndCause | null;
-  players: number | null;
   current_round: number | null;
   current_phase: Phase | null;
+  end_cause: EndCause | null;
+  players: number | null;
 }
 export interface GameState {
   info: GameInfo;
-  active_player: number;
+  active_player: number | null;
   players: Players;
   nodes: Nodes;
   connections: Connections;
@@ -62,6 +62,9 @@ export interface Ticket {
   count: number;
   allowed_vehicles: AllowedVehicles;
 }
+/**
+ * Vehicle(*, vehicle_id: int, name: str)
+ */
 export interface Vehicle {
   vehicle_id: number;
   name: string;
@@ -77,7 +80,6 @@ export interface Move {
   game_id: number;
   from_node: number;
   to_node: number;
-  ticket_type: number;
 }
 export interface StartGame {
   player_id: number;

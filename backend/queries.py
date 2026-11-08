@@ -21,12 +21,13 @@ class LoginQuery(Query):
         self.sid = sid
         self.player_name = player_name
         self.player_id = None
-        self.rooms = []
+        self.game_infos = []
 
         # Transacton block start
         with conn.transaction():
             cursor = conn.cursor()
             # Get existing player by name
+            self.player_id = get_player_id(cursor, player_name)
             self.player_id = get_player_id(cursor, player_name)
 
             # Or insert new player
@@ -34,7 +35,7 @@ class LoginQuery(Query):
             if self.player_id is None:
                 self.player_id = insert_new_player(cursor, player_name)
 
-            self.rooms = get_lobby_rooms(cursor)
+            self.game_infos = get_game_infos(cursor)
 
     # Only called if the constructor (and thus all SQL-transactions) succeed
     async def fullfill(self, sio: FastAPISocketIO):
@@ -44,7 +45,7 @@ class LoginQuery(Query):
             {"sender": "Server", "content": f"{self.player_name} logged in"},
             skip_sid=self.sid,
         )
-        await sio.emit("lobby", self.rooms)
+        await sio.emit("lobby", self.game_infos)
 
         # Events can pass responses back to the user as ACK
         return self.player_id
@@ -62,6 +63,9 @@ class LogoutQuery(Query):
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
+            "chat",
+            {"sender": "Server", "content": f"{self.player_name} logged out"},
+            skip_sid=self.sid,
             "chat",
             {"sender": "Server", "content": f"{self.player_name} logged out"},
             skip_sid=self.sid,
@@ -93,6 +97,18 @@ class RoomJoinQuery(Query):
             self.player_name = get_player_name(cursor, player_id)
             self.gamestate = get_gamestate(cursor, room_id)
 
+            # Insert joining player as spectator; do nothing if player already is part of this game
+            cursor.execute(
+                t"""
+                    INSERT INTO teilnehmer(id_benutzer, id_partie, teilnehmertyp, spielerrolle, aktiv)
+                    VALUES (
+                        {player_id}, {room_id}, 'zuschauer', NULL, TRUE
+                    )
+                    ON CONFLICT (id_benutzer, id_partie)
+                    DO NOTHING;
+                """
+            )
+
     async def fullfill(self, sio: FastAPISocketIO):
         room = str(self.room_id)
         await sio.enter_room(self.sid, room)
@@ -107,7 +123,14 @@ class RoomJoinQuery(Query):
             room=room,
             skip_sid=self.sid,
         )
-        return {"room_id": self.room_id, "gamestate": self.gamestate}
+
+        await sio.emit(
+            event="gamestate",
+            data=self.gamestate,
+            to=self.sid,
+        )
+
+        return self.room_id
 
 
 class RoomLeaveQuery(Query):
@@ -119,15 +142,8 @@ class RoomLeaveQuery(Query):
 
         with conn.transaction():
             cursor = conn.cursor()
-            row = cursor.execute(
-                t"select benutzername from benutzer where id = {self.player_id};"
-            ).fetchone()
-
-            assert row is not None, "Unknown player ID"
-            self.player_name = row[0]
-
-        self.room = TODO
-        assert self.room is not None, "Unknown room ID"
+            self.player_name = get_player_name(cursor, player_id)
+            self.game_infos = get_game_infos(cursor)
 
     async def fullfill(self, sio: FastAPISocketIO):
         room = str(self.room_id)
@@ -144,406 +160,152 @@ class RoomLeaveQuery(Query):
 
         await sio.leave_room(self.sid, room)
         await sio.enter_room(self.sid, "lobby")
+        await sio.emit("lobby", self.game_infos, to=self.sid)
 
-        return self.room
+        return True
 
 
 class MoveQuery(Query):
     def __init__(self, conn: DBConnection, sid, move: Move):
         self.sid = sid
         self.move = move
+        self.room = str(move.game_id)
         self.player_name = None
         self.gamestate = None
 
         with conn.transaction():
             cursor = conn.cursor()
 
-            # Identify player username
-            cursor.execute(
-                t"""
-                select benutzername 
-                from benutzer 
-                where id = {self.move.player_id};
-                """
-            )
-            row = cursor.fetchone()
-            self.player_name = row[0] if row else None
-            assert self.player_name is not None, "Unknown player ID"
+            self.player_name = get_player_name(cursor, move.player_id)
 
-            # Check if game is active and query game parameters for gamestate
-            cursor.execute(
-                t"""
-                select id_karte, benutzername, karte.name, karte.breite, karte.hoehe, status, aktuelle_runde, aktuelle_phase, aktuelle_reihenfolge
-                from partie 
-                where id = {self.move.game_id}
-                join benutzer on partie.id_benutzer = benutzer.id
-                join karte on partie.id_karte = karte.id;
-                """
+            # Query current game state and check if game is active
+            self.gamestate = get_gamestate(cursor, move.game_id)
+            # print(f"gamestate: {self.gamestate}")
+
+            assert self.gamestate.info.status == Status.InProgress, (
+                "Game is not in-play"
             )
-            row = cursor.fetchone()
-            (
-                map_id,
-                creator_name,
-                map_name,
-                map_width,
-                map_height,
-                current_status,
-                current_round,
-                current_phase,
-                active_player_turn_order,
-            ) = row if row else None
-            assert current_status == Status.InProgress, "Game is not in-play"
 
             # Check if player is active, matches game's current_phase and actually is at move.from_node
-            cursor.execute(
-                t"""
-                select id, id_aktueller_knoten, teilnehmertyp, spielerrolle, aktiv, reihenfolge
-                from teilnehmer 
-                where 
-                    id_partie = {self.move.game_id} and
-                    id_benutzer = {self.move.player_id};
-                """
+            player = self.gamestate.get_player(move.player_id)
+            # print(f"player: {player}")
+
+            assert player is not None, f"Unknown player with ID: {move.player_id}"
+            assert player.turn_order == self.gamestate.active_player, (
+                f"It's not your turn. {self.gamestate.active_player} is active and you are {player.turn_order} in turn order"
             )
-            row = cursor.fetchone()
-            (
-                ingame_player_id,
-                current_node,
-                player_type,
-                player_role,
-                player_is_active,
-                player_turn_order,
-            ) = row if row else None
-            assert player_is_active, "You are not an active player"
-            assert player_turn_order == active_player_turn_order, (
-                f"It's not your turn. {active_player_turn_order} is active and you are {player_turn_order} in turn order"
+            assert player.role is not None, (
+                f"You are not an active human player, You are {player.role}"
             )
-            assert player_type == "spieler", (
-                f"You are not an active human player, You are {player_type}"
-            )
-            if current_phase == "detektive":
+            if self.gamestate.info.current_phase == "detektive":
                 assert player_role == "detektiv", (
                     f"Detectives are active and you are a {player_role}"
                 )
-            elif current_phase == "mister_x":
+            elif self.gamestate.info.current_phase == "mister_x":
                 assert player_role == "mister_x", (
                     f"Mister-X is active and you are a {player_role}"
                 )
-            assert current_node == move.from_node, (
+            assert player.current_node == move.from_node, (
                 f"You cannot move from {move.from_node}. You are at {current_node}"
             )
 
-            # Check if connection is valid for the chosen ticket
-            cursor.execute(
-                t"""
-                select id_startknoten, id_zielknoten, ticketart.id
-                from knoten
-                where id_karte = {map_id}
-                join verbindung on knoten.id = verbindung.id_startknoten
-                join verkehrsmittel on verbindung.id_verkehrsmittel = verkehrsmittel.id
-                join ticketart on ticketart.id_verkehrsmittel = verkehrsmittel.id;
-                """
-            )
-            connection = cursor.fetchone()
-            assert (move.from_node, move.to_node, move.ticket_type) == connection, (
-                f"No connection available from {move.from_node} to {move.to_node} with ticket {move.ticket_type}"
+            print("Player is active")
+
+            # Check if connection is valid for any ticket
+            # TODO: Allow player to chose ticket
+            connections = self.gamestate.get_connections(move.from_node, move.to_node)
+            print(f"connections: {connections}")
+
+            valid_ticket = None
+            chosen_connection = None
+            for c in connections:
+                valid_ticket = self.gamestate.player_can_take_connection(c, player)
+                if valid_ticket:
+                    chosen_connection = c
+                    break
+
+            assert valid_ticket is not None, (
+                f"No connection available from {move.from_node} to {move.to_node} with any ticket"
             )
 
-            # Check if player has required ticket
-            cursor.execute(
-                t"""
-                select anzahl
-                from ticketbestand
-                where 
-                    id_teilnehmer = {ingame_player_id} and
-                    id_ticketart = {move.ticket_type};
-                """
-            )
-            row = cursor.fetchone()
-            ticket_count = row[0] if row else None
-            assert ticket_count > 0, (
-                f"No ticket remaining for ticket type {move.ticket_type}"
-            )
+            print(f"Player has valid ticket for connection {chosen_connection}")
 
-            # Check if another player already is at move.to_node
-            cursor.execute(
-                t"""
-                select spielerrolle
-                from teilnehmer
-                where 
-                    id_partie = {move.game_id} and
-                    id_aktueller_knoten = {move.to_node};
-                """
-            )
-            row = cursor.fetchone()
-            player_at_role = row[0] if row else None
-            if player_role == "detektiv" and player_at_role == "detektiv":
-                raise ValueError(f"Another detective is already at {move.to_node}")
+            player.move(move.to_node, valid_ticket)
 
-            elif player_role == "mister_x" and player_at_role == "detektiv":
-                raise ValueError(f"A detective is already at {move.to_node}")
+            print("Player moved")
 
-            # Make move on board
-            cursor.execute(
-                t"""
-                update teilnehmer
-                set id_aktueller_knoten = {move.to_node}
-                where id = {ingame_player_id};
-                """
-            )
-
-            # Use ticket
-            cursor.execute(
-                t"""
-                update ticketbestand
-                set anzahl = {ticket_count - 1}
-                where id_teilnehmer = {ingame_player_id};
-                """
-            )
-
-            # Get all nodes for map
-            cursor.execute(
-                t"""
-                select knoten.id, nummer, position_x, position_y
-                from karte
-                where karte.id = {map_id}
-                join knoten on knoten.id_karte = karte.id;
-                """
-            )
-            rows = cursor.fetchall()
-            node_ids = [node_id for (node_id, _, _) in rows]
-            nodes = [
-                MapNode(
-                    node_id=node_id,
-                    nummer=number,
-                    position_x=pos_x,
-                    position_y=pos_y,
-                )
-                for (node_id, number, pos_x, pos_y) in rows
-            ]
-
-            # Get all connections for map
-            cursor.execute(
-                t"""
-                select id_startknoten, id_zielknoten, id_verkehrsmittel
-                from verbindung
-                where id_startknoten in {node_ids};
-                """
-            )
-            rows = cursor.fetchall()
-            connections = [
-                Connection(
-                    from_node=from_node,
-                    to_node=to_node,
-                    vehicle=vehicle,
-                )
-                for (from_node, to_node, vehicle) in rows
-            ]
-            vehicles = list({conn.vehicle for conn in connection})
-
-            # Get allowed vehicles per ticket
-            # Tickets without vehicle restrictions are filtered out
-            cursor.execute(
-                t"""
-                select ticketart.id, ticketart.name, verkehrsmittel.id, verkehrsmittel.name
-                from ticketart
-                left join verkehrsmittel where ticketart.id_verkehrsmittel = verkehrsmittel.id;
-                """
-            )
-            rows = cursor.fetchall()
-            tickets_dict = {
-                ticket_type_id: {  # Set
-                    Vehicle(vehicle_id=vehicle_id, name=vehicle_name)
-                }
-                for (ticket_type_id, ticket_name, vehicle_id, vehicle_name) in rows
-            }
-
-            # Get per-player status
+            winner = None
             mister_x_caught = False
-            cursor.execute(
-                t"""
-                select benutzername, id_ticketart, anzahl, verkehrsmittel.name, spielerrolle, id_startknoten, id_aktueller_knoten, reihenfolge
-                from teilnehmer
-                where id_partie = {move.game_id}
-                join benutzer on teilenhmer.id_benutzer == benutzer.id 
-                join ticketbestand on ticketbestand.id_teilnehmer == teilnehmer.id
-                join ticketart on ticketart.id == id_ticketart
-                join verkehrsmittel on ticketart.id_verkehrsmittel == verkehrsmittel.id;
-                """
-            )
-            rows = cursor.fetchall()
-
-            # This iterates all rows of the query and constructs one large dictionary, indexed by username
-            player_dict = {
-                username: {
-                    "role": role,
-                    "start": start,
-                    "current": current,
-                    "turn_order": turn_order,
-                    "tickets": {  # Set
-                        Ticket(
-                            ticket_type=ticket_type,
-                            count=count,
-                            allowed_vehicles=list(
-                                tickets_dict.get(
-                                    ticket_type, vehicles
-                                )  # Get full vehicles list for tickets with no vehicle restriction
-                            ),
-                        )
-                    },
-                }
-                for (
-                    username,
-                    ticket_type,
-                    count,
-                    v_name,
-                    role,
-                    start,
-                    current,
-                    turn_order,
-                ) in rows
-            }
-
-            # TODO: Pass dictionary to client direcly instead of transforming to list first?
-            players = [
-                Player(
-                    name=k,
-                    role=v["role"],
-                    tickets=list(v["tickets"]),
-                    starting_node=v["start"],
-                    current_node=v["current"],
-                    turn_order=v["turn_order"],
-                )
-                for (k, v) in player_dict.items()
-            ]
-            mister_x = next(p for p in players if p.role == Role.MisterX)
-            detectives = [p for p in players if p.role == Role.Detective]
-            player_count = len(detectives) + 1
+            mister_x = self.gamestate.get_mister_x()
+            detectives = self.gamestate.get_detectives()
 
             # Check if Mister-X was caught
             for d in detectives:
-                if detectives[0] == mister_x[0]:
+                if d.current_node == mister_x.current_node:
                     mister_x_caught = True
                     break
+
+            print("Checked if Mister-X is caught")
+
+            current_round = self.gamestate.info.current_round
 
             # Check if Mister-X escaped
             mister_x_escaped = current_round == 22 and not mister_x_caught
 
-            # Filter available connections based on held tickets
-            def get_ticket_conns(
-                conns: list[Connection], player: Player
-            ) -> list[Connection]:
-                player_vehicles = {  # Set of all allowed vehicles for held tickets
-                    v for v in t.allowed_vehicles for t in player.tickets if t.count > 0
-                }
-                return [
-                    c
-                    for c in conns
-                    if c.vehicle in player_vehicles
-                    and (  # connections starts from or points to player.current_node
-                        c.from_node_id == player.current_node
-                        or c.to_node_id == player.current_node
-                    )
-                ]
-
-            # Reverse connection pointing towards instead of away from player.current_node
-            def reverse_conns(
-                conns: list[Connection], player: Player
-            ) -> list[Connection]:
-                return [
-                    Connection(
-                        connection_id=c.connection_id,
-                        vehicle_id=c.vehicle_id,
-                        from_node_id=c.from_node_id
-                        if c.from_node_id == player.current_node
-                        else c.to_node_id,
-                        to_node_id=c.to_node_id
-                        if c.to_node_id == player.current_node
-                        else c.from_node_id,
-                    )
-                    for c in conns
-                ]
-
-            # Filter connections ending on nodes blocked by players
-            def filter_player_pos(
-                conns: list[Connection], players: list[Player]
-            ) -> list[Connection]:
-                player_positions = [p.current_node for p in players]
-                return [c for c in conns if c.to_node_id not in player_positions]
-
-            # Gets all legal moves per player as a dict indexed by player name
-            def get_legal_moves(conns: list[Connection], players: list[Player]) -> dict:
-                return {
-                    p.name: filter_player_pos(
-                        reverse_conns(get_ticket_conns(conns, p), p),
-                        players,
-                    )
-                    for p in players
-                }
+            print("Checked if Mister-X escaped")
 
             # TODO: Legal moves could be sent to clients directly instead of being recalculated by the frontend
-            legal_moves = get_legal_moves(connections, players)
-            mister_x_blocked = len(legal_moves[mister_x.name]) == 0
-            detectives_blocked = all(len(legal_moves[d.name]) == 0 for d in detectives)
+            legal_moves = self.gamestate.get_legal_moves_per_player()
+            print(f"legal moves: {legal_moves}")
+
+            mister_x_blocked = len(legal_moves[mister_x.player_id]) == 0
+            detectives_blocked = all(
+                len(legal_moves[d.player_id]) == 0 for d in detectives
+            )
+
+            print("Checked if either team is blocked")
 
             # Update game status if game ended
             if mister_x_escaped:
-                game_end_cause = EndCause.MisterXEscaped
+                self.gamestate.info.end_cause = EndCause.MisterXEscaped
+                winner = "mister_x"
             elif detectives_blocked:
-                game_end_cause = EndCause.DetectivesBlocked
+                self.gamestate.info.end_cause = EndCause.DetectivesBlocked
+                winner = "mister_x"
             elif mister_x_blocked:
-                game_end_cause = EndCause.MisterXBlocked
+                self.gamestate.info.end_cause = EndCause.MisterXBlocked
+                winner = "detektive"
             elif mister_x_caught:
-                game_end_cause = EndCause.MisterXCaught
-            else:
-                game_end_cause = None
+                self.gamestate.info.end_cause = EndCause.MisterXCaught
+                winner = "detektive"
 
-            game_status = (
-                Status.Ended if game_end_cause is not None else Status.InProgress
-            )
+            if self.gamestate.info.end_cause:
+                self.gamestate.info.status = Status.Ended
 
-            # If game has not ended, set next player active.
+            print("status set")
+
+            # If game is still in progress, set next player active.
             # If this player was the last in the turn order: increment round
-            if game_status != Status.InProgress:
-                max_turn_order = max(p.turn_order for p in players)
-                next_round = (
-                    current_round + 1
-                    if active_player_turn_order == max_turn_order
-                    else current_round
-                )
-                next_active_player = (active_player_turn_order + 1) % max_turn_order
-                cursor.execute(
-                    t"""
-                    update partie
-                    set aktuelle_reihenfolge = {next_active_player}, next_round = {next_round}
-                    where id = {move.game_id};
-                    """
-                )
+            if self.gamestate.info.status == Status.InProgress:
+                self.gamestate.set_next_player_active()
+                print("Next player is active")
 
-            # Construct gamestate for event broacast
-            info = GameInfo(
-                room_id=move.game_id,
-                creator_name=creator_name,
-                map_name=map_name,
-                map_dimensions=[map_width, map_height],
-                status=game_status,
-                players=player_count,
+            # Write new gamestate back to database
+            set_gamestate(
+                cursor=cursor,
+                gamestate=self.gamestate,
+                active_player=player,
+                connection=chosen_connection,
+                ticket=valid_ticket,
                 current_round=current_round,
-                end_cause=game_end_cause,
+                winner=winner,
             )
-            self.gamestate = GameState(
-                info=info,
-                active_player=active_player_turn_order,
-                turn_order=turn_order,
-                players=players,
-                nodes=nodes,
-                connections=connections,
-                vehicles=vehicles,
-            )
+            print("gamestate set")
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
             event="chat",
-            room=self.move.game_id,
+            room=self.room,
             data={
                 "sender": "Server",
                 "content": f"{self.player_name} moving from {self.move.from_node} to {self.move.to_node}",
@@ -552,7 +314,7 @@ class MoveQuery(Query):
 
         await sio.emit(
             event="gamestate",
-            room=self.move.game_id,
+            room=self.room,
             data=self.gamestate,
         )
 
@@ -566,15 +328,14 @@ class StartGameQuery(Query):
 
             # 1 Check game status and host
             cursor.execute(
+                t"""
+                    SELECT p.status, p.id_benutzer, p.id_karte, b.benutzername, k.name, k.breite, k.hoehe
+                    FROM partie AS p
+                    JOIN benutzer AS b ON b.id = p.id_benutzer 
+                    JOIN karte as k ON k.id = p.id_karte
+                    WHERE p.id = {start.game_id}
+                    FOR UPDATE OF p;
                 """
-        SELECT p.status, p.id_benutzer, p.id_karte, b.benutzername, k.name, k.breite, k.hoehe
-        FROM partie AS p
-        JOIN benutzer AS b ON b.id = p.id_benutzer 
-        JOIN karte as k ON k.id = p.id_karte
-        WHERE p.id = %s
-        FOR UPDATE OF p
-        """,
-                (start.game_id,),
             )
 
             game = cursor.fetchone()
@@ -600,14 +361,13 @@ class StartGameQuery(Query):
 
             # 2 Check player roles
             cursor.execute(
-                """
-            SELECT id, spielerrolle
-            FROM teilnehmer
-            WHERE id_partie = %s AND teilnehmertyp = 'spieler' AND aktiv = TRUE
-            ORDER BY id
-            FOR UPDATE
-            """,
-                (start.game_id,),
+                t"""
+                    SELECT id, spielerrolle
+                    FROM teilnehmer
+                    WHERE id_partie = {start.game_id} AND teilnehmertyp = 'spieler' AND aktiv = TRUE
+                    ORDER BY id
+                    FOR UPDATE;
+                    """
             )
             humans = cursor.fetchall()
 
@@ -629,13 +389,12 @@ class StartGameQuery(Query):
             }.get(len(humans), 0)
 
             cursor.execute(
+                t"""
+                    INSERT INTO teilnehmer (id_partie, teilnehmertyp, spielerrolle)
+                    SELECT {start.game_id}, 'bobby', 'detektiv'
+                    FROM generate_series(1, {bobby_count})
+                    RETURNING id;
                 """
-            INSERT INTO teilnehmer (id_partie, teilnehmertyp, spielerrolle)
-            SELECT %s, 'bobby', 'detektiv'
-            FROM generate_series(1, %s)
-            RETURNING id
-            """,
-                (start.game_id, bobby_count),
             )
             bobby_ids = [row[0] for row in cursor.fetchall()]
 
@@ -644,18 +403,17 @@ class StartGameQuery(Query):
 
             # 5 Select random starting nodes
             cursor.execute(
+                t"""
+                    SELECT k.id
+                    FROM knoten AS k
+                    WHERE k.id_karte = {map_id}
+                    AND EXISTS (
+                        SELECT 1 
+                        FROM verbindung AS v
+                        WHERE k.id IN (v.id_startknoten, v.id_zielknoten)
+                    )
+                    ORDER BY random();
                 """
-            SELECT k.id
-            FROM knoten AS k
-            WHERE k.id_karte = %s
-            AND EXISTS (
-                SELECT 1 
-                FROM verbindung AS v
-                WHERE k.id IN (v.id_startknoten, v.id_zielknoten)
-            )
-            ORDER BY random()
-            """,
-                (map_id,),
             )
             node_ids = [row[0] for row in cursor.fetchall()]
 
@@ -664,10 +422,10 @@ class StartGameQuery(Query):
 
             cursor.executemany(
                 """
-            UPDATE teilnehmer
-            SET id_startknoten = %s, id_aktueller_knoten = %s, reihenfolge = %s
-            WHERE id = %s
-            """,
+                    UPDATE teilnehmer
+                    SET id_startknoten = %s, id_aktueller_knoten = %s, reihenfolge = %s
+                    WHERE id = %s;
+                    """,
                 [
                     (node, node, order, pid)
                     for order, (pid, node) in enumerate(
@@ -677,7 +435,7 @@ class StartGameQuery(Query):
             )
 
             # 6 Initialize ticket inventories
-            cursor.execute("select id, name FROM ticketart")
+            cursor.execute("SELECT id, name FROM ticketart")
             ticket_ids = {name: tid for tid, name in cursor.fetchall()}
 
             required = {
@@ -717,35 +475,33 @@ class StartGameQuery(Query):
 
             cursor.executemany(
                 """
-            INSERT INTO ticketbestand (id_teilnehmer, id_ticketart, anzahl)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (id_teilnehmer, id_ticketart)
-            DO UPDATE SET anzahl = EXCLUDED.anzahl
-            """,
+                    INSERT INTO ticketbestand (id_teilnehmer, id_ticketart, anzahl)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (id_teilnehmer, id_ticketart)
+                    DO UPDATE SET anzahl = EXCLUDED.anzahl;
+                """,
                 ticket_rows,
             )
 
             # 7 Start Game
             cursor.execute(
+                t"""
+                    UPDATE partie
+                    SET status = 'laufend',
+                        aktuelle_runde = 1,
+                        aktuelle_phase = 'mister_x',
+                        aktuelle_reihenfolge = 1
+                    WHERE id = {start.game_id};
                 """
-        UPDATE partie
-        SET status = 'laufend',
-            aktuelle_runde = 1,
-            aktuelle_phase = 'mister_x',
-            aktuelle_reihenfolge = 1
-        WHERE id = %s
-        """,
-                (start.game_id,),
             )
 
             # 8 Load map for initial GameState
             cursor.execute(
+                t"""
+                    SELECT id, nummer, position_x, position_y
+                    FROM knoten
+                    WHERE id_karte = {map_id};
                 """
-            SELECT id, nummer, position_x, position_y
-            FROM knoten
-            WHERE id_karte = %s
-            """,
-                (map_id,),
             )
             nodes = [
                 MapNode(
@@ -758,14 +514,13 @@ class StartGameQuery(Query):
             ]
 
             cursor.execute(
+                t"""
+                    SELECT v.id, v.id_startknoten, v.id_zielknoten, v.id_verkehrsmittel
+                    FROM verbindung AS v
+                    JOIN knoten AS s ON s.id = v.id_startknoten
+                    JOIN knoten AS z on z.id = v.id_zielknoten
+                    WHERE s.id_karte = {map_id} AND z.id_karte = {map_id};
                 """
-            SELECT v.id, v.id_startknoten, v.id_zielknoten, v.id_verkehrsmittel
-            FROM verbindung AS v
-            JOIN knoten AS s ON s.id = v.id_startknoten
-            JOIN knoten AS z on z.id = v.id_zielknoten
-            WHERE s.id_karte = %s AND z.id_karte = %s
-            """,
-                (map_id, map_id),
             )
             connections = [
                 Connection(
@@ -778,14 +533,13 @@ class StartGameQuery(Query):
             ]
 
             cursor.execute(
+                t"""
+                    SELECT DISTINCT vm.id, vm.name
+                    FROM verkehrsmittel AS vm
+                    JOIN verbindung AS v ON v.id_verkehrsmittel = vm.id
+                    JOIN knoten AS k ON k.id = v.id_startknoten
+                    WHERE k.id_karte = {map_id};
                 """
-            SELECT DISTINCT vm.id, vm.name
-            FROM verkehrsmittel AS vm
-            JOIN verbindung AS v ON v.id_verkehrsmittel = vm.id
-            JOIN knoten AS k ON k.id = v.id_startknoten
-            WHERE k.id_karte = %s
-            """,
-                (map_id,),
             )
 
             vehicles = [
@@ -794,14 +548,13 @@ class StartGameQuery(Query):
 
             # 9 Load tickets for GameState
             cursor.execute(
+                t"""
+                    SELECT tb.id_teilnehmer, ta.id, ta.name, ta.id_verkehrsmittel, tb.anzahl
+                    FROM ticketbestand AS tb
+                    JOIN ticketart AS ta ON ta.id = tb.id_ticketart
+                    JOIN teilnehmer AS t ON t.id = tb.id_teilnehmer
+                    WHERE t.id_partie = {start.game_id};
                 """
-            SELECT tb.id_teilnehmer, ta.id, ta.name, ta.id_verkehrsmittel, tb.anzahl
-            FROM ticketbestand AS tb
-            JOIN ticketart AS ta ON ta.id = tb.id_ticketart
-            JOIN teilnehmer AS t ON t.id = tb.id_teilnehmer
-            WHERE t.id_partie = %s
-            """,
-                (start.game_id,),
             )
             tickets_by_player = {}
 
@@ -822,18 +575,17 @@ class StartGameQuery(Query):
 
             # 10 Load players for GameState
             cursor.execute(
+                t"""
+                    SELECT b.id, b.benutzername, t.spielerrolle, t.id_startknoten, t.id_aktueller_knoten, t.reihenfolge
+                    FROM teilnehmer AS t
+                    LEFT JOIN benutzer AS b ON b.id = t.id_benutzer
+                    WHERE t.id_partie = {start.game_id}
+                    ORDER BY t.reihenfolge NULLS LAST, t.id;
                 """
-            SELECT t.id, b.benutzername, t.spielerrolle, t.id_startknoten, t.id_aktueller_knoten, t.reihenfolge
-            FROM teilnehmer AS t
-            LEFT JOIN benutzer AS b ON b.id = t.id_benutzer
-            WHERE t.id_partie = %s
-            ORDER BY t.reihenfolge NULLS LAST, t.id
-            """,
-                (start.game_id,),
             )
             players = [
                 Player(
-                    player_id=pid,
+                    player_id=pid if pid else -1,
                     name=name or f"Bobby {pid}",
                     role=Role(role) if role else None,
                     tickets=tickets_by_player.get(pid, []),
@@ -878,13 +630,12 @@ class ChooseRoleQuery(Query):
 
             # 1 Check game status
             cursor.execute(
-                """
+                t"""
                 SELECT status
                 FROM partie
-                WHERE id = %s
-                FOR UPDATE
-                """,
-                (choice.game_id,),
+                WHERE id = {choice.game_id}
+                FOR UPDATE;
+                """
             )
             game = cursor.fetchone()
 
@@ -896,13 +647,12 @@ class ChooseRoleQuery(Query):
 
             # 2 Check participant
             cursor.execute(
-                """
+                t"""
                 SELECT t.id, b.benutzername
                 FROM teilnehmer AS t
                 JOIN benutzer AS b on b.id = t.id_benutzer
-                WHERE t.id_partie = %s AND t.id_benutzer = %s AND t.teilnehmertyp = 'spieler' AND t.aktiv = TRUE
-                """,
-                (choice.game_id, choice.player_id),
+                WHERE t.id_partie = {choice.game_id} AND t.id_benutzer = {choice.player_id} AND t.aktiv = TRUE;
+                """
             )
             player = cursor.fetchone()
 
@@ -911,41 +661,52 @@ class ChooseRoleQuery(Query):
 
             participant_id, self.player_name = player
 
-            # 3 Check wether Mister X is already taken
+            # 3 Check whether Mister X is already taken
             if choice.role == Role.MisterX:
                 cursor.execute(
-                    """
+                    t"""
                     SELECT 1
                     FROM teilnehmer
-                    WHERE id_partie = %s AND spielerrolle = 'mister_x' AND id != %s
-                    """,
-                    (choice.game_id, participant_id),
+                    WHERE id_partie = {choice.game_id} AND spielerrolle = 'mister_x' AND id != {participant_id}
+                    """
                 )
 
                 if cursor.fetchone() is not None:
                     raise ValueError("Mister X ist bereits vergeben")
 
-            # 4 Assign selected Role
-            cursor.execute(
-                """
-                UPDATE teilnehmer
-                SET spielerrolle = %s
-                WHERE id = %s
-                """,
-                (choice.role.value, participant_id),
-            )
+            # 4a Assign selected Role
+            if choice.role:
+                cursor.execute(
+                    t"""
+                    UPDATE teilnehmer
+                    SET 
+                        teilnehmertyp = 'spieler',
+                        spielerrolle = {choice.role.value}
+                    WHERE id = {participant_id}
+                    """
+                )
+
+            # 4b Or revert to spectator
+            else:
+                cursor.execute(
+                    t"""
+                    UPDATE teilnehmer
+                    SET 
+                        teilnehmertyp = 'zuschauer',
+                        spielerrolle = NULL
+                    WHERE id = {participant_id}
+                    """
+                )
 
     async def fullfill(self, sio: FastAPISocketIO):
+        role_label = self.choice.role.value if self.choice.role else "Zuschauer"
         await sio.emit(
             "chat",
             {
                 "sender": "Server",
-                "content": f"{self.player_name} hat die Rolle {self.choice.role.value} gewählt.",
+                "content": f"{self.player_name} hat die Rolle {role_label} gewählt.",
             },
             room=str(self.choice.game_id),
         )
 
-        return {
-            "player_id": self.choice.player_id,
-            "role": self.choice.role.value,
-        }
+        return True
