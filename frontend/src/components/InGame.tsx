@@ -6,6 +6,7 @@ import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayer, g
 import Tickets from './Tickets.tsx';
 import GameInfos from './GameInfos.tsx';
 import type { GameState, Move } from '../interfaces.tsx';
+import frontend_mockup from '../assets/frontend_mockup.png'
 
 type InGameProps = {
     active: boolean,
@@ -177,7 +178,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         <div className="GameContent">
             <h1>Raum {gamestate?.info.room_id} - {gamestate?.info.map_name} </h1>
             <div ref={ingameRef} className="Gameboard" >
-                <img src="/src/assets/frontend_mockup.png" width={viewport} height={viewport} />
+                <img src={frontend_mockup} width={viewport} height={viewport} />
                 {
                     gamestate?.nodes.map((node, index) =>
                         <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={node.node_id === lastMisterXPos}></GameNode>
