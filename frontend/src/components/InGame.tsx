@@ -174,6 +174,10 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
          });
     }
 
+    if (!active) {
+        return null
+    }
+
     return <div className="InGame">
         <div className="GameContent">
             <h1>Raum {gamestate?.info.room_id} - {gamestate?.info.map_name} </h1>
@@ -181,7 +185,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 <img src={frontend_mockup} width={viewport} height={viewport} />
                 {
                     gamestate?.nodes.map((node, index) =>
-                        <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, index)} active_player={gamestate.active_player} is_last_mister_x_pos={node.node_id === lastMisterXPos}></GameNode>
+                        <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, node.node_id)} active_player={gamestate.active_player} is_last_mister_x_pos={node.node_id === lastMisterXPos}></GameNode>
                     )
                 }
             </div>

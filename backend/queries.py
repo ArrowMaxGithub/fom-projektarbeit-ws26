@@ -66,9 +66,6 @@ class LogoutQuery(Query):
             "chat",
             {"sender": "Server", "content": f"{self.player_name} logged out"},
             skip_sid=self.sid,
-            "chat",
-            {"sender": "Server", "content": f"{self.player_name} logged out"},
-            skip_sid=self.sid,
         )
 
 

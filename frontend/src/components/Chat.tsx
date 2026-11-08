@@ -3,11 +3,12 @@ import ChatHistory from '../components/ChatHistory.tsx'
 import type { ChatMessage } from '../interfaces.tsx';
 
 type ChatProps = {
+    active: boolean,
     socket: any,
     playerName: string,
 }
 
-export default function ChatProps({ socket, playerName }: ChatProps) {
+export default function ChatProps({ active, socket, playerName }: ChatProps) {
     const [isSending, setIsSending] = useState(false);
     const [message, setMessage] = useState('');
     const [chatHistory, setChatHistory] = useState<Array<ChatMessage>>([]);
@@ -44,6 +45,9 @@ export default function ChatProps({ socket, playerName }: ChatProps) {
         });
     }
 
+    if (!active){
+        return null;
+    }
 
     return <div className="Chat">
         <form onSubmit={handleSubmitMessage}>
