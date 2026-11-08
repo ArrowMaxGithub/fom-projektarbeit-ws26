@@ -112,8 +112,6 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
     nodes = get_map_nodes(cursor, map_id)
     connections = get_map_connections(cursor, map_id)
 
-    # print(f"Connections: {connections}")
-
     # Get allowed vehicles per ticket
     rows = cursor.execute(
         t"""
@@ -133,9 +131,6 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
     all_vehicles = list(
         {Vehicle(vehicle_id=vid, name=name) for (_, _, vid, name) in rows}
     )
-    # print(f"vehicles: {all_vehicles}")
-
-    # print(f"tickets_dict: {tickets_dict}")
 
     # Get per-player status
     rows = cursor.execute(
@@ -178,8 +173,6 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
             )
         )
 
-    # print(f"player_dict: {player_dict}")
-
     players = [
         Player(
             player_id=k,
@@ -193,11 +186,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         for (k, v) in player_dict.items()
     ]
 
-    # print(f"players: {players}")
-
     info = get_game_infos(cursor, [game_id])[0]
-
-    # print(f"info: {info}")
 
     gamestate = GameState(
         info=info,
@@ -207,8 +196,6 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         connections=connections,
         vehicles=all_vehicles,
     )
-
-    # print(f"gamestate: {gamestate}")
 
     return gamestate
 
@@ -222,7 +209,6 @@ def set_gamestate(
     current_round: int,
     winner: str,
 ):
-    print("A")
     cursor.execute(
         t"""
         UPDATE teilnehmer
@@ -231,7 +217,6 @@ def set_gamestate(
         """
     )
 
-    print("B")
     cursor.execute(
         t"""
         UPDATE ticketbestand
@@ -242,7 +227,6 @@ def set_gamestate(
         """
     )
 
-    print("C")
     row = cursor.execute(
         t"""
         INSERT INTO spielzug(id_teilnehmer, id_verbindung, zugnummer, runde)
@@ -255,9 +239,6 @@ def set_gamestate(
     turn_id = row[0] if row else None
     assert turn_id is not None, "Failed to insert move into move history"
 
-    print(f"turn_id: {turn_id}")
-
-    print("D")
     cursor.execute(
         t"""
         INSERT INTO ticketverbrauch(id_spielzug, id_ticketart)
@@ -267,7 +248,6 @@ def set_gamestate(
         """
     )
 
-    print("E")
     status = gamestate.info.status.value if gamestate.info.status else None
     phase = gamestate.info.current_phase.value if gamestate.info.current_phase else None
     end_cause = gamestate.info.end_cause.value if gamestate.info.end_cause else None

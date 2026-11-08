@@ -1,13 +1,18 @@
 import { useState } from "react";
 
 type LandingPageProps = {
+    active: boolean,
     playerName: string;
     handleNameChange: (name: string) => void;
     handleLogin: () => void;
 }
 
-export default function LandingPage({ playerName, handleNameChange, handleLogin }: LandingPageProps) {
+export default function LandingPage({ active, playerName, handleNameChange, handleLogin }: LandingPageProps) {
     const [showInfo, setShowInfo] = useState(false);
+
+    if (!active){
+        return null;
+    }
 
     return <div className="LandingPage">
         <h1> Willkommen bei GeoCatcher</h1>

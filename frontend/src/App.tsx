@@ -29,7 +29,6 @@ function App() {
       setIsConnected(false);
       setPlayerId(null);
       setCurrentRoom(null);
-      setCurrentGameState(null);
     }
 
     function onError(error: string) {
@@ -112,7 +111,7 @@ function App() {
   return <div className="App">
 
     {/*Landingpage vor dem Login*/}
-    {!isLoggedIn && (<LandingPage playerName={playerName} handleNameChange={handleNameChange} handleLogin={handleLogin} />)}
+    <LandingPage active={!isLoggedIn} playerName={playerName} handleNameChange={handleNameChange} handleLogin={handleLogin} />
 
     {/*Header mit Account-Anzeige nach Login*/}
     {isLoggedIn && (
@@ -126,31 +125,27 @@ function App() {
     )}
 
     {/*Raumauswahl mit eigenem Chat*/}
-    {isLoggedIn && current_room === null && (
-      <div className="LobbyLayout">
-        <Lobby active={true} rooms={rooms} handleRoomJoin={handleRoomJoin} />
-        <Chat socket={socket} playerName={playerName} />
-      </div>
-    )}
+    <div className="LobbyLayout">
+      <Lobby active={isLoggedIn && current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin} />
+      <Chat active={isLoggedIn && current_room === null} socket={socket} playerName={playerName} />
+    </div>
 
     {/*Raum mit eigenem Chat*/}
-    {isLoggedIn && current_room !== null && (
-      <div className="LobbyLayout GameLayout">
-        <InGame
-          active={isLoggedIn && current_room !== null}
-          socket={socket}
-          gamestateFromJoin={currentGameState}
-          handleRoomLeave={handleRoomLeave}
-          gameId={current_room}
-          playerId={playerId}
-        />
-        <Chat
-          key={current_room}
-          socket={socket}
-          playerName={playerName}
-        />
-      </div>
-    )}
+    <div className="LobbyLayout GameLayout">
+      <InGame
+        active={isLoggedIn && current_room !== null}
+        socket={socket}
+        handleRoomLeave={handleRoomLeave}
+        gameId={current_room}
+        playerId={playerId}
+      />
+      <Chat
+        active={isLoggedIn && current_room !== null}
+        key={current_room}
+        socket={socket}
+        playerName={playerName}
+      />
+    </div>
 
   </div>
 }
