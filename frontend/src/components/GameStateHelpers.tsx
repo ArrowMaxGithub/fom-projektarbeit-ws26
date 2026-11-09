@@ -64,7 +64,7 @@ export function getLegalTicketsForVehicle(player: Player, vehicle_id: number): T
     )
 }
 
-export function getNodeStates(new_gamestate: GameState): NodeState[] {
+export function getNodeStates(new_gamestate: GameState, selectedTicket: Ticket | null): NodeState[] {
     const active_player = getActivePlayer(new_gamestate);
     if (!active_player || !active_player.current_node) {
         return [];
@@ -90,7 +90,7 @@ export function getNodeStates(new_gamestate: GameState): NodeState[] {
             return NodeState.IllegalDst;
         }
 
-        const legal_tickets = getLegalTicketsForVehicle(active_player, conn.vehicle_id) ?? [];
+        const legal_tickets = getLegalTicketsForVehicle(active_player, conn.vehicle_id)?.filter(ticket => selectedTicket ? ticket === selectedTicket : true) ?? [];
         const hasTicket = legal_tickets.length > 0;
         if (!hasTicket) {
             return NodeState.IllegalDst;

@@ -5,8 +5,9 @@ import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayer, getPlayerAt, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import Tickets from './Tickets.tsx';
 import GameInfos from './GameInfos.tsx';
-import type { GameState, Move } from '../interfaces.tsx';
+import type { GameState, Move, Ticket } from '../interfaces.tsx';
 import frontend_mockup from '../assets/frontend_mockup.png'
+import TicketButton from './TicketButton.tsx';
 
 type InGameProps = {
     active: boolean,
@@ -23,6 +24,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
     const [lastMisterXPos, setlastMisterXPos] = useState<number | null>(null);
+    const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
 
     const mister_x_show = [4, 9, 14, 19];
 
@@ -32,7 +34,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     useEffect(() => {
         function onGameState(new_gamestate: GameState) {
             console.log("Gamestate update");
-            const new_node_states = getNodeStates(new_gamestate);
+            const new_node_states = getNodeStates(new_gamestate, selectedTicket);
             setNodeStates(new_node_states);
             setGameState(new_gamestate);
             setGameover(isGameOver(new_gamestate));
@@ -174,27 +176,51 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
          });
     }
 
-    if (!active) {
+    function handleSelectTicket(ticket: Ticket){
+        if (!gamestate){
+            return
+        }
+
+        if (ticket === selectedTicket){
+            setselectedTicket(null)
+            console.log(`Deselected ticket ${ticket.name} with ${ticket.count} remaining`);
+            const new_node_states = getNodeStates(gamestate, null);
+            setNodeStates(new_node_states);
+        } else {
+            setselectedTicket(ticket)
+            console.log(`Selected ticket ${ticket.name} with ${ticket.count} remaining`);
+            const new_node_states = getNodeStates(gamestate, ticket);
+            setNodeStates(new_node_states);
+        }
+    }
+
+    if (!active || !gamestate || !playerId) {
         return null
     }
 
     return <div className="InGame">
         <div className="GameContent">
-            <h1>Raum {gamestate?.info.room_id} - {gamestate?.info.map_name} </h1>
+            <h1>Raum {gamestate.info.room_id} - {gamestate.info.map_name} </h1>
             <div ref={ingameRef} className="Gameboard" >
                 <img src={frontend_mockup} width={viewport} height={viewport} />
                 {
-                    gamestate?.nodes.map((node, index) =>
+                    gamestate.nodes.map((node, index) =>
                         <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, node.node_id)} active_player={gamestate.active_player} is_last_mister_x_pos={node.node_id === lastMisterXPos}></GameNode>
                     )
                 }
+                <div className="Ticketbuttons">
+                    {
+                        getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) => 
+                            <TicketButton key={ticket.ticket_type_id} ticket={ticket} selectedTicket={selectedTicket} onClick={handleSelectTicket}></TicketButton>)
+                    }
+                </div>
             </div>
             <button onClick={handleRoomLeave}>Raum verlassen</button>
             <button
                 disabled={playerId === null}
                 onClick={() => {
                     socket.emit("start_game", {
-                        game_id: gamestate?.info.room_id,
+                        game_id: gamestate.info.room_id,
                         player_id: playerId
                     }, (response: unknown) => {
                         console.log("StartGame: Ergebnis:", response);
@@ -214,7 +240,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             <GameInfos
                 gameover={gameover}
                 turn_order={getTurnOrderLabels(gamestate) ?? []}
-                round={gamestate?.info.current_round ?? 0}
+                round={gamestate.info.current_round ?? 0}
                 mister_x_show={mister_x_show}>
             </GameInfos>
         </div>
