@@ -102,6 +102,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             game_id: gamestate.info.room_id,
             from_node: player.current_node,
             to_node: to_node,
+            ticket: selectedTicket,
         }
         socket.emit("move", move)
     }
