@@ -168,8 +168,14 @@ hr {
     }
 
     .SelectedTicket {
-        background-color: #484b5f;
-      }
+        filter: brightness(150%)
+    }
+
+    img {
+      display: block;
+      width: 100px;
+      filter: invert(49%) sepia(4%) saturate(861%) hue-rotate(205deg) brightness(87%) contrast(93%);
+    }
   }
 }
 
