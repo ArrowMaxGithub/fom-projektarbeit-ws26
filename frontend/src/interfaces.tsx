@@ -80,6 +80,7 @@ export interface Move {
   game_id: number;
   from_node: number;
   to_node: number;
+  ticket: Ticket | null;
 }
 export interface StartGame {
   player_id: number;

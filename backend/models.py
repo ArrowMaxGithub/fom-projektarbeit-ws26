@@ -120,8 +120,6 @@ class GameState(BaseModel):
         max_turn_order = max(
             p.turn_order for p in self.players if p.turn_order is not None
         )
-        print(f"max_turn_order: {max_turn_order}")
-        print(f"active_player: {self.active_player}")
 
         if self.active_player == max_turn_order:
             self.info.current_round += 1
@@ -130,7 +128,7 @@ class GameState(BaseModel):
             self.active_player += 1
 
     def player_can_take_connection(
-        self, conn: Connection, player: Player
+        self, conn: Connection, player: Player, selected_ticket: Ticket | None,
     ) -> Ticket | None:
         dst = (
             conn.from_node_id
@@ -144,8 +142,6 @@ class GameState(BaseModel):
             for p in self.players
         )
 
-        print(f"dst_open: {dst_open}")
-
         legal_tickets = [
             t
             for t in player.tickets
@@ -153,16 +149,15 @@ class GameState(BaseModel):
             and (t.count > 0)
         ]
 
-        print(f"legal_tickets: {legal_tickets}")
+        if selected_ticket is None:
+            valid_ticket = next(
+                iter(sorted(legal_tickets, key=lambda t: t.count, reverse=True))
+            )
+        else:
+            valid_ticket = selected_ticket if selected_ticket in legal_tickets else None
 
-        selected_ticket = next(
-            iter(sorted(legal_tickets, key=lambda t: t.ticket_type_id))
-        )  # TODO: Let player choose ticket
-
-        print(f"selected ticket: {selected_ticket}")
-
-        if dst_open and selected_ticket is not None:
-            return selected_ticket
+        if dst_open and valid_ticket is not None:
+            return valid_ticket
         else:
             return None
 
@@ -224,6 +219,7 @@ class Move(BaseModel):
     game_id: int
     from_node: int
     to_node: int
+    ticket: Ticket | None
 
 
 class StartGame(BaseModel):
