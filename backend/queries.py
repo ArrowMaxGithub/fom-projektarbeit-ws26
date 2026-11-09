@@ -169,6 +169,7 @@ class MoveQuery(Query):
         self.room = str(move.game_id)
         self.player_name = None
         self.gamestate = None
+        self.used_ticket = None
 
         with conn.transaction():
             cursor = conn.cursor()
@@ -177,15 +178,12 @@ class MoveQuery(Query):
 
             # Query current game state and check if game is active
             self.gamestate = get_gamestate(cursor, move.game_id)
-            # print(f"gamestate: {self.gamestate}")
-
             assert self.gamestate.info.status == Status.InProgress, (
                 "Game is not in-play"
             )
 
             # Check if player is active, matches game's current_phase and actually is at move.from_node
             player = self.gamestate.get_player(move.player_id)
-            # print(f"player: {player}")
 
             assert player is not None, f"Unknown player with ID: {move.player_id}"
             assert player.turn_order == self.gamestate.active_player, (
@@ -206,17 +204,13 @@ class MoveQuery(Query):
                 f"You cannot move from {move.from_node}. You are at {current_node}"
             )
 
-            print("Player is active")
-
-            # Check if connection is valid for any ticket
-            # TODO: Allow player to chose ticket
+            # Check if connection is valid for selected ticket
             connections = self.gamestate.get_connections(move.from_node, move.to_node)
-            print(f"connections: {connections}")
 
             valid_ticket = None
             chosen_connection = None
             for c in connections:
-                valid_ticket = self.gamestate.player_can_take_connection(c, player)
+                valid_ticket = self.gamestate.player_can_take_connection(c, player, move.ticket)
                 if valid_ticket:
                     chosen_connection = c
                     break
@@ -225,11 +219,8 @@ class MoveQuery(Query):
                 f"No connection available from {move.from_node} to {move.to_node} with any ticket"
             )
 
-            print(f"Player has valid ticket for connection {chosen_connection}")
-
+            self.used_ticket = valid_ticket
             player.move(move.to_node, valid_ticket)
-
-            print("Player moved")
 
             winner = None
             mister_x_caught = False
@@ -242,25 +233,18 @@ class MoveQuery(Query):
                     mister_x_caught = True
                     break
 
-            print("Checked if Mister-X is caught")
-
             current_round = self.gamestate.info.current_round
 
             # Check if Mister-X escaped
             mister_x_escaped = current_round == 22 and not mister_x_caught
 
-            print("Checked if Mister-X escaped")
-
             # TODO: Legal moves could be sent to clients directly instead of being recalculated by the frontend
             legal_moves = self.gamestate.get_legal_moves_per_player()
-            print(f"legal moves: {legal_moves}")
 
             mister_x_blocked = len(legal_moves[mister_x.player_id]) == 0
             detectives_blocked = all(
                 len(legal_moves[d.player_id]) == 0 for d in detectives
             )
-
-            print("Checked if either team is blocked")
 
             # Update game status if game ended
             if mister_x_escaped:
@@ -279,13 +263,10 @@ class MoveQuery(Query):
             if self.gamestate.info.end_cause:
                 self.gamestate.info.status = Status.Ended
 
-            print("status set")
-
             # If game is still in progress, set next player active.
             # If this player was the last in the turn order: increment round
             if self.gamestate.info.status == Status.InProgress:
                 self.gamestate.set_next_player_active()
-                print("Next player is active")
 
             # Write new gamestate back to database
             set_gamestate(
@@ -297,7 +278,6 @@ class MoveQuery(Query):
                 current_round=current_round,
                 winner=winner,
             )
-            print("gamestate set")
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
@@ -305,7 +285,7 @@ class MoveQuery(Query):
             room=self.room,
             data={
                 "sender": "Server",
-                "content": f"{self.player_name} moving from {self.move.from_node} to {self.move.to_node}",
+                "content": f"{self.player_name} moving from {self.move.from_node} to {self.move.to_node} with {self.used_ticket.name}",
             },
         )
 

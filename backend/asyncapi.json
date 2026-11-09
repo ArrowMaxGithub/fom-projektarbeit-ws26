@@ -483,13 +483,24 @@
                 "to_node": {
                   "title": "To Node",
                   "type": "integer"
+                },
+                "ticket": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/op_move_receive_root_2565dce22e4b31bc_message_0_Ticket"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               },
               "required": [
                 "player_id",
                 "game_id",
                 "from_node",
-                "to_node"
+                "to_node",
+                "ticket"
               ],
               "title": "Move",
               "type": "object"
@@ -1003,6 +1014,56 @@
         ],
         "title": "Status",
         "type": "string"
+      },
+      "op_move_receive_root_2565dce22e4b31bc_message_0_Ticket": {
+        "properties": {
+          "ticket_type_id": {
+            "title": "Ticket Type Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "allowed_vehicles": {
+            "items": {
+              "$ref": "#/components/schemas/op_move_receive_root_2565dce22e4b31bc_message_0_Vehicle"
+            },
+            "title": "Allowed Vehicles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ticket_type_id",
+          "name",
+          "count",
+          "allowed_vehicles"
+        ],
+        "title": "Ticket",
+        "type": "object"
+      },
+      "op_move_receive_root_2565dce22e4b31bc_message_0_Vehicle": {
+        "description": "Vehicle(*, vehicle_id: int, name: str)",
+        "properties": {
+          "vehicle_id": {
+            "title": "Vehicle Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vehicle_id",
+          "name"
+        ],
+        "title": "Vehicle",
+        "type": "object"
       }
     }
   },
