@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Self
 
 from pydantic import BaseModel
 
@@ -108,6 +109,9 @@ class GameState(BaseModel):
     def get_player(self, player_id: int) -> Player | None:
         return next(p for p in self.players if p.player_id == player_id)
 
+    def get_active_player(self) -> Player | None:
+        return next(p for p in self.players if p.turn_order == self.active_player)
+
     def get_connections(self, from_node_id: int, to_node_id: int) -> list[Connection]:
         return [
             c
@@ -128,7 +132,10 @@ class GameState(BaseModel):
             self.active_player += 1
 
     def player_can_take_connection(
-        self, conn: Connection, player: Player, selected_ticket: Ticket | None,
+        self,
+        conn: Connection,
+        player: Player,
+        selected_ticket: Ticket | None,
     ) -> Ticket | None:
         dst = (
             conn.from_node_id
@@ -212,6 +219,24 @@ class GameState(BaseModel):
     ) -> list[Connection]:
         player_positions = [p.current_node for p in players]
         return [c for c in conns if c.to_node_id not in player_positions]
+
+    # Returns a masked copy redacting any non-public game information
+    def masked(self) -> Self:
+        import copy
+
+        masked = copy.copy(self)
+        active_player = masked.get_active_player()
+
+        SHOW_MISTER_X_ROUNDS = [4, 9, 14, 19]
+        mister_x = masked.get_mister_x()
+        
+        if masked.info.status != Status.Ended:
+            mister_x.starting_node = None
+
+        if not (masked.info.current_round in SHOW_MISTER_X_ROUNDS and active_player.role == Role.MisterX):
+            mister_x.current_node = None
+
+        return masked
 
 
 class Move(BaseModel):

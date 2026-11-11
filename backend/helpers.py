@@ -117,7 +117,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         t"""
         SELECT ticketart.id, ticketart.name, verkehrsmittel.id, verkehrsmittel.name
         FROM ticketart
-        JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id;
+        RIGHT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id;
         """
     ).fetchall()
 

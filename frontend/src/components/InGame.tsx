@@ -23,7 +23,6 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     const [gameover, setGameover] = useState<boolean>(false);
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
-    const [lastMisterXPos, setlastMisterXPos] = useState<number | null>(null);
     const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
 
     const mister_x_show = [4, 9, 14, 19];
@@ -34,9 +33,9 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     useEffect(() => {
         function onGameState(new_gamestate: GameState) {
             console.log("Gamestate update");
+            updateFromGamestate(new_gamestate)
             const new_node_states = getNodeStates(new_gamestate, selectedTicket);
             setNodeStates(new_node_states);
-            setGameState(new_gamestate);
             setGameover(isGameOver(new_gamestate));
 
             if (isGameEnded(new_gamestate)) {
@@ -58,7 +57,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         return () => {
             socket.off('gamestate', onGameState);
         };
-    }, [socket]);
+    }, [socket, playerId]);
 
     useEffect(() => {
         const ingame = ingameRef.current;
@@ -76,6 +75,30 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
 
     if (!active) {
         return null;
+    }
+
+    function updateFromGamestate(new_gamestate: GameState) {
+        if (!playerId) {
+            return;
+        }
+
+        setGameState((old_gamestate) => {
+            const player = getPlayer(new_gamestate, playerId);
+            const mister_x = getMisterX(new_gamestate);
+            const currentMisterXPos = getMisterX(new_gamestate)?.current_node;
+            const lastMisterXPos = getMisterX(old_gamestate)?.current_node;
+
+            if (!player || !mister_x) {
+                return old_gamestate;
+            }
+
+            // Remember last known Mister-X position if no current position is included.
+            if (lastMisterXPos && currentMisterXPos === null){
+                mister_x.current_node = lastMisterXPos;
+            }
+
+            return new_gamestate;
+        });
     }
 
     function makeMove(to_node: number) {
@@ -148,7 +171,6 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
 
         const pos = misterX.current_node;
         console.log(`Mister X is currently at ${pos}`);
-        setlastMisterXPos(pos);
     }
 
     function handleWheel(event: any) {
@@ -206,7 +228,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 <img src={frontend_mockup} width={viewport} height={viewport} />
                 {
                     gamestate.nodes.map((node, index) =>
-                        <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, node.node_id)} active_player={gamestate.active_player} is_last_mister_x_pos={node.node_id === lastMisterXPos}></GameNode>
+                        <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} player_at={getPlayerAt(gamestate, node.node_id)} active_player={gamestate.active_player} is_last_mister_x_pos={getPlayer(gamestate, playerId)?.role != "mister_x" && node.node_id === getMisterX(gamestate)?.current_node}></GameNode>
                     )
                 }
                 <div className="Ticketbuttons">

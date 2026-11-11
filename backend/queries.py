@@ -88,11 +88,13 @@ class RoomJoinQuery(Query):
         self.room_id = room_id
         self.player_name = None
         self.gamestate = None
+        self.is_mister_x = False
 
         with conn.transaction():
             cursor = conn.cursor()
             self.player_name = get_player_name(cursor, player_id)
             self.gamestate = get_gamestate(cursor, room_id)
+            self.is_mister_x = self.gamestate.get_player(player_id).role == Role.MisterX
 
             # Insert joining player as spectator; do nothing if player already is part of this game
             cursor.execute(
@@ -121,11 +123,20 @@ class RoomJoinQuery(Query):
             skip_sid=self.sid,
         )
 
-        await sio.emit(
-            event="gamestate",
-            data=self.gamestate,
-            to=self.sid,
-        )
+        # Only Mister-X gets the full gamestate
+        if self.is_mister_x:
+            await sio.emit(
+                event="gamestate",
+                data=self.gamestate,
+                to=self.sid
+            )
+        # All other players only get the masked gamestate
+        else:
+            await sio.emit(
+                event="gamestate",
+                data=self.gamestate.masked(),
+                to=self.sid
+            )
 
         return self.room_id
 
@@ -169,6 +180,7 @@ class MoveQuery(Query):
         self.room = str(move.game_id)
         self.player_name = None
         self.gamestate = None
+        self.is_mister_x = False
         self.used_ticket = None
 
         with conn.transaction():
@@ -203,6 +215,8 @@ class MoveQuery(Query):
             assert player.current_node == move.from_node, (
                 f"You cannot move from {move.from_node}. You are at {current_node}"
             )
+
+            self.is_mister_x = player.role == Role.MisterX
 
             # Check if connection is valid for selected ticket
             connections = self.gamestate.get_connections(move.from_node, move.to_node)
@@ -289,10 +303,21 @@ class MoveQuery(Query):
             },
         )
 
+        # Only Mister-X gets the full gamestate
+        if self.is_mister_x:
+            await sio.emit(
+                event="gamestate",
+                room=self.room,
+                data=self.gamestate,
+                to=self.sid
+            )
+
+        # All other players only get the masked gamestate
         await sio.emit(
             event="gamestate",
             room=self.room,
-            data=self.gamestate,
+            data=self.gamestate.masked(),
+            skip_sid=self.sid if self.is_mister_x else None # Mister-X already got the full gamestate
         )
 
 
