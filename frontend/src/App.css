@@ -168,7 +168,7 @@ hr {
     }
 
     .SelectedTicket {
-        filter: brightness(150%)
+      filter: brightness(150%)
     }
 
     img {
@@ -181,6 +181,27 @@ hr {
 
 .Chat {
   padding: 2em;
+  min-width: 0;
+  border: 1px solid #555;
+  border-radius: 0.5em;
+
+  ul {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    list-style: none;
+    padding-left: 0;
+  }
+
+  form {
+    display: flex;
+    gap: 0.5em;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
 }
 
 
