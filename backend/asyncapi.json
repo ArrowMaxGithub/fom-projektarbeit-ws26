@@ -61,6 +61,14 @@
         }
       }
     },
+    "op_reset_database_receive_root_cb947a715fbcc637_channel": {
+      "address": "/",
+      "messages": {
+        "op_reset_database_receive_root_cb947a715fbcc637_message": {
+          "$ref": "#/components/messages/op_reset_database_receive_root_cb947a715fbcc637_message"
+        }
+      }
+    },
     "op_room_join_receive_root_482dc0317868e5a4_channel": {
       "address": "/",
       "messages": {
@@ -186,6 +194,21 @@
       "messages": [
         {
           "$ref": "#/channels/op_move_receive_root_2565dce22e4b31bc_channel/messages/op_move_receive_root_2565dce22e4b31bc_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_reset_database_receive_root_cb947a715fbcc637": {
+      "summary": "Receive reset_database (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_reset_database_receive_root_cb947a715fbcc637_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_reset_database_receive_root_cb947a715fbcc637_channel/messages/op_reset_database_receive_root_cb947a715fbcc637_message"
         }
       ],
       "x-pydantic-socketio": {
@@ -508,6 +531,18 @@
           ],
           "minItems": 1,
           "maxItems": 1
+        }
+      },
+      "op_reset_database_receive_root_cb947a715fbcc637_message": {
+        "name": "reset_database",
+        "x-pydantic-socketio": {
+          "event": "reset_database"
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [],
+          "minItems": 0,
+          "maxItems": 0
         }
       },
       "op_room_join_receive_root_482dc0317868e5a4_message": {
