@@ -19,3 +19,4 @@ services:
       - ./backend:/app
       - /app/.venv
       - /app/__pycache__
+      - ./database/docker-entrypoint-initdb.d/020_seed.sql:/app/seed.sql

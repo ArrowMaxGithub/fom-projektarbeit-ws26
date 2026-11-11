@@ -94,6 +94,7 @@ export namespace Root {
     "login": (...args: [...[player_name: string], ack?: (...args: unknown[]) => void]) => void;
     "logout": (...args: [...[player_id: number], ack?: (...args: unknown[]) => void]) => void;
     "move": (...args: [...[move: Move], ack?: (...args: unknown[]) => void]) => void;
+    "reset_database": (...args: [...[], ack?: (...args: unknown[]) => void]) => void;
     "room_join": (...args: [...[player_id: number, room_id: number], ack?: (...args: unknown[]) => void]) => void;
     "room_leave": (...args: [...[player_id: number, room_id: number], ack?: (...args: unknown[]) => void]) => void;
     "start_game": (...args: [...[start: StartGame], ack?: (...args: unknown[]) => void]) => void;

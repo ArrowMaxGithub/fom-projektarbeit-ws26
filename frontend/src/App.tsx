@@ -106,6 +106,11 @@ function App() {
       }
     });
   }
+
+  function handleResetDatabase() {
+    socket.emit("reset_database")
+  }
+
   const isLoggedIn = isConnected && playerId !== null;
 
   return <div className="App">
@@ -120,6 +125,7 @@ function App() {
         <div className="Account">
           <span>Logged in as: {playerName}</span>
           <button onClick={handleLogout}>Logout</button>
+          <button onClick={handleResetDatabase}>Reset database</button>
         </div>
       </div>
     )}

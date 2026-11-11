@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+import psycopg
 from fastapi import FastAPI
 from models import *
 from psycopg_pool import ConnectionPool
@@ -27,6 +28,28 @@ pool = ConnectionPool(
     conninfo,
     open=True,  # Populate pool on startup
 )
+
+
+# TODO: Remove in prod
+def truncate_db_reseed():
+    print("Resetting database to initial seed state")
+    superpassword = os.getenv("POSTGRES_PASSWORD")
+    conninfo = f"host=database port=5432 dbname={dbname} user=postgres password={superpassword}"
+
+    with open("seed.sql", "r") as seed_file:
+        seed = seed_file.read()
+        with psycopg.connect(conninfo) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                t"""
+                    TRUNCATE verkehrsmittel, ticketart, benutzer, karte, partie, knoten, verbindung, teilnehmer, ticketbestand, ticketverbrauch, spielzug
+                    RESTART IDENTITY
+                    CASCADE;
+                """
+            )
+            cursor.execute(seed)
+
+    print("Initialized seed state")
 
 
 async def shutdown_server():
@@ -82,13 +105,17 @@ async def logout(sid, player_id: int):
 @sio.on("room_join")
 async def room_join(sid, player_id: int, room_id: int):
     with pool.connection() as conn:
-        return await guarded_query(sid, lambda: RoomJoinQuery(conn, sid, player_id, room_id))   
+        return await guarded_query(
+            sid, lambda: RoomJoinQuery(conn, sid, player_id, room_id)
+        )
 
 
 @sio.on("room_leave")
 async def room_leave(sid, player_id: int, room_id: int):
     with pool.connection() as conn:
-        return await guarded_query(sid, lambda: RoomLeaveQuery(conn, sid, player_id, room_id))
+        return await guarded_query(
+            sid, lambda: RoomLeaveQuery(conn, sid, player_id, room_id)
+        )
 
 
 @sio.on("move")
@@ -112,6 +139,12 @@ async def choose_role(sid, choice: ChooseRole):
 @sio.on("chat")
 async def chat(sid, message: ChatMessage):
     return await guarded_query(sid, lambda: ChatQuery(sid, message))
+
+
+# TODO: Remove in prod
+@sio.on("reset_database")
+async def reset_database(sid):
+    truncate_db_reseed()
 
 
 # Server-to-client event
