@@ -197,6 +197,15 @@ hr {
   }
 }
 
+.MisterXHistory {
+  display: grid;
+  grid-template-rows: repeat(6, auto);
+  grid-auto-flow: column;
+  grid-template-columns: max-content;
+  gap: 0.5em 1.5em;
+  overflow-x: auto;
+}
+
 .Chat {
   padding: 2em;
   min-width: 0;

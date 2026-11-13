@@ -107,6 +107,7 @@ class GameState(BaseModel):
     nodes: list[MapNode]  # All nodes which make up the map
     connections: list[Connection]  # Connections between nodes
     vehicles: list[Vehicle]  # All used vehicles for this map
+    mister_x_moves: list[str] = []  # All Mr. X moves
 
     def get_mister_x(self) -> Player | None:
         return next((p for p in self.players if p.role == Role.MisterX), None)
@@ -265,7 +266,9 @@ class GameState(BaseModel):
         if masked.info.status != Status.Ended:
             mister_x.starting_node = None
 
-        if not (is_start_new_round and masked.info.current_round in SHOW_MISTER_X_ROUNDS):
+        if not (
+            is_start_new_round and masked.info.current_round in SHOW_MISTER_X_ROUNDS
+        ):
             mister_x.current_node = None
 
         return masked

@@ -24,6 +24,23 @@ def get_last_move_ticket_name(cursor: Cursor, round: int, player_id: int) -> str
     last_move_ticket_name = row[0] if row else None
     return last_move_ticket_name
 
+
+def get_mister_x_moves(cursor: Cursor, game_id: int) -> list[tuple[int, str]]:
+    rows = cursor.execute(
+        t"""
+        SELECT s.runde, ta.name
+        FROM spielzug AS s
+        JOIN teilnehmer AS t ON s.id_teilnehmer = t.id
+        JOIN ticketverbrauch AS tv ON tv.id_spielzug = s.id
+        JOIN ticketart AS ta ON tv.id_ticketart = ta.id
+        WHERE t.id_partie = {game_id} AND t.spielerrolle = 'mister_x'
+        ORDER BY s.runde, s.id;
+        """
+    ).fetchall()
+
+    return rows
+
+
 def insert_new_player(cursor: Cursor, player_name: str) -> int:
     row = cursor.execute(
         t"""
@@ -232,6 +249,10 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
 
     info = get_game_infos(cursor, [game_id])[0]
 
+    mister_x_moves = [
+        f"{runde} - {ticket}" for runde, ticket in get_mister_x_moves(cursor, game_id)
+    ]
+
     gamestate = GameState(
         info=info,
         active_player=active_player,
@@ -239,6 +260,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         nodes=nodes,
         connections=connections,
         vehicles=all_vehicles,
+        mister_x_moves=mister_x_moves,
     )
 
     return gamestate
