@@ -5,6 +5,7 @@ export type Role = "mister_x" | "detektiv";
 export type EndCause = "gefangen" | "mr_x_blockiert" | "mr_x_entkommen" | "detektive_blockiert";
 export type Status = "lobby" | "laufend" | "beendet" | "abgebrochen";
 export type Phase = "mister_x" | "detektive";
+export type PlayerType = "spieler" | "bobby" | "zuschauer";
 export type AllowedVehicles = Vehicle[];
 export type Tickets = Ticket[];
 export type Players = Player[];
@@ -50,6 +51,7 @@ export interface GameState {
 export interface Player {
   player_id: number;
   name: string;
+  player_type: PlayerType;
   role: Role | null;
   tickets: Tickets;
   starting_node: number | null;

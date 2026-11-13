@@ -31,19 +31,33 @@ def get_player_id(cursor: Cursor, player_name: str) -> int | None:
     return player_id
 
 
-def get_player_name(cursor: Cursor, player_id: int) -> str:
+def get_player_name_by_user_id(cursor: Cursor, user_id: int) -> str:
     row = cursor.execute(
         t"""
         SELECT b.benutzername
         FROM benutzer as b 
-        WHERE b.id = {player_id}; 
+        WHERE b.id = {user_id}; 
         """
     ).fetchone()
 
     player_name = row[0] if row else None
-    assert player_name is not None, (
-        f"Failed to get player name for player ID {player_id}"
-    )
+    assert player_name is not None, f"Failed to get player name for use ID {user_id}"
+
+    return player_name
+
+
+def get_player_name_by_player_id(cursor: Cursor, player_id: int) -> str:
+    row = cursor.execute(
+        t"""
+        SELECT b.benutzername
+        FROM teilnehmer as t
+        JOIN benutzer as b on t.id_benutzer = b.id 
+        WHERE t.id = {player_id}; 
+        """
+    ).fetchone()
+
+    player_name = row[0] if row else None
+    assert player_name is not None, f"Failed to get player name for use ID {player_id}"
 
     return player_name
 
@@ -135,31 +149,38 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
     # Get per-player status
     rows = cursor.execute(
         t"""
-        SELECT benutzer.id, benutzername, id_ticketart, ticketart.name, anzahl, verkehrsmittel.name, spielerrolle, id_startknoten, id_aktueller_knoten, reihenfolge
+        SELECT teilnehmer.id, benutzername, id_ticketart, ticketart.name, anzahl, verkehrsmittel.name, teilnehmertyp, spielerrolle, id_startknoten, id_aktueller_knoten, reihenfolge
         FROM teilnehmer
-        JOIN benutzer ON teilnehmer.id_benutzer = benutzer.id 
-        JOIN ticketbestand ON ticketbestand.id_teilnehmer = teilnehmer.id
-        JOIN ticketart ON ticketart.id = id_ticketart
+        LEFT JOIN benutzer ON teilnehmer.id_benutzer = benutzer.id 
+        LEFT JOIN ticketbestand ON ticketbestand.id_teilnehmer = teilnehmer.id
+        LEFT JOIN ticketart ON ticketart.id = id_ticketart
         LEFT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id
-        WHERE id_partie = {game_id};
+        WHERE id_partie = {game_id}
+        ORDER BY teilnehmer.id ASC;
         """
     ).fetchall()
+
+    bobby_names = iter([f"Bobby {i}" for i in range(1, 5)])
 
     # Initialize per-player dict
     player_dict = {
         r[0]: {
-            "name": r[1],
-            "role": r[6],
-            "start": r[7],
-            "current": r[8],
-            "turn_order": r[9],
+            "name": r[1] if r[1] else next(bobby_names),
+            "player_type": r[6],
+            "role": r[7],
+            "start": r[8],
+            "current": r[9],
+            "turn_order": r[10],
             "tickets": [],
         }
         for r in rows
     }
 
-    # Populate tickets per player
+    # Populate tickets per human player
     for r in rows:
+        if r[6] == "bobby" or r[2] is None:
+            continue
+
         player_dict[r[0]]["tickets"].append(
             Ticket(
                 ticket_type_id=r[2],
@@ -177,6 +198,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         Player(
             player_id=k,
             name=v["name"],
+            player_type=v["player_type"],
             role=v["role"],
             tickets=v["tickets"],
             starting_node=v["start"],
@@ -217,15 +239,16 @@ def set_gamestate(
         """
     )
 
-    cursor.execute(
-        t"""
-        UPDATE ticketbestand
-        SET anzahl = {ticket.count}
-        WHERE 
-            id_teilnehmer = {active_player.player_id} AND
-            id_ticketart = {ticket.ticket_type_id};
-        """
-    )
+    if ticket:
+        cursor.execute(
+            t"""
+            UPDATE ticketbestand
+            SET anzahl = {ticket.count}
+            WHERE 
+                id_teilnehmer = {active_player.player_id} AND
+                id_ticketart = {ticket.ticket_type_id};
+            """
+        )
 
     row = cursor.execute(
         t"""
@@ -239,14 +262,15 @@ def set_gamestate(
     turn_id = row[0] if row else None
     assert turn_id is not None, "Failed to insert move into move history"
 
-    cursor.execute(
-        t"""
-        INSERT INTO ticketverbrauch(id_spielzug, id_ticketart)
-        VALUES (
-            {turn_id}, {ticket.ticket_type_id}
-        );
-        """
-    )
+    if ticket:
+        cursor.execute(
+            t"""
+            INSERT INTO ticketverbrauch(id_spielzug, id_ticketart)
+            VALUES (
+                {turn_id}, {ticket.ticket_type_id}
+            );
+            """
+        )
 
     status = gamestate.info.status.value if gamestate.info.status else None
     phase = gamestate.info.current_phase.value if gamestate.info.current_phase else None
@@ -339,7 +363,7 @@ def get_player_infos(
             SELECT 
         )
 
-        SELECT id, benutzername, spielerrolle, id_aktueller_knoten, teilnehmertyp, aktiv, reihenfolge
+        SELECT id, benutzername, teilnehmertyp, spielerrolle, id_aktueller_knoten, teilnehmertyp, aktiv, reihenfolge
         FROM teilnehmer as t
         WHERE id_partie = {self.move.game_id};
         """
@@ -349,11 +373,12 @@ def get_player_infos(
         Player(
             player_id=r[0],
             name=r[1],
-            role=r[2],
-            tickets=r[3],
-            starting_node=r[4],
-            current_node=r[5],
-            turn_order=r[6],
+            player_type=r[2],
+            role=r[3],
+            tickets=r[4],
+            starting_node=r[5],
+            current_node=r[6],
+            turn_order=r[7],
         )
         for r in rows
     ]

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client';
 import './App.css'
 import Lobby from './components/Lobby.tsx'
-import type { GameInfo } from './interfaces.tsx';
+import type { GameInfo } from './interfaces.ts';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
@@ -13,6 +13,7 @@ function App() {
   // React states which are affected by UI event handlers
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [playerName, setPlayerName] = useState<string>("Matthias");
+  const [userId, setUserId] = useState<number | null>(null);
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
   const [current_room, setCurrentRoom] = useState<number | null>(null);
@@ -27,7 +28,7 @@ function App() {
     function onDisconnect() {
       console.log("Disconnected");
       setIsConnected(false);
-      setPlayerId(null);
+      setUserId(null);
       setCurrentRoom(null);
     }
 
@@ -62,10 +63,10 @@ function App() {
     socket.connect();
     // `ack` is the response from the executed server query
     // It will be undefined for a failed query
-    socket.emit('login', playerName, (player_id: number) => {
-      if (player_id !== undefined) {
-        console.log(`My player ID: ${player_id} | My Name: ${playerName}`);
-        setPlayerId(player_id);
+    socket.emit('login', playerName, (user_id: number) => {
+      if (user_id !== undefined) {
+        console.log(`My user ID: ${user_id} | My Name: ${playerName}`);
+        setUserId(user_id);
       } else {
         console.error("Login failed");
       }
@@ -73,7 +74,7 @@ function App() {
   }
 
   function handleLogout() {
-    socket.emit('logout', playerId);
+    socket.emit('logout', userId);
     socket.disconnect();
   }
 
@@ -82,12 +83,14 @@ function App() {
   }
 
   function handleRoomJoin(room_id: number) {
-    if (playerId === null) return;
+    if (userId === null) return;
 
     console.log(`${playerName} joining room: ${room_id}`);
-    socket.emit("room_join", playerId, room_id, (ack_room_id: number) => {
-      if (ack_room_id !== undefined) {
-        setCurrentRoom(ack_room_id);
+    socket.emit("room_join", userId, room_id, (player_id: number | null) => {
+      if (player_id !== null) {
+        setPlayerId(player_id);
+        setCurrentRoom(room_id);
+        console.log(`My player ID: ${player_id} for room: ${room_id}`);
       } else {
         console.error("Room join failed");
       }
@@ -95,11 +98,12 @@ function App() {
   }
 
   function handleRoomLeave() {
-    if (current_room === null || playerId === null) return;
+    if (current_room === null || userId === null) return;
 
     console.log(`${playerName} leaving room: ${current_room}`);
-    socket.emit("room_leave", playerId, current_room, (success: boolean) => {
+    socket.emit("room_leave", userId, current_room, (success: boolean) => {
       if (success !== undefined) {
+        setPlayerId(null);
         setCurrentRoom(null);
       } else {
         console.error("Failed to leave room");
@@ -111,7 +115,7 @@ function App() {
     socket.emit("reset_database")
   }
 
-  const isLoggedIn = isConnected && playerId !== null;
+  const isLoggedIn = isConnected && userId !== null;
 
   return <div className="App">
 

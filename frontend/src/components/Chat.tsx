@@ -1,6 +1,6 @@
 import { useEffect, useState, type SubmitEvent } from 'react'
 import ChatHistory from '../components/ChatHistory.tsx'
-import type { ChatMessage } from '../interfaces.tsx';
+import type { ChatMessage } from '../interfaces.ts';
 
 type ChatProps = {
     active: boolean,

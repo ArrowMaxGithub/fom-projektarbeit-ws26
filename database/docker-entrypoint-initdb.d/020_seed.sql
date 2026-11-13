@@ -211,7 +211,7 @@ VALUES (
         '1',
         '3',
         'laufend',
-        '4',
+        '3',
         'detektive',
         '1',
         DEFAULT,

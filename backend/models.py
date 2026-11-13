@@ -34,6 +34,12 @@ class Role(Enum):
     Detective = "detektiv"
 
 
+class PlayerType(Enum):
+    Player = "spieler"
+    Bobby = "bobby"
+    Spectator = "zuschauer"
+
+
 # Advertised game in main lobby
 class GameInfo(BaseModel):
     room_id: int
@@ -75,8 +81,9 @@ class Ticket(BaseModel):
 
 
 class Player(BaseModel):
-    player_id: int
-    name: str
+    player_id: int  # teilnehmer.id
+    name: str  # benutzer.benutzername
+    player_type: PlayerType
     role: Role | None  # None for spectators
     tickets: list[Ticket]  # Remaining tickets per vehicle; empty for spectators
     starting_node: int | None  # None for spectators
@@ -87,7 +94,8 @@ class Player(BaseModel):
         return next([t for t in self.tickets if t.ticket_type_id == ticket_type_id])
 
     def move(self, to_node_id: int, ticket: Ticket):
-        ticket.count -= 1
+        if ticket is not None:
+            ticket.count -= 1
         self.current_node = to_node_id
 
 
@@ -100,17 +108,22 @@ class GameState(BaseModel):
     connections: list[Connection]  # Connections between nodes
     vehicles: list[Vehicle]  # All used vehicles for this map
 
-    def get_mister_x(self) -> Player:
-        return next(p for p in self.players if p.role == Role.MisterX)
+    def get_mister_x(self) -> Player | None:
+        return next((p for p in self.players if p.role == Role.MisterX), None)
 
     def get_detectives(self) -> list[Player]:
         return [p for p in self.players if p.role == Role.Detective]
 
     def get_player(self, player_id: int) -> Player | None:
-        return next(p for p in self.players if p.player_id == player_id)
+        return next((p for p in self.players if p.player_id == player_id), None)
 
     def get_active_player(self) -> Player | None:
-        return next(p for p in self.players if p.turn_order == self.active_player)
+        return next(
+            (p for p in self.players if p.turn_order == self.active_player), None
+        )
+
+    def get_vehicle(self, vehicle_id: int) -> Vehicle | None:
+        return next((v for v in self.vehicles if v.vehicle_id == vehicle_id), None)
 
     def get_connections(self, from_node_id: int, to_node_id: int) -> list[Connection]:
         return [
@@ -152,16 +165,27 @@ class GameState(BaseModel):
         legal_tickets = [
             t
             for t in player.tickets
-            if (conn.vehicle_id in [v.vehicle_id for v in t.allowed_vehicles])
+            if (
+                conn.vehicle_id in [v.vehicle_id for v in t.allowed_vehicles]
+                or len(t.allowed_vehicles) == 0
+            )
             and (t.count > 0)
         ]
 
         if selected_ticket is None:
             valid_ticket = next(
-                iter(sorted(legal_tickets, key=lambda t: t.count, reverse=True))
+                iter(sorted(legal_tickets, key=lambda t: t.count, reverse=True)), None
             )
         else:
-            valid_ticket = selected_ticket if selected_ticket in legal_tickets else None
+            selected_ticket = next(
+                (
+                    t
+                    for t in legal_tickets
+                    if t.ticket_type_id == selected_ticket.ticket_type_id
+                ),
+                None,
+            )
+            valid_ticket = selected_ticket if selected_ticket and selected_ticket.count > 0 else None
 
         if dst_open and valid_ticket is not None:
             return valid_ticket
@@ -229,11 +253,18 @@ class GameState(BaseModel):
 
         SHOW_MISTER_X_ROUNDS = [4, 9, 14, 19]
         mister_x = masked.get_mister_x()
-        
+
+        # Should only be true for empty rooms during lobby
+        if mister_x is None or active_player is None:
+            return masked
+
         if masked.info.status != Status.Ended:
             mister_x.starting_node = None
 
-        if not (masked.info.current_round in SHOW_MISTER_X_ROUNDS and active_player.role == Role.MisterX):
+        if not (
+            masked.info.current_round in SHOW_MISTER_X_ROUNDS
+            and active_player.role == Role.MisterX
+        ):
             mister_x.current_node = None
 
         return masked

@@ -1,8 +1,26 @@
 import type { GameState, Player, Connection, Ticket, Vehicle, MapNode } from "../interfaces";
 import { NodeState } from "./NodeState";
 
-export function getPlayer(gamestate: GameState, player_id: number): Player | undefined {
-    return gamestate.players.find(player => player.player_id === player_id)
+export function getPlayerPerspective(gamestate: GameState, player_id: number | null): number | null{
+    const active_player = getActivePlayer(gamestate);
+    const player = getPlayer(gamestate, player_id);
+
+    let perspective;
+    if (player?.player_type === "zuschauer"){
+        perspective = null;
+    }
+    else if (active_player?.player_type === "bobby" && player?.role === "detektiv"){
+        perspective = active_player?.player_id;
+    }
+    else {
+        perspective = player_id;
+    }
+
+    return perspective;
+}
+
+export function getPlayer(gamestate: GameState | null, player_id: number | null): Player | undefined {
+    return gamestate?.players.find(player => player.player_id === player_id)
 }
 
 export function getActivePlayerIndex(gamestate: GameState): number {
@@ -10,11 +28,12 @@ export function getActivePlayerIndex(gamestate: GameState): number {
 }
 
 export function getActivePlayer(gamestate: GameState | null): Player | undefined {
+    if (gamestate?.active_player === null) return undefined;
     return gamestate?.players.find(player => player.turn_order === gamestate?.active_player)
 }
 
-export function getPlayerAt(gamestate: GameState, node_index: number): Player | undefined {
-    return gamestate?.players.find(player => player.current_node === node_index)
+export function getPlayersAt(gamestate: GameState, node_index: number): Player[] {
+    return gamestate?.players.filter(player => player.current_node === node_index)
 }
 
 export function getMisterX(gamestate: GameState | null): Player | undefined {
@@ -32,7 +51,7 @@ export function getTurnOrderLabels(gamestate: GameState | null): string[] | unde
         .map(p => p.name);
 }
 
-export function getConnection(gamestate: GameState, from_node_id: number, to_node_id: number): Connection | undefined {
+export function getConnections(gamestate: GameState, from_node_id: number, to_node_id: number): Connection[] | undefined {
     const connections: Connection[] = gamestate.connections
         .filter(conn => conn.from_node_id === from_node_id || conn.to_node_id === from_node_id)
         .map(conn => {
@@ -46,10 +65,10 @@ export function getConnection(gamestate: GameState, from_node_id: number, to_nod
             }
         });
 
-    return connections.find(conn => conn.to_node_id === to_node_id);
+    return connections.filter(conn => conn.to_node_id === to_node_id);
 }
 
-export function getNode(gamestate: GameState, node_id: number): MapNode | undefined {
+export function getNode(gamestate: GameState, node_id: number | null): MapNode | undefined {
     return gamestate.nodes.find(node => node.node_id === node_id)
 }
 
@@ -60,17 +79,20 @@ export function getVehicle(gamestate: GameState, vehicle_id: number): Vehicle | 
 export function getLegalTicketsForVehicle(player: Player, vehicle_id: number): Ticket[] | undefined {
     return player.tickets.filter(ticket =>
         ticket.count > 0 &&
-        ticket.allowed_vehicles.flatMap(av => av.vehicle_id).includes(vehicle_id)
+        (
+            ticket.allowed_vehicles.length == 0 ||
+            ticket.allowed_vehicles.flatMap(av => av.vehicle_id).includes(vehicle_id)
+        )
     )
 }
 
-export function getNodeStates(new_gamestate: GameState, selectedTicket: Ticket | null): NodeState[] {
-    const active_player = getActivePlayer(new_gamestate);
-    if (!active_player || !active_player.current_node) {
+export function getNodeStates(playerId: number | null, new_gamestate: GameState, selectedTicket: Ticket | null): NodeState[] {
+    const player = getPlayer(new_gamestate, playerId);
+    if (!player) {
         return [];
     }
 
-    const current_node = getNode(new_gamestate, active_player.current_node);
+    const current_node = getNode(new_gamestate, player.current_node);
     if (!current_node) {
         return []; // Spectators have no valid target nodes
     }
@@ -78,34 +100,43 @@ export function getNodeStates(new_gamestate: GameState, selectedTicket: Ticket |
     const player_positions = new_gamestate.players.map(player => player.current_node);
     const misterX_pos = new_gamestate.players.find(player => player.role === "mister_x")?.current_node;
 
-    console.log(`Connections for ${active_player.name}`);
+    console.log(`Connections for ${player.name}`);
     const new_node_states: NodeState[] = new_gamestate.nodes.map((node, _index) => {
         if (node.node_id === current_node.node_id) {
             return NodeState.Current;
         }
 
-        const conn = getConnection(new_gamestate, current_node.node_id, node.node_id);
+        const conns = getConnections(new_gamestate, current_node.node_id, node.node_id);
 
-        if (!conn) {
+        if (!conns) {
             return NodeState.IllegalDst;
         }
 
-        const legal_tickets = getLegalTicketsForVehicle(active_player, conn.vehicle_id)?.filter(ticket => selectedTicket ? ticket === selectedTicket : true) ?? [];
-        const hasTicket = legal_tickets.length > 0;
-        if (!hasTicket) {
-            return NodeState.IllegalDst;
-        }
+        const legal_conns = conns.filter(conn => {
+            const legal_tickets = getLegalTicketsForVehicle(player, conn.vehicle_id)?.filter(ticket => selectedTicket !== null ? ticket === selectedTicket : true) ?? [];
+            const hasTicket = legal_tickets.length > 0 || player.player_type == "bobby";
+            if (hasTicket) {
+                return conn;
+            } else {
+                return null;
+            }
+        })
+
+        if (legal_conns.length == 0) return NodeState.IllegalDst;
 
         const occupied = player_positions.includes(node.node_id);
         const isMisterXPos = misterX_pos === node.node_id;
+        const canMoveOntoMisterX = player.role == "detektiv";
 
         let state: NodeState;
-        if ((!occupied && conn) || (isMisterXPos && conn)) { state = NodeState.LegalDst } else { state = NodeState.IllegalDst }
+        if (!occupied || (isMisterXPos && canMoveOntoMisterX)) { state = NodeState.LegalDst } else { state = NodeState.IllegalDst }
 
-        const vehicle_name = getVehicle(new_gamestate, conn.vehicle_id)?.name ?? "Unknown";
-        if (state === NodeState.LegalDst) {
-            console.log(`From ${current_node.node_id} to ${node.number} via ${vehicle_name}`);
-        }
+        legal_conns.forEach(conn => {
+            const vehicle_name = getVehicle(new_gamestate, conn.vehicle_id)?.name ?? "Unknown";
+            if (state === NodeState.LegalDst) {
+                console.log(`From ${current_node.node_id} to ${node.number} via ${vehicle_name}`);
+            }
+        })
 
         return state;
     });

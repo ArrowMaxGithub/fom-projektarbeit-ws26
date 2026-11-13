@@ -52,14 +52,14 @@ class LoginQuery(Query):
 
 
 class LogoutQuery(Query):
-    def __init__(self, conn: DBConnection, sid, player_id: int):
+    def __init__(self, conn: DBConnection, sid, user_id: int):
         self.sid = sid
-        self.player_id = player_id
+        self.user_id = user_id
         self.player_name = None
 
         with conn.transaction():
             cursor = conn.cursor()
-            self.player_name = get_player_name(cursor, player_id)
+            self.player_name = get_player_name_by_user_id(cursor, user_id)
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
@@ -82,33 +82,55 @@ class ChatQuery(Query):
 
 
 class RoomJoinQuery(Query):
-    def __init__(self, conn: DBConnection, sid, player_id: int, room_id: int):
+    def __init__(self, conn: DBConnection, sid, user_id: int, room_id: int):
         self.sid = sid
-        self.player_id = player_id
+        self.user_id = user_id
         self.room_id = room_id
         self.player_name = None
+        self.player_id = None
         self.gamestate = None
         self.is_mister_x = False
 
         with conn.transaction():
             cursor = conn.cursor()
-            self.player_name = get_player_name(cursor, player_id)
+            self.player_name = get_player_name_by_user_id(cursor, user_id)
             self.gamestate = get_gamestate(cursor, room_id)
-            self.is_mister_x = self.gamestate.get_player(player_id).role == Role.MisterX
 
             # Insert joining player as spectator; do nothing if player already is part of this game
             cursor.execute(
                 t"""
                     INSERT INTO teilnehmer(id_benutzer, id_partie, teilnehmertyp, spielerrolle, aktiv)
                     VALUES (
-                        {player_id}, {room_id}, 'zuschauer', NULL, TRUE
+                        {user_id}, {room_id}, 'zuschauer', NULL, TRUE
                     )
                     ON CONFLICT (id_benutzer, id_partie)
                     DO NOTHING;
                 """
             )
+            row = cursor.execute(
+                t"""
+                    SELECT id 
+                    FROM teilnehmer
+                    WHERE 
+                        id_benutzer = {user_id} AND
+                        id_partie = {room_id};
+                """
+            ).fetchone()
+
+            self.player_id = row[0] if row else None
+            if self.player_id is not None:
+                player = self.gamestate.get_player(self.player_id)
+                self.is_mister_x = player.role == Role.MisterX if player else False
 
     async def fullfill(self, sio: FastAPISocketIO):
+        if self.player_id is None:
+            await sio.emit(
+                "error",
+                data=f"Failed to insert player with user {self.user_id} into room {self.room_id}",
+                to=self.sid,
+            )
+            return None
+
         room = str(self.room_id)
         await sio.enter_room(self.sid, room)
         await sio.leave_room(self.sid, "lobby")
@@ -125,32 +147,24 @@ class RoomJoinQuery(Query):
 
         # Only Mister-X gets the full gamestate
         if self.is_mister_x:
-            await sio.emit(
-                event="gamestate",
-                data=self.gamestate,
-                to=self.sid
-            )
+            await sio.emit(event="gamestate", data=self.gamestate, to=self.sid)
         # All other players only get the masked gamestate
         else:
-            await sio.emit(
-                event="gamestate",
-                data=self.gamestate.masked(),
-                to=self.sid
-            )
+            await sio.emit(event="gamestate", data=self.gamestate.masked(), to=self.sid)
 
-        return self.room_id
+        return self.player_id
 
 
 class RoomLeaveQuery(Query):
-    def __init__(self, conn: DBConnection, sid, player_id: int, room_id: int):
+    def __init__(self, conn: DBConnection, sid, user_id: int, room_id: int):
         self.sid = sid
-        self.player_id = player_id
+        self.user_id = user_id
         self.room_id = room_id
         self.player_name = None
 
         with conn.transaction():
             cursor = conn.cursor()
-            self.player_name = get_player_name(cursor, player_id)
+            self.player_name = get_player_name_by_user_id(cursor, user_id)
             self.game_infos = get_game_infos(cursor)
 
     async def fullfill(self, sio: FastAPISocketIO):
@@ -178,15 +192,13 @@ class MoveQuery(Query):
         self.sid = sid
         self.move = move
         self.room = str(move.game_id)
-        self.player_name = None
+        self.active_player_name = None
         self.gamestate = None
         self.is_mister_x = False
-        self.used_ticket = None
+        self.used_ticket_name = None
 
         with conn.transaction():
             cursor = conn.cursor()
-
-            self.player_name = get_player_name(cursor, move.player_id)
 
             # Query current game state and check if game is active
             self.gamestate = get_gamestate(cursor, move.game_id)
@@ -194,29 +206,39 @@ class MoveQuery(Query):
                 "Game is not in-play"
             )
 
-            # Check if player is active, matches game's current_phase and actually is at move.from_node
+            # `player` is the player submitting the move. This may be a human player's own move or a move submitted for a bobby.
             player = self.gamestate.get_player(move.player_id)
+            active_player = self.gamestate.get_active_player()
+            self.active_player_name = active_player.name
+
+            active_player_is_bobby = active_player.player_type == PlayerType.Bobby
+            player_can_control_bobby = (
+                active_player_is_bobby and player.role == Role.Detective
+            )
 
             assert player is not None, f"Unknown player with ID: {move.player_id}"
-            assert player.turn_order == self.gamestate.active_player, (
+            assert (
+                player.turn_order == self.gamestate.active_player
+                or player_can_control_bobby
+            ), (
                 f"It's not your turn. {self.gamestate.active_player} is active and you are {player.turn_order} in turn order"
             )
             assert player.role is not None, (
                 f"You are not an active human player, You are {player.role}"
             )
             if self.gamestate.info.current_phase == "detektive":
-                assert player_role == "detektiv", (
+                assert player.role == "detektiv", (
                     f"Detectives are active and you are a {player_role}"
                 )
             elif self.gamestate.info.current_phase == "mister_x":
-                assert player_role == "mister_x", (
+                assert player.role == "mister_x", (
                     f"Mister-X is active and you are a {player_role}"
                 )
-            assert player.current_node == move.from_node, (
-                f"You cannot move from {move.from_node}. You are at {current_node}"
+            assert active_player.current_node == move.from_node, (
+                f"You cannot move from {move.from_node}. You are at {active_player.current_node}"
             )
 
-            self.is_mister_x = player.role == Role.MisterX
+            self.is_mister_x = active_player.role == Role.MisterX
 
             # Check if connection is valid for selected ticket
             connections = self.gamestate.get_connections(move.from_node, move.to_node)
@@ -224,17 +246,19 @@ class MoveQuery(Query):
             valid_ticket = None
             chosen_connection = None
             for c in connections:
-                valid_ticket = self.gamestate.player_can_take_connection(c, player, move.ticket)
-                if valid_ticket:
+                valid_ticket = self.gamestate.player_can_take_connection(
+                    c, active_player, move.ticket
+                )
+                if valid_ticket or active_player.player_type == PlayerType.Bobby:
                     chosen_connection = c
                     break
 
-            assert valid_ticket is not None, (
+            assert chosen_connection is not None, (
                 f"No connection available from {move.from_node} to {move.to_node} with any ticket"
             )
 
-            self.used_ticket = valid_ticket
-            player.move(move.to_node, valid_ticket)
+            self.used_ticket_name = valid_ticket.name if valid_ticket else "Bobbyticket"
+            active_player.move(move.to_node, valid_ticket)
 
             winner = None
             mister_x_caught = False
@@ -286,7 +310,7 @@ class MoveQuery(Query):
             set_gamestate(
                 cursor=cursor,
                 gamestate=self.gamestate,
-                active_player=player,
+                active_player=active_player,
                 connection=chosen_connection,
                 ticket=valid_ticket,
                 current_round=current_round,
@@ -299,17 +323,14 @@ class MoveQuery(Query):
             room=self.room,
             data={
                 "sender": "Server",
-                "content": f"{self.player_name} moving from {self.move.from_node} to {self.move.to_node} with {self.used_ticket.name}",
+                "content": f"{self.active_player_name} moving from {self.move.from_node} to {self.move.to_node} with {self.used_ticket_name}",
             },
         )
 
         # Only Mister-X gets the full gamestate
         if self.is_mister_x:
             await sio.emit(
-                event="gamestate",
-                room=self.room,
-                data=self.gamestate,
-                to=self.sid
+                event="gamestate", room=self.room, data=self.gamestate, to=self.sid
             )
 
         # All other players only get the masked gamestate
@@ -317,7 +338,9 @@ class MoveQuery(Query):
             event="gamestate",
             room=self.room,
             data=self.gamestate.masked(),
-            skip_sid=self.sid if self.is_mister_x else None # Mister-X already got the full gamestate
+            skip_sid=self.sid
+            if self.is_mister_x
+            else None,  # Mister-X already got the full gamestate
         )
 
 
@@ -331,9 +354,10 @@ class StartGameQuery(Query):
             # 1 Check game status and host
             cursor.execute(
                 t"""
-                    SELECT p.status, p.id_benutzer, p.id_karte, b.benutzername, k.name, k.breite, k.hoehe
+                    SELECT p.status, t.id, p.id_karte, b.benutzername, k.name, k.breite, k.hoehe
                     FROM partie AS p
                     JOIN benutzer AS b ON b.id = p.id_benutzer 
+                    JOIN teilnehmer AS t ON t.id_benutzer = p.id_benutzer 
                     JOIN karte as k ON k.id = p.id_karte
                     WHERE p.id = {start.game_id}
                     FOR UPDATE OF p;
@@ -347,7 +371,7 @@ class StartGameQuery(Query):
 
             (
                 status,
-                host_id,
+                host_player_id,
                 map_id,
                 host_name,
                 map_name,
@@ -355,7 +379,7 @@ class StartGameQuery(Query):
                 height,
             ) = game
 
-            if host_id != start.player_id:
+            if host_player_id != start.player_id:
                 raise ValueError("Nur der Host kann die Partie starten.")
 
             if status != Status.Open.value:
@@ -384,11 +408,12 @@ class StartGameQuery(Query):
                 raise ValueError("Genau ein Mister X und mindestens ein Detektiv.")
 
             # 3 Create Bobbys
-            bobby_count = {
+            bobbies_needed = {
                 2: 2,
                 3: 2,
                 4: 1,
-            }.get(len(humans), 0)
+            }
+            bobby_count = bobbies_needed.get(len(humans), 0)
 
             cursor.execute(
                 t"""
@@ -551,7 +576,7 @@ class StartGameQuery(Query):
             # 9 Load tickets for GameState
             cursor.execute(
                 t"""
-                    SELECT t.id_benutzer, ta.id, ta.name, ta.id_verkehrsmittel, tb.anzahl
+                    SELECT t.id, ta.id, ta.name, ta.id_verkehrsmittel, tb.anzahl
                     FROM ticketbestand AS tb
                     JOIN ticketart AS ta ON ta.id = tb.id_ticketart
                     JOIN teilnehmer AS t ON t.id = tb.id_teilnehmer
@@ -578,24 +603,26 @@ class StartGameQuery(Query):
             # 10 Load players for GameState
             cursor.execute(
                 t"""
-                    SELECT b.id, b.benutzername, t.spielerrolle, t.id_startknoten, t.id_aktueller_knoten, t.reihenfolge
+                    SELECT t.id, b.benutzername, t.teilnehmertyp, t.spielerrolle, t.id_startknoten, t.id_aktueller_knoten, t.reihenfolge
                     FROM teilnehmer AS t
                     LEFT JOIN benutzer AS b ON b.id = t.id_benutzer
                     WHERE t.id_partie = {start.game_id}
                     ORDER BY t.reihenfolge NULLS LAST, t.id;
                 """
             )
+            bobby_names = iter([f"Bobby {i}" for i in range(1, bobby_count + 1)])
             players = [
                 Player(
-                    player_id=pid if pid else -1,
-                    name=name or f"Bobby {pid}",
+                    player_id=pid,
+                    name=name or next(bobby_names),
+                    player_type=player_type,
                     role=Role(role) if role else None,
                     tickets=tickets_by_player.get(pid, []),
                     starting_node=starting_node,
                     current_node=current_node,
                     turn_order=order,
                 )
-                for pid, name, role, starting_node, current_node, order in cursor.fetchall()
+                for pid, name, player_type, role, starting_node, current_node, order in cursor.fetchall()
             ]
 
             # 11 Construct initial GameState
@@ -618,8 +645,10 @@ class StartGameQuery(Query):
                 vehicles=vehicles,
             )
 
+    # TODO: Only send full gamestate to mister-x. All other players only get the masked gamestate.
+    # Issue: The host might not be mister-x, so we don't know the Socket.IO session ID of mister-x.
     async def fullfill(self, sio: FastAPISocketIO):
-        await sio.emit("gamestate", self.gamestate)
+        await sio.emit("gamestate", self.gamestate, room=str(self.start.game_id))
         return {"game_id": self.start.game_id, "status": "laufend"}
 
 
@@ -653,7 +682,7 @@ class ChooseRoleQuery(Query):
                 SELECT t.id, b.benutzername
                 FROM teilnehmer AS t
                 JOIN benutzer AS b on b.id = t.id_benutzer
-                WHERE t.id_partie = {choice.game_id} AND t.id_benutzer = {choice.player_id} AND t.aktiv = TRUE;
+                WHERE t.id_partie = {choice.game_id} AND t.id = {choice.player_id} AND t.aktiv = TRUE;
                 """
             )
             player = cursor.fetchone()
