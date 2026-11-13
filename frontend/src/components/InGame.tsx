@@ -25,6 +25,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const [viewport, setViewport] = useState<number>(750);
     const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
+    const [activeTab, setActiveTab] = useState<number>(0);
 
     const mister_x_show = [4, 9, 14, 19];
 
@@ -34,7 +35,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     useEffect(() => {
         function onGameState(new_gamestate: GameState) {
             setGameState((old_gamestate) => {
-                if (old_gamestate === null){
+                if (old_gamestate === null) {
                     return new_gamestate
                 }
 
@@ -50,17 +51,17 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 }
 
                 if (
-                    currentMisterXPos && 
-                    mister_x_show.includes(new_gamestate.info.current_round ?? 0) && 
-                    active_player === mister_x && 
+                    currentMisterXPos &&
+                    mister_x_show.includes(new_gamestate.info.current_round ?? 0) &&
+                    active_player === mister_x &&
                     previous_active_player?.role !== "mister_x"
-                ){
+                ) {
                     console.log(`setLastMisterXShowPos: ${currentMisterXPos}`);
                     setLastMisterXShowPos(currentMisterXPos);
                 }
 
                 // Remember last known Mister-X position if no current position is included.
-                if (lastMisterXPos && currentMisterXPos === null){
+                if (lastMisterXPos && currentMisterXPos === null) {
                     console.log(`Remembering last known mister-x pos: ${lastMisterXPos}`);
                     mister_x.current_node = lastMisterXPos;
                 }
@@ -77,10 +78,10 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     }, [socket, playerId]);
 
     useEffect(() => {
-        if (!playerId || !gamestate){
+        if (!playerId || !gamestate) {
             return;
         }
-        
+
         const perspective = getPlayerPerspective(gamestate, playerId);
         const new_node_states = getNodeStates(perspective, gamestate, selectedTicket);
         setNodeStates(new_node_states);
@@ -123,22 +124,22 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         const player = getPlayer(gamestate, playerId);
         const active_player = getActivePlayer(gamestate);
 
-        if (!player){
+        if (!player) {
             console.error(`Failed to find player with ID: ${playerId}`);
             return;
         }
 
-        if (!player.current_node){
+        if (!player.current_node) {
             console.error(`Player with ID ${playerId} has no current_node`);
             return;
         }
 
-        if (!active_player){
+        if (!active_player) {
             console.error(`Failed to find active player`);
             return;
         }
 
-        if (!active_player.current_node){
+        if (!active_player.current_node) {
             console.error(`Active player has no current_node`);
             return;
         }
@@ -226,23 +227,23 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             game_id: gamestate?.info.room_id,
             player_id: playerId,
             role: role
-        }, (success: boolean) => { 
-            if (success){
+        }, (success: boolean) => {
+            if (success) {
                 console.log("Chosen role: ", role)
             } else {
                 console.error(`Failed to choose role: ${role}`);
             }
-         });
+        });
     }
 
-    function handleSelectTicket(ticket: Ticket){
-        if (!gamestate){
+    function handleSelectTicket(ticket: Ticket) {
+        if (!gamestate) {
             return
         }
 
         const perspective = getPlayerPerspective(gamestate, playerId);
 
-        if (ticket === selectedTicket){
+        if (ticket === selectedTicket) {
             setselectedTicket(null)
             console.log(`Deselected ticket ${ticket.name} with ${ticket.count} remaining`);
             const new_node_states = getNodeStates(perspective, gamestate, null);
@@ -255,7 +256,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         }
     }
 
-    function handleStartGame(){
+    function handleStartGame() {
         socket.emit("start_game", {
             game_id: gamestate?.info.room_id,
             player_id: playerId
@@ -278,12 +279,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                         <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} players_at={getPlayersAt(gamestate, node.node_id)} active_player={gamestate?.active_player} lastMisterXShowPos={lastMisterXShowPos}></GameNode>
                     )
                 }
-                <div className="Ticketbuttons">
-                    {
-                        getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) => 
-                            <TicketButton key={ticket.ticket_type_id} ticket={ticket} selectedTicket={selectedTicket} bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"} onClick={handleSelectTicket}></TicketButton>)
-                    }
-                </div>
+
             </div>
             <button onClick={() => {
                 setLastMisterXShowPos(null);
@@ -305,14 +301,33 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         </div>
 
         <div className="GameInfosPanel">
-            <p>{gameover ? "Game Over" : "Active Player: " + (getActivePlayer(gamestate)?.name ?? "-")}</p>
-            <Tickets gameover={gameover} tickets={getActivePlayer(gamestate)?.tickets ?? []}></Tickets>
-            <GameInfos
-                gameover={gameover}
-                turn_order={getTurnOrderLabels(gamestate) ?? []}
-                round={gamestate?.info.current_round ?? 0}
-                mister_x_show={mister_x_show}>
-            </GameInfos>
+            <div className='SidepanelTabs'>
+                <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(0)}>Spielinformationen</button>
+                <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(1)}>Tickets</button>
+                <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(2)}>Reiter 3</button>
+            </div>
+
+            {activeTab == 0 && <>
+                {gameover && <p>Game Over</p>}
+                <GameInfos
+                    gameover={gameover}
+                    turn_order={getTurnOrderLabels(gamestate) ?? []}
+                    round={gamestate.info.current_round ?? 0}
+                    active_player={getActivePlayer(gamestate)?.name ?? "-"}
+                    mister_x_show={mister_x_show}>
+                </GameInfos>
+            </>}
+
+            {activeTab == 1 &&
+                <div className="Ticketbuttons">
+                    {
+                        getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) =>
+                            <TicketButton key={ticket.ticket_type_id} ticket={ticket} selectedTicket={selectedTicket} bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"} onClick={handleSelectTicket}></TicketButton>)
+                    }
+                </div>
+            }
+
+            {activeTab == 2 && <p>Inhalt für Reiter 3</p>}
         </div>
     </div >
 }
