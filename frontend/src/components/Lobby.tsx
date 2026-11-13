@@ -1,4 +1,4 @@
-import { type GameInfo } from "../interfaces.tsx";
+import { type GameInfo } from "../interfaces.ts";
 import LobbyGame from "../components/LobbyGame.tsx";
 
 type LobbyProps = {

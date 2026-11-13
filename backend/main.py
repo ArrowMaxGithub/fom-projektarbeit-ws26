@@ -154,7 +154,7 @@ sio.register_emit("gamestate", GameState, namespace="/")
 # Auto-generate asyncapi.json on server start from pydantic-models.
 # Needs to be called at the end of the file after all Socket.IO events.
 # During development, the Vite dev server auto-generates TypeScript-interfaces from this file.
-# Backend: models.py changes -> generate asyncapi.json -> Frontend: generate interfaces.tsx
+# Backend: models.py changes -> generate asyncapi.json -> Frontend: generate interfaces.ts
 print("Generating asyncapi.json")
 async_api = sio.asyncapi(title="API", version="1")
 Path("asyncapi.json").write_text(

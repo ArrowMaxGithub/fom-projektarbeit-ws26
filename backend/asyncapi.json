@@ -810,6 +810,9 @@
             "title": "Name",
             "type": "string"
           },
+          "player_type": {
+            "$ref": "#/components/schemas/op_gamestate_send_root_468f8dc1224789e8_message_0_PlayerType"
+          },
           "role": {
             "anyOf": [
               {
@@ -864,6 +867,7 @@
         "required": [
           "player_id",
           "name",
+          "player_type",
           "role",
           "tickets",
           "starting_node",
@@ -872,6 +876,15 @@
         ],
         "title": "Player",
         "type": "object"
+      },
+      "op_gamestate_send_root_468f8dc1224789e8_message_0_PlayerType": {
+        "enum": [
+          "spieler",
+          "bobby",
+          "zuschauer"
+        ],
+        "title": "PlayerType",
+        "type": "string"
       },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Role": {
         "enum": [

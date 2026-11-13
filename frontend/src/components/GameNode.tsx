@@ -9,21 +9,20 @@ type GameNodeProps = {
     scale_y: number,
     node: MapNode,
     state: NodeState,
-    player_at: Player | undefined,
+    players_at: Player[],
     active_player: number | null,
-    is_last_mister_x_pos: boolean,
+    lastMisterXShowPos: number | null,
 }
 
-export default function GameNode({ makeMove, number, gameover, scale_x, scale_y, node, state, player_at, active_player, is_last_mister_x_pos }: GameNodeProps) {
+export default function GameNode({ makeMove, number, gameover, scale_x, scale_y, node, state, players_at, active_player, lastMisterXShowPos}: GameNodeProps) {
     function handleClick(state: NodeState, number: number) {
-        if (player_at) {
-            if (player_at.role === "mister_x" && state === NodeState.LegalDst) {
-                makeMove(number); // Detectives can move unto Mister-X
-                return;
-            } else {
-                console.log(`Node ${number} is occupied by: ${player_at.name}`);
+        if (players_at.length > 0) {
+            const detective_at = players_at.find(p => p.role === "detektiv");
+            if (detective_at){
+                console.log(`Node ${number} is occupied by: ${detective_at.name}`);
                 return;
             }
+            makeMove(number); // Detectives can move unto Mister-X
         }
 
         switch (state) {
@@ -43,10 +42,14 @@ export default function GameNode({ makeMove, number, gameover, scale_x, scale_y,
 
     return <div className="MapNode" style={{ left: node.position_x * scale_x - 20, top: node.position_y * scale_y - 20 }}>
         <button className={"MapNodeButton " + nodeStateToClassName(state)} disabled={gameover} key={number} onClick={() => handleClick(state, number)}>{number}</button>
-        <div className={active_player === player_at?.turn_order ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
-            {is_last_mister_x_pos ? <span className="LastMisterXPos">🔍</span> : null}
-            <span className="PlayerAt">{player_at?.name}</span>
-            <span className="PlayerRole">{player_at?.role}</span>
-        </div>
+        {node.node_id === lastMisterXShowPos ? <span className="LastMisterXPos">🔍</span> : null}
+        {
+            players_at.map((player, _index) =>            
+                <div key={player.player_id} className={active_player === player?.turn_order ? "PlayerInfo HighlightActivePlayer" : "PlayerInfo"}>
+                    <span className="PlayerAt">{player?.name}</span>
+                    <span className="PlayerRole">{player?.role}</span>
+                </div>
+            )
+        }
     </div>
 }

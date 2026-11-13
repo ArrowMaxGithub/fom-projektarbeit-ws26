@@ -1,4 +1,4 @@
-import type { ChatMessage } from '../interfaces.tsx'
+import type { ChatMessage } from '../interfaces.ts'
 
 type ChatHistoryProps = {
     chatHistory: ChatMessage[],
