@@ -185,7 +185,11 @@ class GameState(BaseModel):
                 ),
                 None,
             )
-            valid_ticket = selected_ticket if selected_ticket and selected_ticket.count > 0 else None
+            valid_ticket = (
+                selected_ticket
+                if selected_ticket and selected_ticket.count > 0
+                else None
+            )
 
         if dst_open and valid_ticket is not None:
             return valid_ticket
@@ -245,7 +249,7 @@ class GameState(BaseModel):
         return [c for c in conns if c.to_node_id not in player_positions]
 
     # Returns a masked copy redacting any non-public game information
-    def masked(self) -> Self:
+    def masked(self, is_start_new_round: bool) -> Self:
         import copy
 
         masked = copy.copy(self)
@@ -261,10 +265,7 @@ class GameState(BaseModel):
         if masked.info.status != Status.Ended:
             mister_x.starting_node = None
 
-        if not (
-            masked.info.current_round in SHOW_MISTER_X_ROUNDS
-            and active_player.role == Role.MisterX
-        ):
+        if not (is_start_new_round and masked.info.current_round in SHOW_MISTER_X_ROUNDS):
             mister_x.current_node = None
 
         return masked

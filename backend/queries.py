@@ -150,7 +150,7 @@ class RoomJoinQuery(Query):
             await sio.emit(event="gamestate", data=self.gamestate, to=self.sid)
         # All other players only get the masked gamestate
         else:
-            await sio.emit(event="gamestate", data=self.gamestate.masked(), to=self.sid)
+            await sio.emit(event="gamestate", data=self.gamestate.masked(True), to=self.sid)
 
         return self.player_id
 
@@ -196,6 +196,7 @@ class MoveQuery(Query):
         self.gamestate = None
         self.is_mister_x = False
         self.used_ticket_name = None
+        self.is_start_new_round = False
 
         with conn.transaction():
             cursor = conn.cursor()
@@ -258,6 +259,13 @@ class MoveQuery(Query):
             )
 
             self.used_ticket_name = valid_ticket.name if valid_ticket else "Bobbyticket"
+
+            # Check if last move during this round was already a double-move
+            # TODO: Checking against ticket name is quite brittle. Could be a database attribute instead.
+            last_move = get_last_move_ticket_name(cursor, self.gamestate.info.current_round, move.player_id)
+            if last_move == "Doppelzugticket":
+                assert self.used_ticket_name != "Doppelzugticket", "Can't use double-moves twice in a row"
+
             active_player.move(move.to_node, valid_ticket)
 
             winner = None
@@ -303,8 +311,11 @@ class MoveQuery(Query):
 
             # If game is still in progress, set next player active.
             # If this player was the last in the turn order: increment round
-            if self.gamestate.info.status == Status.InProgress:
+            # TODO: Checking against ticket name is quite brittle. Could be a database attribute instead.
+            if self.gamestate.info.status == Status.InProgress and self.used_ticket_name != "Doppelzugticket":
                 self.gamestate.set_next_player_active()
+
+            self.is_start_new_round = self.gamestate.active_player == 1 and self.used_ticket_name != "Doppelzugticket"
 
             # Write new gamestate back to database
             set_gamestate(
@@ -337,7 +348,7 @@ class MoveQuery(Query):
         await sio.emit(
             event="gamestate",
             room=self.room,
-            data=self.gamestate.masked(),
+            data=self.gamestate.masked(self.is_start_new_round),
             skip_sid=self.sid
             if self.is_mister_x
             else None,  # Mister-X already got the full gamestate

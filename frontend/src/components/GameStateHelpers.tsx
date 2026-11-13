@@ -97,11 +97,10 @@ export function getNodeStates(playerId: number | null, new_gamestate: GameState,
         return []; // Spectators have no valid target nodes
     }
 
-    const player_positions = new_gamestate.players.map(player => player.current_node);
-    const misterX_pos = new_gamestate.players.find(player => player.role === "mister_x")?.current_node;
+    const detective_positions = new_gamestate.players.filter(player => player.role == "detektiv").map(player => player.current_node);
 
     console.log(`Connections for ${player.name}`);
-    const new_node_states: NodeState[] = new_gamestate.nodes.map((node, _index) => {
+    let new_node_states: NodeState[] = new_gamestate.nodes.map((node, _index) => {
         if (node.node_id === current_node.node_id) {
             return NodeState.Current;
         }
@@ -124,12 +123,10 @@ export function getNodeStates(playerId: number | null, new_gamestate: GameState,
 
         if (legal_conns.length == 0) return NodeState.IllegalDst;
 
-        const occupied = player_positions.includes(node.node_id);
-        const isMisterXPos = misterX_pos === node.node_id;
-        const canMoveOntoMisterX = player.role == "detektiv";
+        const occupied = detective_positions.includes(node.node_id);
 
         let state: NodeState;
-        if (!occupied || (isMisterXPos && canMoveOntoMisterX)) { state = NodeState.LegalDst } else { state = NodeState.IllegalDst }
+        if (!occupied) { state = NodeState.LegalDst } else { state = NodeState.IllegalDst }
 
         legal_conns.forEach(conn => {
             const vehicle_name = getVehicle(new_gamestate, conn.vehicle_id)?.name ?? "Unknown";
