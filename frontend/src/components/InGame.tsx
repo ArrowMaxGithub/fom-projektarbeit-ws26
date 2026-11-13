@@ -3,7 +3,6 @@ import type { Socket } from "socket.io-client";
 import GameNode from './GameNode.tsx';
 import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayer, getPlayersAt, getPlayerPerspective, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
-import Tickets from './Tickets.tsx';
 import GameInfos from './GameInfos.tsx';
 import type { GameState, Move, Ticket } from '../interfaces.ts';
 import frontend_mockup from '../assets/frontend_mockup.png'
@@ -304,7 +303,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             <div className='SidepanelTabs'>
                 <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(0)}>Spielinformationen</button>
                 <button aria-pressed={activeTab === 1} onClick={() => setActiveTab(1)}>Tickets</button>
-                <button aria-pressed={activeTab === 2} onClick={() => setActiveTab(2)}>Reiter 3</button>
+                <button aria-pressed={activeTab === 2} onClick={() => setActiveTab(2)}>Zughistorie Mister X</button>
             </div>
 
             {activeTab == 0 && <>
@@ -312,7 +311,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 <GameInfos
                     gameover={gameover}
                     turn_order={getTurnOrderLabels(gamestate) ?? []}
-                    round={gamestate.info.current_round ?? 0}
+                    round={gamestate?.info.current_round ?? 0}
                     active_player={getActivePlayer(gamestate)?.name ?? "-"}
                     mister_x_show={mister_x_show}>
                 </GameInfos>
@@ -327,7 +326,11 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 </div>
             }
 
-            {activeTab == 2 && <p>Inhalt für Reiter 3</p>}
+            {activeTab == 2 &&
+                <div className="MisterXHistory">
+                    {gamestate?.mister_x_moves?.map((move, index) => <div key={index}>{move}</div>)}
+                </div>
+            }
         </div>
     </div >
 }

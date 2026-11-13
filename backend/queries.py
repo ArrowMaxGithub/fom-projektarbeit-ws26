@@ -150,7 +150,9 @@ class RoomJoinQuery(Query):
             await sio.emit(event="gamestate", data=self.gamestate, to=self.sid)
         # All other players only get the masked gamestate
         else:
-            await sio.emit(event="gamestate", data=self.gamestate.masked(True), to=self.sid)
+            await sio.emit(
+                event="gamestate", data=self.gamestate.masked(True), to=self.sid
+            )
 
         return self.player_id
 
@@ -262,9 +264,13 @@ class MoveQuery(Query):
 
             # Check if last move during this round was already a double-move
             # TODO: Checking against ticket name is quite brittle. Could be a database attribute instead.
-            last_move = get_last_move_ticket_name(cursor, self.gamestate.info.current_round, move.player_id)
+            last_move = get_last_move_ticket_name(
+                cursor, self.gamestate.info.current_round, move.player_id
+            )
             if last_move == "Doppelzugticket":
-                assert self.used_ticket_name != "Doppelzugticket", "Can't use double-moves twice in a row"
+                assert self.used_ticket_name != "Doppelzugticket", (
+                    "Can't use double-moves twice in a row"
+                )
 
             active_player.move(move.to_node, valid_ticket)
 
@@ -312,10 +318,16 @@ class MoveQuery(Query):
             # If game is still in progress, set next player active.
             # If this player was the last in the turn order: increment round
             # TODO: Checking against ticket name is quite brittle. Could be a database attribute instead.
-            if self.gamestate.info.status == Status.InProgress and self.used_ticket_name != "Doppelzugticket":
+            if (
+                self.gamestate.info.status == Status.InProgress
+                and self.used_ticket_name != "Doppelzugticket"
+            ):
                 self.gamestate.set_next_player_active()
 
-            self.is_start_new_round = self.gamestate.active_player == 1 and self.used_ticket_name != "Doppelzugticket"
+            self.is_start_new_round = (
+                self.gamestate.active_player == 1
+                and self.used_ticket_name != "Doppelzugticket"
+            )
 
             # Write new gamestate back to database
             set_gamestate(
@@ -327,6 +339,10 @@ class MoveQuery(Query):
                 current_round=current_round,
                 winner=winner,
             )
+            if self.is_mister_x:
+                self.gamestate.mister_x_moves.append(
+                    f"{current_round} - {self.used_ticket_name}"
+                )
 
     async def fullfill(self, sio: FastAPISocketIO):
         await sio.emit(
