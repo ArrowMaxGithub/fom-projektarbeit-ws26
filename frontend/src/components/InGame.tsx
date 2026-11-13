@@ -303,8 +303,8 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         <div className="GameInfosPanel">
             <div className='SidepanelTabs'>
                 <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(0)}>Spielinformationen</button>
-                <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(1)}>Tickets</button>
-                <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(2)}>Reiter 3</button>
+                <button aria-pressed={activeTab === 1} onClick={() => setActiveTab(1)}>Tickets</button>
+                <button aria-pressed={activeTab === 2} onClick={() => setActiveTab(2)}>Reiter 3</button>
             </div>
 
             {activeTab == 0 && <>

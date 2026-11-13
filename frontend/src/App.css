@@ -94,6 +94,12 @@ hr {
       button {
         flex: 1;
       }
+
+      button[aria-pressed="true"] {
+        border-color: #646cff;
+        color: white;
+        font-weight: bold;
+      }
     }
   }
 
