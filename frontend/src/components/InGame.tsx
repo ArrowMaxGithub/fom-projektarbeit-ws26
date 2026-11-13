@@ -275,7 +275,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 <div className="Ticketbuttons">
                     {
                         getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) => 
-                            <TicketButton key={ticket.ticket_type_id} ticket={ticket} selectedTicket={selectedTicket} onClick={handleSelectTicket}></TicketButton>)
+                            <TicketButton key={ticket.ticket_type_id} ticket={ticket} selectedTicket={selectedTicket} bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"} onClick={handleSelectTicket}></TicketButton>)
                     }
                 </div>
             </div>
