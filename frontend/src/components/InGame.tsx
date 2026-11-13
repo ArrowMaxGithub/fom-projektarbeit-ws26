@@ -39,6 +39,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 }
 
                 const active_player = getActivePlayer(new_gamestate);
+                const previous_active_player = getActivePlayer(old_gamestate);
                 const player = getPlayer(new_gamestate, playerId);
                 const mister_x = getMisterX(new_gamestate);
                 const currentMisterXPos = getMisterX(new_gamestate)?.current_node;
@@ -48,7 +49,12 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                     return new_gamestate;
                 }
 
-                if (currentMisterXPos && mister_x_show.includes(new_gamestate.info.current_round ?? 0) && active_player === mister_x){
+                if (
+                    currentMisterXPos && 
+                    mister_x_show.includes(new_gamestate.info.current_round ?? 0) && 
+                    active_player === mister_x && 
+                    previous_active_player?.role !== "mister_x"
+                ){
                     console.log(`setLastMisterXShowPos: ${currentMisterXPos}`);
                     setLastMisterXShowPos(currentMisterXPos);
                 }
@@ -280,6 +286,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 </div>
             </div>
             <button onClick={() => {
+                setLastMisterXShowPos(null);
                 setGameState(null);
                 setNodeStates([]);
                 setGameover(false);

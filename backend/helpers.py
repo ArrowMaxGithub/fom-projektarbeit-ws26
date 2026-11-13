@@ -2,6 +2,28 @@ from models import *
 from psycopg.cursor import Cursor
 
 
+def get_last_move_ticket_name(cursor: Cursor, round: int, player_id: int) -> str:
+    row = cursor.execute(
+        t"""
+        WITH max_ticket_use_id(id) AS (
+            SELECT MAX(t.id)
+            FROM ticketverbrauch as t
+            JOIN spielzug AS s ON t.id_spielzug = s.id 
+            WHERE 
+                id_teilnehmer = {player_id} AND
+                runde = {round}
+        )
+
+        SELECT ta.name
+            FROM max_ticket_use_id
+            JOIN ticketverbrauch AS tv ON max_ticket_use_id.id = tv.id
+            JOIN ticketart AS ta ON tv.id_ticketart = ta.id;
+        """
+    ).fetchone()
+
+    last_move_ticket_name = row[0] if row else None
+    return last_move_ticket_name
+
 def insert_new_player(cursor: Cursor, player_name: str) -> int:
     row = cursor.execute(
         t"""
