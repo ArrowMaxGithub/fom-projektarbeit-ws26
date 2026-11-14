@@ -1,13 +1,15 @@
 services:
   frontend:
-    container_name: frontend
+    container_name: fom-frontend
     build: ./frontend
     restart: unless-stopped
     ports:
       - "80:80"
+    networks: 
+      - backend
+      - fom-internal
     depends_on:
       - backend
-
   backend:
     container_name: backend
     build: ./backend
@@ -19,6 +21,8 @@ services:
       - PYTHONUNBUFFERED=1
     expose:
       - "8000"
+    networks: 
+      - fom-internal
     depends_on:
       database:
         condition: service_healthy
@@ -32,6 +36,8 @@ services:
         required: true
     environment:
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
+    networks:
+      - fom-internal
     expose:
       - "5432"
     volumes:
@@ -43,3 +49,8 @@ services:
       timeout: 30s
       retries: 10
   
+networks:
+  backend:
+    external: true
+
+  fom-internal: 
