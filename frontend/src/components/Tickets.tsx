@@ -5,7 +5,7 @@ type TicketProps = {
     tickets: Ticket[],
 }
 
-export default function GameNode({ gameover, tickets }: TicketProps) {
+export default function Ticket({ gameover, tickets }: TicketProps) {
     if (gameover) {
         return null;
     }

@@ -1,11 +1,9 @@
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Socket } from "socket.io-client";
-import GameNode from './GameNode.tsx';
-import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayer, getPlayersAt, getPlayerPerspective, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
+import { getActivePlayer, getDetectives, getMisterX, getPlayer, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import GameInfos from './GameInfos.tsx';
 import type { GameState, Move, Ticket } from '../interfaces.ts';
-import frontend_mockup from '../assets/frontend_mockup.png'
+import Gameboard from './Gameboard.tsx';
 import TicketButton from './TicketButton.tsx';
 
 type InGameProps = {
@@ -17,19 +15,13 @@ type InGameProps = {
 }
 
 export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
-    const ingameRef = useRef<HTMLDivElement>(null);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
     const [gameover, setGameover] = useState<boolean>(false);
-    const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
-    const [viewport, setViewport] = useState<number>(750);
     const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
     const [activeTab, setActiveTab] = useState<number>(0);
 
     const mister_x_show = [4, 9, 14, 19];
-
-    const scale_x = viewport / (gamestate?.info.map_dimensions[0] ?? viewport);
-    const scale_y = viewport / (gamestate?.info.map_dimensions[1] ?? viewport);
 
     useEffect(() => {
         function onGameState(new_gamestate: GameState) {
@@ -42,6 +34,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 const previous_active_player = getActivePlayer(old_gamestate);
                 const player = getPlayer(new_gamestate, playerId);
                 const mister_x = getMisterX(new_gamestate);
+                const player_is_mister_x = mister_x?.player_id === playerId;
                 const currentMisterXPos = getMisterX(new_gamestate)?.current_node;
                 const lastMisterXPos = getMisterX(old_gamestate)?.current_node;
 
@@ -59,14 +52,33 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                     setLastMisterXShowPos(currentMisterXPos);
                 }
 
-                // Remember last known Mister-X position if no current position is included.
-                if (lastMisterXPos && currentMisterXPos === null) {
+                // Remember last known Mister-X position as Mister-X during detective rounds.
+                if (lastMisterXPos && currentMisterXPos === null && player_is_mister_x){
                     console.log(`Remembering last known mister-x pos: ${lastMisterXPos}`);
                     mister_x.current_node = lastMisterXPos;
                 }
 
                 return new_gamestate;
             });
+
+            if(isGameOver(new_gamestate)){
+                setGameover(true);
+                revealMisterX(new_gamestate);
+            }
+            switch (new_gamestate.info.end_cause){
+                case 'detektive_blockiert':
+                    misterXWon(new_gamestate);
+                    break;
+                case 'mr_x_entkommen':
+                    misterXWon(new_gamestate);
+                    break;
+                case 'gefangen':
+                    detectivesWon(new_gamestate);
+                    break;
+                case 'mr_x_blockiert':
+                    detectivesWon(new_gamestate);
+                    break;
+            }
         }
 
         socket.on('gamestate', onGameState);
@@ -81,9 +93,6 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             return;
         }
 
-        const perspective = getPlayerPerspective(gamestate, playerId);
-        const new_node_states = getNodeStates(perspective, gamestate, selectedTicket);
-        setNodeStates(new_node_states);
         setGameover(isGameOver(gamestate));
 
         if (isGameEnded(gamestate)) {
@@ -99,20 +108,6 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             }
         }
     }, [playerId, gamestate])
-
-    useEffect(() => {
-        const ingame = ingameRef.current;
-        if (ingame) {
-            ingame.addEventListener('wheel', handleWheel, { passive: false });
-        }
-
-        return () => {
-            if (ingame) {
-                ingame.removeEventListener('wheel', handleWheel);
-            }
-        };
-
-    }, [viewport]);
 
     function makeMove(to_node: number) {
         if (!gamestate || !playerId) {
@@ -209,16 +204,6 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         console.log(`Mister X is currently at ${pos}`);
     }
 
-    function handleWheel(event: any) {
-        const ctrl = event.ctrlKey;
-        if (!ctrl) {
-            return;
-        }
-
-        event.preventDefault();
-        setViewport(viewport - event.deltaY * 0.1);
-    }
-
     function chooseRole(role: "mister_x" | "detektiv" | null) {
         if (playerId === null) return;
 
@@ -240,18 +225,12 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             return
         }
 
-        const perspective = getPlayerPerspective(gamestate, playerId);
-
         if (ticket === selectedTicket) {
             setselectedTicket(null)
             console.log(`Deselected ticket ${ticket.name} with ${ticket.count} remaining`);
-            const new_node_states = getNodeStates(perspective, gamestate, null);
-            setNodeStates(new_node_states);
         } else {
             setselectedTicket(ticket)
             console.log(`Selected ticket ${ticket.name} with ${ticket.count} remaining`);
-            const new_node_states = getNodeStates(perspective, gamestate, ticket);
-            setNodeStates(new_node_states);
         }
     }
 
@@ -271,19 +250,10 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
     return <div className="InGame">
         <div className="GameContent">
             <h1>Raum {gamestate?.info.room_id} - {gamestate?.info.map_name} </h1>
-            <div ref={ingameRef} className="Gameboard" >
-                <img src={frontend_mockup} width={viewport} height={viewport} />
-                {
-                    gamestate?.nodes.map((node, index) =>
-                        <GameNode key={node.node_id} makeMove={makeMove} number={node.node_id} gameover={gameover} scale_x={scale_x} scale_y={scale_y} node={node} state={nodeStates[index]} players_at={getPlayersAt(gamestate, node.node_id)} active_player={gamestate?.active_player} lastMisterXShowPos={lastMisterXShowPos}></GameNode>
-                    )
-                }
-
-            </div>
+            <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
             <button onClick={() => {
                 setLastMisterXShowPos(null);
                 setGameState(null);
-                setNodeStates([]);
                 setGameover(false);
                 handleRoomLeave()
             }
