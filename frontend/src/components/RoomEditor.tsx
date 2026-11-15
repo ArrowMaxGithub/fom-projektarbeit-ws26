@@ -3,6 +3,7 @@ import type {GameInfo} from '../interfaces.ts';
 
 type RoomEditorProps = {
     room: GameInfo | null,
+    maps: Array<{id: number; name: string}>,
     busy: boolean,
     error: string,
     onClose: () => void,
@@ -11,22 +12,16 @@ type RoomEditorProps = {
     onDelete: () => void;
 }
 
-const maps = [
-    {id: 1, name: "Berlin"},
-    {id: 2, name: "München"},
-    {id: 3, name: "Stuttgart"},
-];
-
-export default function RoomEditor({ room, busy, error, onClose, onSave, onStart, onDelete }: RoomEditorProps) {
+export default function RoomEditor({ room, maps, busy, error, onClose, onSave, onStart, onDelete }: RoomEditorProps) {
     const [maxPlayers, setMaxPlayers] = useState(room?.max_players ?? 6);
     const [mapID, setMapID] = useState(room?.map_id ?? 1);
     const [rules, setRules] = useState(room?.rules ?? "Standard");
 
     useEffect(() => {
         setMaxPlayers(room?.max_players ?? 6);
-        setMapID(room?.map_id ?? 1);
+        setMapID(room?.map_id ?? maps[0]?.id ?? 0);
         setRules(room?.rules ?? "Standard");
-    }, [room]);
+    }, [room, maps]);
 
     return <div className="RoomEditorBackdrop" onMouseDown={(event) => {
         if (event.target === event.currentTarget && !busy) {
@@ -50,7 +45,8 @@ export default function RoomEditor({ room, busy, error, onClose, onSave, onStart
                     </label>
                     <label>
                         Karte:
-                        <select value={mapID} disabled={busy} onChange={(event) => setMapID(Number(event.target.value))}>
+                        <select value={mapID} disabled={busy || maps.length === 0} onChange={(event) => setMapID(Number(event.target.value))}>
+                            {maps.length === 0 && (<option value={mapID}>Keine Karte Verfügbar</option>)}
                             {maps.map((map) => <option key={map.id} value={map.id}>{map.name}</option>)}
                         </select>
                     </label>
@@ -67,8 +63,8 @@ export default function RoomEditor({ room, busy, error, onClose, onSave, onStart
                 {room && <button type="button" disabled={busy} onClick={onDelete}>Raum löschen</button>}
                 <div className="RoomEditorRightActions">
                     <button type="button" disabled={busy} onClick={onClose}>Abbrechen</button>
-                    {room && <button type="button" disabled={busy} onClick={() => onSave(mapID, maxPlayers, rules)}>Speichern</button>}
-                    <button type="button" disabled={busy} onClick={() => onStart(mapID, maxPlayers, rules)}>{room ? 'Festlegen' : 'Raum erstellen'}</button>
+                    {room && <button type="button" disabled={busy || maps.length === 0} onClick={() => onSave(mapID, maxPlayers, rules)}>Speichern</button>}
+                    <button type="button" disabled={busy || maps.length === 0} onClick={() => onStart(mapID, maxPlayers, rules)}>{room ? 'Festlegen' : 'Raum erstellen'}</button>
                 </div>
             </footer>
         </section>

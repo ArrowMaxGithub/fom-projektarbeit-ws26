@@ -208,6 +208,23 @@ class RoomLeaveQuery(Query):
 
         return True
 
+class GetMapsQuery(Query):
+    def __init__(self, conn: DBConnection, sid):
+        with conn.transaction():
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "SELECT id, name FROM karte ORDER BY name"
+            )
+
+            self.maps = [
+                {"id": map_id, "name": name}
+                for map_id, name in cursor.fetchall()
+            ]
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        return self.maps
+
 class CreateRoomQuery(Query):
     def __init__(self, conn: DBConnection, sid, settings: RoomSettings):
         self.sid = sid
@@ -289,7 +306,7 @@ def validate_room_settings(cursor, settings: RoomSettings):
     row = cursor.execute(
         "SELECT name FROM karte WHERE id = %s", (settings.map_id,)
     ).fetchone()
-    if row is None or row[0] not in ("Berlin", "München", "Stuttgart"):
+    if row is None:
         raise ValueError("Unbekannte Karte.")
 
 class MoveQuery(Query):

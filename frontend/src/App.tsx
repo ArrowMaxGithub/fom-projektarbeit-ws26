@@ -17,6 +17,7 @@ function App() {
   const [userId, setUserId] = useState<number | null>(null);
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
+  const [maps, setMaps] = useState<Array<{id: number; name: string}>>([]);
   const [current_room, setCurrentRoom] = useState<number | null>(null);
   const [editingRoom, setEditingRoom] = useState<GameInfo | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -134,12 +135,29 @@ function App() {
     setEditingRoom(room);
     setEditorError("");
     setEditorOpen(true);
+    loadMaps();
+  }
+
+  function loadMaps() {
+    setMaps([]);
+    socket.timeout(5000).emit(
+      "get_maps",
+      (err: Error | null, result: Array<{id: number; name: string}> | null) => {
+        if (err || !Array.isArray(result)) {
+          setEditorError("Karten konnten nicht geladen werden.");
+          return;
+        }
+
+        setMaps(result);
+      }
+    );
   }
 
   function createEditor() {
     setEditingRoom(null);
     setEditorError("");
     setEditorOpen(true);
+    loadMaps();
   }
 
   function editorSettings(mapID: number, maxPlayers: number, rules: string): RoomSettings | null {
@@ -276,7 +294,7 @@ function App() {
       />
     </div>
 
-    {editorOpen && <RoomEditor room={editingRoom} busy={editorBusy} error={editorError} onClose={() => setEditorOpen(false)} onSave={saveEditor} onStart={startEditor} onDelete={deleteEditor} />}
+    {editorOpen && <RoomEditor room={editingRoom} maps={maps} busy={editorBusy} error={editorError} onClose={() => setEditorOpen(false)} onSave={saveEditor} onStart={startEditor} onDelete={deleteEditor} />}
   </div>
 }
 

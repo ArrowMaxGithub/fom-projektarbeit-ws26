@@ -158,6 +158,14 @@ async def on_disconnect(sid):
             clear_room_sessions(room_id)
 
 
+@sio.on("get_maps")
+async def get_maps(sid):
+    with pool.connection() as conn:
+        return await guarded_query(
+            sid, lambda: GetMapsQuery(conn, sid)
+        )
+
+
 @sio.on("room_create")
 async def room_create(sid, settings: RoomSettings):
     with pool.connection() as conn:
