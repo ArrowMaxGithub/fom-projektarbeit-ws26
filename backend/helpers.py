@@ -170,7 +170,8 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         t"""
         SELECT ticketart.id, ticketart.name, verkehrsmittel.id, verkehrsmittel.name
         FROM ticketart
-        RIGHT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id;
+        RIGHT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id
+        ORDER BY ticketart.id;
         """
     ).fetchall()
 
@@ -195,7 +196,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         LEFT JOIN ticketart ON ticketart.id = id_ticketart
         LEFT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id
         WHERE id_partie = {game_id}
-        ORDER BY teilnehmer.id ASC;
+        ORDER BY teilnehmer.id ASC, id_ticketart;
         """
     ).fetchall()
 
@@ -356,7 +357,8 @@ def get_map_nodes(cursor: Cursor, map_id: int) -> list[MapNode]:
         t"""
         SELECT knoten.id, nummer, position_x, position_y
         FROM knoten
-        WHERE knoten.id_karte = {map_id};
+        WHERE knoten.id_karte = {map_id}
+        ORDER BY knoten.id;
         """
     ).fetchall()
 
@@ -381,7 +383,8 @@ def get_map_connections(cursor, map_id) -> list[Connection]:
         SELECT v.id, v.id_startknoten, v.id_zielknoten, v.id_verkehrsmittel
         FROM knoten
         JOIN verbindung AS v ON knoten.id = v.id_startknoten
-        WHERE knoten.id_karte = {map_id};
+        WHERE knoten.id_karte = {map_id}
+        ORDER BY v.id;
         """
     ).fetchall()
 
