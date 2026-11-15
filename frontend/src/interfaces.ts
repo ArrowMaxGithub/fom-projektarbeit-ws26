@@ -39,6 +39,10 @@ export interface GameInfo {
   current_phase: Phase | null;
   end_cause: EndCause | null;
   players: number | null;
+  creator_id: number;
+  max_players: number;
+  map_id: number;
+  rules: string;
 }
 export interface GameState {
   info: GameInfo;
@@ -105,4 +109,16 @@ export namespace Root {
     "gamestate": (...args: [...[GameState], ack?: (...args: unknown[]) => void]) => void;
     "lobby": (...args: [...[RootLobbyPayloadArgument1], ack?: (...args: unknown[]) => void]) => void;
   }
+}
+
+export interface RoomSettings {
+  user_id: number;
+  room_id?: number | null;
+  max_players: number;
+  map_id: number;
+  rules: string;
+}
+export interface RoomAction {
+  user_id: number;
+  room_id: number;
 }

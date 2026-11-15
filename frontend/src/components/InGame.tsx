@@ -5,7 +5,7 @@ import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getDetectives, getMisterX, getNodeStates, getPlayer, getPlayersAt, getPlayerPerspective, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import Tickets from './Tickets.tsx';
 import GameInfos from './GameInfos.tsx';
-import type { GameState, Move, Ticket } from '../interfaces.ts';
+import type { GameState, Move, Ticket, GameInfo } from '../interfaces.ts';
 import frontend_mockup from '../assets/frontend_mockup.png'
 import TicketButton from './TicketButton.tsx';
 
@@ -15,9 +15,11 @@ type InGameProps = {
     handleRoomLeave: () => void,
     gameId: number | null,
     playerId: number | null,
+    userID: number | null,
+    onEditRoom: (room: GameInfo) => void;
 }
 
-export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
+export default function InGame({ active, socket, handleRoomLeave, playerId, userID, onEditRoom }: InGameProps) {
     const ingameRef = useRef<HTMLDivElement>(null);
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
@@ -285,6 +287,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                     }
                 </div>
             </div>
+            {gamestate?.info.status === "lobby" && gamestate?.info.creator_id === userID && (<button onClick={() => onEditRoom(gamestate.info)}>Raum bearbeiten</button>)}
             <button onClick={() => {
                 setLastMisterXShowPos(null);
                 setGameState(null);

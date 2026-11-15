@@ -3,14 +3,16 @@ import type { GameInfo } from "../interfaces";
 type LobbyGameProps = {
     info: GameInfo,
     onClick: () => void;
+    canEdit: boolean;
+    onEdit: () => void;
 }
 
-export default function LobbyGame({ info, onClick }: LobbyGameProps) {
+export default function LobbyGame({ info, onClick, canEdit, onEdit }: LobbyGameProps) {
     let map_label = `Karte: ${info.map_name}`;
 
     let player_label = "";
     if (info.status === "laufend" || info.status === "lobby") {
-        player_label = `Spieler: ${info.players} von 6`;
+        player_label = `Spieler: ${info.players} von ${info.max_players}`;
     };
 
     let status_label;
@@ -41,7 +43,7 @@ export default function LobbyGame({ info, onClick }: LobbyGameProps) {
         <div className="RoomStatus">
             <h1>{status_label}</h1>
             <h2>{player_label}</h2>
-            {info.status === "lobby" && (<button disabled>Löschen</button>)}
+            {info.status === "lobby" && canEdit && (<button onClick={onEdit}>Raum bearbeiten</button>)}
         </div>
     </div>
 }

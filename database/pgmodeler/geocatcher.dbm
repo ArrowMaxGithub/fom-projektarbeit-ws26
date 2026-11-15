@@ -5,7 +5,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 -->
 <dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="20"
 	 gen-disabled-objs-code="false" show-sys-schemas-rects="true"
-	 last-position="0,-32" last-zoom="0.8" scene-rect="-20,-40,2111.85,1162.92"
+	 last-position="0,-31" last-zoom="0.8" scene-rect="-20,-40,2111.85,1162.92"
 	 default-schema="public" default-owner="postgres"
 	 layers="Default layer"
 	 active-layers="0"
@@ -80,7 +80,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="partie" layers="0" collapse-mode="1" max-obj-count="10" z-value="0">
+<table name="partie" layers="0" collapse-mode="1" max-obj-count="13" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<tag name="spieler_und_spielverwaltung"/>
@@ -106,6 +106,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</column>
 	<column name="ende_grund" default-value="NULL">
 		<type name="varchar" length="0"/>
+	</column>
+	<column name="max_spieler" not-null="true" default-value="6">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="regelwerk" not-null="true" default-value="'Standard'">
+		<type name="text" length="0"/>
 	</column>
 	<constraint name="partie_pk" type="pk-constr" table="public.partie">
 		<columns names="id" ref-type="src-columns"/>

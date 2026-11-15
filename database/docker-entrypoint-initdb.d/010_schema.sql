@@ -29,6 +29,8 @@ CREATE TABLE public.partie (
     id_benutzer integer,
     id_karte integer,
     status varchar NOT NULL DEFAULT 'lobby',
+    max_spieler integer NOT NULL DEFAULT 6 CHECK (max_spieler BETWEEN 2 AND 6),
+    regelwerk varchar NOT NULL DEFAULT 'Standard' CHECK (regelwerk = 'Standard'),
     aktuelle_runde smallint NOT NULL DEFAULT 0,
     aktuelle_phase varchar DEFAULT NULL,
     aktuelle_reihenfolge smallint,

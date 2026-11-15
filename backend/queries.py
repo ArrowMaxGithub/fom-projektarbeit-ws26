@@ -28,7 +28,6 @@ class LoginQuery(Query):
             cursor = conn.cursor()
             # Get existing player by name
             self.player_id = get_player_id(cursor, player_name)
-            self.player_id = get_player_id(cursor, player_name)
 
             # Or insert new player
             # If this failed (e.g. username already taken), the transaction would be rolled back and no changes would be written to the database
@@ -165,6 +164,18 @@ class RoomLeaveQuery(Query):
         with conn.transaction():
             cursor = conn.cursor()
             self.player_name = get_player_name_by_user_id(cursor, user_id)
+            owner = cursor.execute(
+                "SELECT id_benutzer, status FROM partie WHERE id = %s", (room_id,)
+            ).fetchone()
+            self.delete_room = bool(
+                owner and owner[0] == user_id and owner[1] == "lobby"
+            )
+            if self.delete_room:
+                cursor.execute("DELETE FROM partie WHERE id = %s", (room_id,))
+            else:
+                cursor.execute(
+                    "UPDATE teilnehmer SET aktiv = FALSE WHERE id_partie = %s AND id_benutzer = %s", (room_id, user_id),
+                )
             self.game_infos = get_game_infos(cursor)
 
     async def fullfill(self, sio: FastAPISocketIO):
@@ -180,12 +191,103 @@ class RoomLeaveQuery(Query):
             skip_sid=self.sid,
         )
 
-        await sio.leave_room(self.sid, room)
-        await sio.enter_room(self.sid, "lobby")
-        await sio.emit("lobby", self.game_infos, to=self.sid)
+        if self.delete_room:
+            await sio.emit("room_deleted", self.room_id, room=room)
+            for participant_sid in list(sio.manager.get_participants("/", room)):
+                client_sid = (
+                    participant_sid[0]
+                    if isinstance(participant_sid, tuple)
+                    else participant_sid
+                )
+                await sio.leave_room(client_sid, room)
+                await sio.enter_room(client_sid, "lobby")
+        await sio.emit("lobby", self.game_infos, room="lobby")
 
         return True
 
+class CreateRoomQuery(Query):
+    def __init__(self, conn: DBConnection, sid, settings: RoomSettings):
+        self.sid = sid
+        with conn.transaction():
+            cursor = conn.cursor()
+            validate_room_settings(cursor, settings)
+            self.room_id = cursor.execute(
+                "INSERT INTO partie (id_benutzer, id_karte, max_spieler, regelwerk) "
+                "VALUES (%s, %s, %s, %s) RETURNING id",
+                (settings.user_id, settings.map_id, settings.max_players, settings.rules),
+            ).fetchone()[0]
+            self.game_infos = get_game_infos(cursor)
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        await sio.emit("lobby", self.game_infos, room="lobby")
+        return self.room_id
+
+class UpdateRoomQuery(Query):
+    def __init__(self, conn: DBConnection, sid, settings: RoomSettings):
+        if settings.room_id is None:
+            raise ValueError("Raum-ID fehlt.")
+        with conn.transaction():
+            cursor = conn.cursor()
+            validate_room_settings(cursor, settings)
+            row = cursor.execute(
+                "SELECT COUNT(*) FROM teilnehmer WHERE id_partie = %s AND "
+                "teilnehmertyp = 'spieler' AND aktiv = TRUE", (settings.room_id,)
+            ).fetchone()
+            if row[0] > settings.max_players:
+                raise ValueError("Es sind bereits mehr Spieler im Raum als erlaubt.")
+            changed = cursor.execute(
+                "UPDATE partie SET id_karte = %s, max_spieler = %s, regelwerk = %s "
+                "WHERE id = %s AND id_benutzer = %s AND status = 'lobby' RETURNING id",
+                (settings.map_id, settings.max_players, settings.rules,
+                 settings.room_id, settings.user_id),
+            ).fetchone()
+            if changed is None:
+                raise ValueError("Nur der Host darf einen offenen Raum bearbeiten.")
+            self.game_infos = get_game_infos(cursor)
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        await sio.emit("lobby", self.game_infos, room="lobby")
+        return True
+
+class DeleteRoomQuery(Query):
+    def __init__(self, conn: DBConnection, sid, action: RoomAction):
+        self.room_id = action.room_id
+        with conn.transaction():
+            cursor = conn.cursor()
+            row = cursor.execute(
+                "DELETE FROM partie WHERE id = %s AND id_benutzer = %s "
+                "AND status = 'lobby' RETURNING id",
+                (action.room_id, action.user_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("Nur der Host darf einen offenen Raum löschen.")
+            self.game_infos = get_game_infos(cursor)
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        room = str(self.room_id)
+        # Notify occupants before moving them out of the deleted room.
+        await sio.emit("room_deleted", self.room_id, room=room)
+        for participant_sid in list(sio.manager.get_participants("/", room)):
+            client_sid = (
+                    participant_sid[0]
+                    if isinstance(participant_sid, tuple)
+                    else participant_sid
+                )
+            await sio.leave_room(client_sid, room)
+            await sio.enter_room(client_sid, "lobby")
+        await sio.emit("lobby", self.game_infos, room="lobby")
+        return True
+
+def validate_room_settings(cursor, settings: RoomSettings):
+    if not 2 <= settings.max_players <= 6:
+        raise ValueError("Die Spieleranzahl muss zwischen 2 und 6 liegen.")
+    if settings.rules != "Standard":
+        raise ValueError("Unbekanntes Regelwerk.")
+    row = cursor.execute(
+        "SELECT name FROM karte WHERE id = %s", (settings.map_id,)
+    ).fetchone()
+    if row is None or row[0] not in ("Berlin", "München", "Stuttgart"):
+        raise ValueError("Unbekannte Karte.")
 
 class MoveQuery(Query):
     def __init__(self, conn: DBConnection, sid, move: Move):
@@ -412,7 +514,10 @@ class StartGameQuery(Query):
 
             detectives = [pid for pid, role in humans if role == "detektiv"]
 
-            if not 2 <= len(humans) <= 6:
+            configured_limit = cursor.execute(
+                "SELECT max_spieler FROM partie WHERE id = %s", (start.game_id,)
+            ).fetchone()[0]
+            if not 2 <= len(humans) <= configured_limit:
                 raise ValueError("Partie benötigt zwischen 2 und 6 Spieler")
 
             if len(mister_x) != 1 or len(detectives) != len(humans) - 1:
@@ -636,11 +741,19 @@ class StartGameQuery(Query):
                 for pid, name, player_type, role, starting_node, current_node, order in cursor.fetchall()
             ]
 
+            self.creator_id, self.max_players, self.rules = cursor.execute(
+                "SELECT id_benutzer, max_spieler, regelwerk FROM partie WHERE id = %s", (start.game_id,),
+            ).fetchone()
+
             # 11 Construct initial GameState
             self.gamestate = GameState(
                 info=GameInfo(
                     room_id=start.game_id,
                     creator_name=host_name,
+                    creator_id=self.creator_id,
+                    map_id=map_id,
+                    max_players=self.max_players,
+                    rules=self.rules,
                     map_name=map_name,
                     map_dimensions=[width, height],
                     status=Status.InProgress,
@@ -662,6 +775,36 @@ class StartGameQuery(Query):
         await sio.emit("gamestate", self.gamestate, room=str(self.start.game_id))
         return {"game_id": self.start.game_id, "status": "laufend"}
 
+class SwitchToGameQuery(StartGameQuery):
+    def __init__(self, conn: DBConnection, sid, request: SwitchToGame):
+        with conn.transaction():
+            cursor = conn.cursor()
+            row = cursor.execute(
+                "SELECT t.id FROM teilnehmer t JOIN partie p ON p.id = t.id_partie "
+                "WHERE p.id = %s AND p.id_benutzer = %s AND "
+                "t.id_benutzer = %s AND p.status = 'lobby' AND t.aktiv = TRUE",
+                (request.room_id, request.user_id, request.user_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("Der Host muss dem Raum beitreten, bevor das Spiel startet.")
+            self.host_player_id = row[0]
+            max_players = cursor.execute(
+                "SELECT max_spieler FROM partie WHERE id = %s", (request.room_id,)
+            ).fetchone()[0]
+            active_players = cursor.execute(
+                "SELECT COUNT(*) FROM teilnehmer WHERE id_partie = %s "
+                "AND teilnehmertyp = 'spieler' AND aktiv = TRUE", (request.room_id,)
+            ).fetchone()[0]
+            if active_players > max_players:
+                raise ValueError("Die maximale Spieleranzahl ist überschritten.")
+        super().__init__(conn, sid, StartGame(player_id=self.host_player_id, game_id=request.room_id))
+        with conn.transaction():
+            self.game_infos = get_game_infos(conn.cursor())
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        result = await super().fullfill(sio)
+        await sio.emit("lobby", self.game_infos, room="lobby")
+        return result
 
 class ChooseRoleQuery(Query):
     def __init__(self, conn: DBConnection, sid, choice: ChooseRole):

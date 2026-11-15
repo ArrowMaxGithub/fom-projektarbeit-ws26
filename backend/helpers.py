@@ -103,7 +103,7 @@ def get_game_infos(cursor: Cursor, game_ids: list[int] | None = None) -> list[Ga
             GROUP BY t.id_partie
         )
 
-        SELECT p.id, b.benutzername, k.name, k.breite, k.hoehe, p.status, p.ende_grund, COALESCE(t.anzahl, 0), p.aktuelle_runde, p.aktuelle_phase
+        SELECT p.id, b.benutzername, k.name, k.breite, k.hoehe, p.status, p.ende_grund, COALESCE(t.anzahl, 0), p.aktuelle_runde, p.aktuelle_phase, p.id_benutzer, p.id_karte, p.max_spieler, p.regelwerk
         FROM partie AS p
         JOIN karte AS k ON k.id = id_karte
         JOIN benutzer AS b ON p.id_benutzer = b.id
@@ -123,6 +123,10 @@ def get_game_infos(cursor: Cursor, game_ids: list[int] | None = None) -> list[Ga
             players=r[7],
             current_round=r[8],
             current_phase=r[9],
+            creator_id=r[10],
+            map_id=r[11],
+            max_players=r[12],
+            rules=r[13],
         )
         for r in rows
     ]

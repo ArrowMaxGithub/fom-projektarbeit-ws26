@@ -51,7 +51,10 @@ class GameInfo(BaseModel):
     current_phase: Phase | None  # None for Phase.Open | Phase.Starting
     end_cause: EndCause | None
     players: int | None  # None for Phase.Ended
-
+    creator_id: int
+    max_players: int = 6
+    map_id: int
+    rules: str = "Standard"
 
 class MapNode(BaseModel):
     node_id: int
@@ -288,3 +291,18 @@ class ChooseRole(BaseModel):
     player_id: int
     game_id: int
     role: Role | None
+
+class RoomSettings(BaseModel):
+    user_id: int
+    room_id: int | None = None
+    map_id: int
+    max_players: int
+    rules: str = "Standard"
+
+class RoomAction(BaseModel):
+    user_id: int
+    room_id: int
+
+class SwitchToGame(BaseModel):
+    user_id: int
+    room_id: int

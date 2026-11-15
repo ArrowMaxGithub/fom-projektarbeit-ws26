@@ -24,6 +24,8 @@ password = os.getenv("POSTGRES_LOCAL_PASSWORD")
 dbname = os.getenv("POSTGRES_DB")
 conninfo = f"host=database port=5432 dbname={dbname} user={user} password={password}"
 
+active_room_sessions: dict[str, tuple[int, int]] = {} #Store active Room for each socket
+
 pool = ConnectionPool(
     conninfo,
     open=True,  # Populate pool on startup
@@ -105,16 +107,90 @@ async def logout(sid, player_id: int):
 @sio.on("room_join")
 async def room_join(sid, player_id: int, room_id: int):
     with pool.connection() as conn:
-        return await guarded_query(
+        result = await guarded_query(
             sid, lambda: RoomJoinQuery(conn, sid, player_id, room_id)
         )
+        if result is not None:
+            active_room_sessions[sid] = (player_id, room_id)
+            return result
 
+def clear_room_sessions(room_id: int):
+    for client_sid, (_, active_room_id) in list(active_room_sessions.items()):
+        if active_room_id == room_id:
+            active_room_sessions.pop(client_sid, None)
 
 @sio.on("room_leave")
 async def room_leave(sid, player_id: int, room_id: int):
+    query = None
+
+    with pool.connection() as conn:
+        def create_query():
+            nonlocal query
+            query = RoomLeaveQuery(conn, sid, player_id, room_id)
+            return query
+        result = await guarded_query(sid, create_query)
+
+    if result is True:
+        if query.delete_room:
+            clear_room_sessions(room_id)
+        else:
+            active_room_sessions.pop(sid, None)
+    return result
+
+
+@sio.on("disconnect")
+async def on_disconnect(sid):
+    session = active_room_sessions.pop(sid, None)
+
+    if session is not None:
+        user_id, room_id = session
+        query = None
+
+        with pool.connection() as conn:
+            def create_query():
+                nonlocal query
+                query = RoomLeaveQuery(conn, sid, user_id, room_id)
+                return query
+
+            result = await guarded_query(sid, create_query)
+
+        if result is True and query is not None and query.delete_room:
+            clear_room_sessions(room_id)
+
+
+@sio.on("room_create")
+async def room_create(sid, settings: RoomSettings):
     with pool.connection() as conn:
         return await guarded_query(
-            sid, lambda: RoomLeaveQuery(conn, sid, player_id, room_id)
+            sid, lambda: CreateRoomQuery(conn, sid, settings)
+        )
+
+
+@sio.on("room_update")
+async def room_update(sid, settings: RoomSettings):
+    with pool.connection() as conn:
+        return await guarded_query(
+            sid, lambda: UpdateRoomQuery(conn, sid, settings)
+        )
+
+
+@sio.on("room_delete")
+async def room_delete(sid, action: RoomAction):
+    with pool.connection() as conn:
+        result = await guarded_query(
+            sid, lambda: DeleteRoomQuery(conn, sid, action)
+        )
+
+    if result is True:
+        clear_room_sessions(action.room_id)
+
+    return result
+
+@sio.on("switch_to_game")
+async def switch_to_game(sid, request: SwitchToGame):
+    with pool.connection() as conn:
+        return await guarded_query(
+            sid, lambda: SwitchToGameQuery(conn, sid, request)
         )
 
 
@@ -150,7 +226,7 @@ async def reset_database(sid):
 # Server-to-client event
 sio.register_emit("lobby", list[GameInfo], namespace="/")
 sio.register_emit("gamestate", GameState, namespace="/")
-
+sio.register_emit("room_deleted", int, namespace="/")
 # Auto-generate asyncapi.json on server start from pydantic-models.
 # Needs to be called at the end of the file after all Socket.IO events.
 # During development, the Vite dev server auto-generates TypeScript-interfaces from this file.
