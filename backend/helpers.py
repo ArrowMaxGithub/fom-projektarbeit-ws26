@@ -182,8 +182,9 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         for (ticket_type_id, ticket_name, vehicle_id, vehicle_name) in rows
     }
 
-    all_vehicles = list(
-        {Vehicle(vehicle_id=vid, name=name) for (_, _, vid, name) in rows}
+    all_vehicles = sorted(
+        {Vehicle(vehicle_id=vid, name=name) for (_, _, vid, name) in rows},
+        key=lambda v: v.vehicle_id
     )
 
     # Get per-player status
