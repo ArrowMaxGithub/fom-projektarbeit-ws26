@@ -12,8 +12,11 @@ export default function ChatProps({ active, socket, playerName }: ChatProps) {
     const [isSending, setIsSending] = useState(false);
     const [message, setMessage] = useState('');
     const [chatHistory, setChatHistory] = useState<Array<ChatMessage>>([]);
+    const [isChatVisible, setIsChatVisible] = useState(true);
 
     useEffect(() => {
+        if (!active) return;
+
         function onChat(msg: ChatMessage) {
             console.log(`Incoming message from ${msg.sender}: ${msg.content}`);
             setChatHistory(prev => prev.concat(msg));
@@ -24,7 +27,7 @@ export default function ChatProps({ active, socket, playerName }: ChatProps) {
         return () => {
             socket.off('chat', onChat);
         };
-    }, []);
+    }, [active]);
 
     function handleSubmitMessage(event: SubmitEvent) {
         event.preventDefault();
@@ -35,7 +38,7 @@ export default function ChatProps({ active, socket, playerName }: ChatProps) {
         };
 
         socket.emit('chat', msg, (success: boolean) => {
-            if (success){
+            if (success) {
                 setMessage("");
                 setIsSending(false);
             } else {
@@ -45,15 +48,20 @@ export default function ChatProps({ active, socket, playerName }: ChatProps) {
         });
     }
 
-    if (!active){
+    if (!active) {
         return null;
     }
 
     return <div className="Chat">
-        <form onSubmit={handleSubmitMessage}>
-            <input value={message} onChange={current => setMessage(current.target.value)} />
-            <button type="submit" disabled={isSending}>Send Message</button>
-        </form>
-        <ChatHistory chatHistory={chatHistory} />
+        <button onClick={() => setIsChatVisible(!isChatVisible)}>
+            {isChatVisible ? "Chat ausblenden" : "Chat einblenden"}
+        </button>
+        {isChatVisible && <>
+            <ChatHistory chatHistory={chatHistory} />
+            <form onSubmit={handleSubmitMessage}>
+                <input value={message} onChange={current => setMessage(current.target.value)} />
+                <button type="submit" disabled={isSending}>Send Message</button>
+            </form>
+        </>}
     </div>
 }

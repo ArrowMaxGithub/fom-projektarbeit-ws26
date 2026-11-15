@@ -1,7 +1,7 @@
 import type { GameState, Player, Connection, Ticket, Vehicle, MapNode } from "../interfaces";
 import { NodeState } from "./NodeState";
 
-export function getPlayerPerspective(gamestate: GameState, player_id: number | null): number | null{
+export function getPlayerPerspective(gamestate: GameState | null, player_id: number | null): number | null{
     const active_player = getActivePlayer(gamestate);
     const player = getPlayer(gamestate, player_id);
 
@@ -68,12 +68,12 @@ export function getConnections(gamestate: GameState, from_node_id: number, to_no
     return connections.filter(conn => conn.to_node_id === to_node_id);
 }
 
-export function getNode(gamestate: GameState, node_id: number | null): MapNode | undefined {
-    return gamestate.nodes.find(node => node.node_id === node_id)
+export function getNode(gamestate: GameState | null, node_id: number | null): MapNode | undefined {
+    return gamestate?.nodes.find(node => node.node_id === node_id)
 }
 
-export function getVehicle(gamestate: GameState, vehicle_id: number): Vehicle | undefined {
-    return gamestate.vehicles.find(vehicle => vehicle.vehicle_id === vehicle_id)
+export function getVehicle(gamestate: GameState | null, vehicle_id: number): Vehicle | undefined {
+    return gamestate?.vehicles.find(vehicle => vehicle.vehicle_id === vehicle_id)
 }
 
 export function getLegalTicketsForVehicle(player: Player, vehicle_id: number): Ticket[] | undefined {

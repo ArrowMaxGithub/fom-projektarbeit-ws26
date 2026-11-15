@@ -51,6 +51,7 @@ export interface GameState {
   nodes: Nodes;
   connections: Connections;
   vehicles: Vehicles;
+  mister_x_moves?: string[];
 }
 export interface Player {
   player_id: number;

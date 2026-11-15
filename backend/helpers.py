@@ -24,6 +24,23 @@ def get_last_move_ticket_name(cursor: Cursor, round: int, player_id: int) -> str
     last_move_ticket_name = row[0] if row else None
     return last_move_ticket_name
 
+
+def get_mister_x_moves(cursor: Cursor, game_id: int) -> list[tuple[int, str]]:
+    rows = cursor.execute(
+        t"""
+        SELECT s.runde, ta.name
+        FROM spielzug AS s
+        JOIN teilnehmer AS t ON s.id_teilnehmer = t.id
+        JOIN ticketverbrauch AS tv ON tv.id_spielzug = s.id
+        JOIN ticketart AS ta ON tv.id_ticketart = ta.id
+        WHERE t.id_partie = {game_id} AND t.spielerrolle = 'mister_x'
+        ORDER BY s.runde, s.id;
+        """
+    ).fetchall()
+
+    return rows
+
+
 def insert_new_player(cursor: Cursor, player_name: str) -> int:
     row = cursor.execute(
         t"""
@@ -157,7 +174,8 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         t"""
         SELECT ticketart.id, ticketart.name, verkehrsmittel.id, verkehrsmittel.name
         FROM ticketart
-        RIGHT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id;
+        RIGHT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id
+        ORDER BY ticketart.id;
         """
     ).fetchall()
 
@@ -168,8 +186,9 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         for (ticket_type_id, ticket_name, vehicle_id, vehicle_name) in rows
     }
 
-    all_vehicles = list(
-        {Vehicle(vehicle_id=vid, name=name) for (_, _, vid, name) in rows}
+    all_vehicles = sorted(
+        {Vehicle(vehicle_id=vid, name=name) for (_, _, vid, name) in rows},
+        key=lambda v: v.vehicle_id
     )
 
     # Get per-player status
@@ -182,7 +201,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         LEFT JOIN ticketart ON ticketart.id = id_ticketart
         LEFT JOIN verkehrsmittel ON ticketart.id_verkehrsmittel = verkehrsmittel.id
         WHERE id_partie = {game_id}
-        ORDER BY teilnehmer.id ASC;
+        ORDER BY teilnehmer.id ASC, id_ticketart;
         """
     ).fetchall()
 
@@ -236,6 +255,10 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
 
     info = get_game_infos(cursor, [game_id])[0]
 
+    mister_x_moves = [
+        f"{runde} - {ticket}" for runde, ticket in get_mister_x_moves(cursor, game_id)
+    ]
+
     gamestate = GameState(
         info=info,
         active_player=active_player,
@@ -243,6 +266,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
         nodes=nodes,
         connections=connections,
         vehicles=all_vehicles,
+        mister_x_moves=mister_x_moves,
     )
 
     return gamestate
@@ -338,7 +362,8 @@ def get_map_nodes(cursor: Cursor, map_id: int) -> list[MapNode]:
         t"""
         SELECT knoten.id, nummer, position_x, position_y
         FROM knoten
-        WHERE knoten.id_karte = {map_id};
+        WHERE knoten.id_karte = {map_id}
+        ORDER BY knoten.id;
         """
     ).fetchall()
 
@@ -363,7 +388,8 @@ def get_map_connections(cursor, map_id) -> list[Connection]:
         SELECT v.id, v.id_startknoten, v.id_zielknoten, v.id_verkehrsmittel
         FROM knoten
         JOIN verbindung AS v ON knoten.id = v.id_startknoten
-        WHERE knoten.id_karte = {map_id};
+        WHERE knoten.id_karte = {map_id}
+        ORDER BY v.id;
         """
     ).fetchall()
 
