@@ -19,6 +19,8 @@ services:
       - PYTHONUNBUFFERED=1
     expose:
       - "8000"
+    volumes:
+      - ./database/docker-entrypoint-initdb.d/020_seed.sql:/app/seed.sql # TODO: Remove in prod
     depends_on:
       database:
         condition: service_healthy
