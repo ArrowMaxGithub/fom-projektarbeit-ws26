@@ -43,6 +43,7 @@ class LoginQuery(Query):
         await sio.emit(
             "chat",
             {"sender": "Server", "content": f"{self.player_name} logged in"},
+            room="lobby",
             skip_sid=self.sid,
         )
         await sio.emit("lobby", self.game_infos)
