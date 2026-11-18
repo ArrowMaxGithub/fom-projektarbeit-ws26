@@ -252,22 +252,24 @@ export default function InGame({ active, socket, handleRoomLeave, setAccountBarH
     return <div className="InGame">
         <div className="GameContent">
             <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
-            <button onClick={() => {
+            <div className="GameControlButtons">
+                <button onClick={() => {
                 setLastMisterXShowPos(null);
                 setGameState(null);
                 setGameover(false);
                 handleRoomLeave()
-            }
-            }>Raum verlassen</button>
-            <button
-                disabled={playerId === null}
-                onClick={handleStartGame}
-            >
-                Spiel starten
-            </button>
-            <button onClick={() => chooseRole("mister_x")}>Mister X wählen</button>
-            <button onClick={() => chooseRole("detektiv")}>Detektiv wählen</button>
-            <button onClick={() => chooseRole(null)}>Zuschauer wählen</button>
+                }
+                }>Raum verlassen</button>
+                <button
+                    disabled={playerId === null}
+                    onClick={handleStartGame}
+                >
+                    Spiel starten
+                </button>
+                <button onClick={() => chooseRole("mister_x")}>Mister X wählen</button>
+                <button onClick={() => chooseRole("detektiv")}>Detektiv wählen</button>
+                <button onClick={() => chooseRole(null)}>Zuschauer wählen</button>
+            </div>
         </div>
 
         <div className="GameInfosPanel">
