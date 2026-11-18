@@ -219,8 +219,6 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         xmlns="http://www.w3.org/2000/svg" 
         fill={"white"}
         stroke={"black"}
-        width={1000}
-        height={1000}
         viewBox={[0, 0, 1000, 1000].toString()}>
 
         { 

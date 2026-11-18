@@ -8,6 +8,7 @@ hr {
   align-items: center;
   justify-content: stretch;
   padding: 15px;
+  gap: 5px;
 }
 
 .LandingPage {
@@ -66,8 +67,7 @@ hr {
 
 .LobbyLayout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr);
-  gap: 30px;
+  grid-template-columns: 75% 25%;
   width: 100%;
   align-items: start;
 }
@@ -122,10 +122,6 @@ hr {
 
 
 .Gameboard {
-  width: 100%;
-  max-width: 750px;
-  height: 100%;
-  border: 2px solid #9ca3af;
   padding: 20px;
   margin-bottom: 5px;
 
