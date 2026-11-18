@@ -152,6 +152,11 @@ hr {
     dominant-baseline: central;
   }
 
+  .PlayerFigurine{
+    width: 40px;
+    height: 40px;
+  }
+
   .PlayerAt {
     font-size: 25px;
   }
