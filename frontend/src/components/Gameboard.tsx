@@ -77,7 +77,12 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             const conn_count = addEntry(dict, key);
             const nudge = 10 * (conn_count - 1);
 
-            const color = vehicle_name_to_color(vehicle.name);
+            let color = vehicle_name_to_color(vehicle.name);
+            const legalForSelectedTicket = selectedTicket?.allowed_vehicles.find(v => v.vehicle_id === vehicle.vehicle_id);
+            
+            if (selectedTicket && !legalForSelectedTicket){
+                color = "grey";
+            }
 
             return {
                 id: conn.connection_id, 
@@ -232,7 +237,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
                         x2={x2} 
                         y2={y2} 
                         stroke={color} 
-                        strokeWidth={4}>                
+                        strokeWidth={4}>
                     </line>
             )
         }
