@@ -11,13 +11,12 @@ import MisterXHistory from './MisterXHistory.tsx';
 type InGameProps = {
     active: boolean,
     socket: Socket,
-    handleRoomLeave: () => void,
     setAccountBarHeader: (value: string) => void,
     gameId: number | null,
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, handleRoomLeave, setAccountBarHeader, playerId }: InGameProps) {
+export default function InGame({ active, socket,setAccountBarHeader, playerId }: InGameProps) {
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
     const [revealedPositions, setRevealedPositions] = useState<Record<number, number>>({});
