@@ -103,6 +103,7 @@ function App() {
     if (current_room === null || userId === null) return;
 
     console.log(`${playerName} leaving room: ${current_room}`);
+    setAccountBarHeader("GeoCatcher");
     socket.emit("room_leave", userId, current_room, (success: boolean) => {
       if (success !== undefined) {
         setPlayerId(null);
