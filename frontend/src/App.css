@@ -6,6 +6,18 @@ hr {
   display: none !important;
 }
 
+.Clickable {
+    cursor: pointer !important;
+  }
+
+  .Unclickable {
+    cursor: not-allowed !important;
+  }
+
+  .DefaultCursor {
+    cursor: default;
+  }
+
 .App {
   display: flex;
   flex-direction: column;
@@ -129,18 +141,6 @@ hr {
 .Gameboard {
   padding: 20px;
   margin-bottom: 5px;
-
-  .Clickable {
-    cursor: pointer !important;
-  }
-
-  .Unclickable {
-    cursor: not-allowed !important;
-  }
-
-  .DefaultCursor {
-    cursor: default;
-  }
 
   .MapNode {
     stroke-width: 2px;
@@ -323,5 +323,16 @@ hr {
 
   h1 {
     margin: 0;
+  }
+
+  .AccountBarHeader{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .AccountBarAction{
+    width: 50px;
+    height: 50px;
   }
 }
