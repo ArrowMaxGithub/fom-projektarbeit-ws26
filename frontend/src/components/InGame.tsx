@@ -9,13 +9,12 @@ import TicketButton from './TicketButton.tsx';
 type InGameProps = {
     active: boolean,
     socket: Socket,
-    handleRoomLeave: () => void,
     setAccountBarHeader: (value: string) => void,
     gameId: number | null,
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, handleRoomLeave, setAccountBarHeader, playerId }: InGameProps) {
+export default function InGame({ active, socket,setAccountBarHeader, playerId }: InGameProps) {
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
     const [gameover, setGameover] = useState<boolean>(false);
@@ -250,13 +249,6 @@ export default function InGame({ active, socket, handleRoomLeave, setAccountBarH
     }
 
     return <div className="InGame">
-        <button onClick={() => {
-            setLastMisterXShowPos(null);
-            setGameState(null);
-            setGameover(false);
-            handleRoomLeave()
-            }
-        }>Raum verlassen</button>
         <div className="GameContent">
             <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
             <div className="GameControlButtons" hidden={gamestate?.info.status !== "lobby"}>

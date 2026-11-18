@@ -6,6 +6,7 @@ import type { GameInfo } from './interfaces.ts';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
+import icon_search from './assets/icon_search.svg'
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
@@ -127,7 +128,10 @@ function App() {
     {/*Header mit Account-Anzeige nach Login*/}
     {isLoggedIn && (
       <div className="AccountBar">
-        <h1>{accountBarHeader}</h1>
+        <div className="AccountBarHeader">
+          <img className="Clickable AccountBarAction" src={icon_search} onClick={handleRoomLeave}/>
+          <h1>{accountBarHeader}</h1>
+        </div>
         <div className="Account">
           <span>Logged in as: {playerName}</span>
           <button onClick={handleLogout}>Logout</button>
@@ -148,7 +152,6 @@ function App() {
         active={isLoggedIn && current_room !== null}
         socket={socket}
         setAccountBarHeader={setAccountBarHeader}
-        handleRoomLeave={handleRoomLeave}
         gameId={current_room}
         playerId={playerId}
       />
