@@ -140,6 +140,7 @@ hr {
 .Gameboard {
   padding: 20px;
   margin-bottom: 5px;
+  max-height: 700px;
 
   .MapNode {
     stroke-width: 2px;
@@ -154,6 +155,7 @@ hr {
   .PlayerFigurine{
     width: 40px;
     height: 40px;
+    transition: transform 0.25s ease-in-out;
   }
 
   .PlayerAt {
