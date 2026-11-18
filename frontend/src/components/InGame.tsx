@@ -12,11 +12,12 @@ type InGameProps = {
     active: boolean,
     socket: Socket,
     handleRoomLeave: () => void,
+    setAccountBarHeader: (value: string) => void,
     gameId: number | null,
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
+export default function InGame({ active, socket, handleRoomLeave, setAccountBarHeader, playerId }: InGameProps) {
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
     const [revealedPositions, setRevealedPositions] = useState<Record<number, number>>({});
@@ -102,6 +103,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             return;
         }
 
+        setAccountBarHeader(`Raum ${gamestate?.info.room_id} - ${gamestate?.info.map_name}`)
         setGameover(isGameOver(gamestate));
 
         if (isGameEnded(gamestate)) {
@@ -258,7 +260,6 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
 
     return <div className="InGame">
         <div className="GameContent">
-            <h1>Raum {gamestate?.info.room_id} - {gamestate?.info.map_name} </h1>
             <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
             <button onClick={() => {
                 setLastMisterXShowPos(null);

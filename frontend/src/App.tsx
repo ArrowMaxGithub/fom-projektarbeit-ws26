@@ -18,6 +18,7 @@ function App() {
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
   const [current_room, setCurrentRoom] = useState<number | null>(null);
+  const [accountBarHeader, setAccountBarHeader] = useState<string>("GeoCatcher");
 
   // Define any callbacks to events sent by the server here
   useEffect(() => {
@@ -126,7 +127,7 @@ function App() {
     {/*Header mit Account-Anzeige nach Login*/}
     {isLoggedIn && (
       <div className="AccountBar">
-        <h1>GeoCatcher</h1>
+        <h1>{accountBarHeader}</h1>
         <div className="Account">
           <span>Logged in as: <span style={{ color: getPlayerColor(playerName) }}>{playerName}</span></span>
           <button onClick={handleLogout}>Logout</button>
@@ -146,6 +147,7 @@ function App() {
       <InGame
         active={isLoggedIn && current_room !== null}
         socket={socket}
+        setAccountBarHeader={setAccountBarHeader}
         handleRoomLeave={handleRoomLeave}
         gameId={current_room}
         playerId={playerId}
