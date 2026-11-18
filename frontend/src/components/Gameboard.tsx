@@ -202,14 +202,12 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
     const mrx_node = getNode(gamestate, lastMisterXShowPos)
 
     return (
-        <svg
-            className="Gameboard"
-            xmlns="http://www.w3.org/2000/svg"
-            fill={"white"}
-            stroke={"black"}
-            width={1000}
-            height={1000}
-            viewBox={[0, 0, 1000, 1000].toString()}>
+    <svg 
+        className="Gameboard" 
+        xmlns="http://www.w3.org/2000/svg" 
+        fill={"white"}
+        stroke={"black"}
+        viewBox={[0, 0, 1000, 1000].toString()}>
 
             {
                 // Draw connections with nudged colored lines
