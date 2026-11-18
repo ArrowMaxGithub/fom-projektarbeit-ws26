@@ -228,6 +228,10 @@ hr {
     }
   }
 
+  .SelectedTicket{
+    filter: brightness(150%);
+  }
+
   img {
     display: block;
     width: 30px;
