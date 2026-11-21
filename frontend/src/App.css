@@ -109,12 +109,13 @@ hr {
 }
 
 @keyframes rotate {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 
@@ -162,7 +163,7 @@ hr {
     animation: rotate 10s linear infinite;
   }
 
-  .VehicleLegend{
+  .VehicleLegend {
     font-size: 20px;
   }
 
@@ -231,13 +232,19 @@ hr {
 }
 
 .Chat {
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
   padding: 2em;
   min-width: 0;
   border: 1px solid #555;
   border-radius: 0.5em;
+  box-sizing: border-box;
 
   ul {
-    max-height: 300px;
+    flex: 1;
+    min-height: 1;
+    max-height: none;
     overflow-y: auto;
     overflow-wrap: anywhere;
     list-style: none;
@@ -253,6 +260,10 @@ hr {
       min-width: 0;
     }
   }
+}
+
+.Chat:has(form) {
+  height: 350px;
 }
 
 

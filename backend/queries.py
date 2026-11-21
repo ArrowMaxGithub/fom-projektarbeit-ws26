@@ -76,9 +76,11 @@ class ChatQuery(Query):
         self.message = message
 
     async def fullfill(self, sio: FastAPISocketIO):
+        if len(self.message.content) > 300:
+            return False
+
         rooms = sio.rooms(self.sid)
         await sio.emit("chat", self.message, room=rooms)
-
         return True
 
 
