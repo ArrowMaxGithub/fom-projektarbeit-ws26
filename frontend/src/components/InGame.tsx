@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { Socket } from "socket.io-client";
-import { getActivePlayer, getDetectives, getMisterX, getPlayer, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
+import { getActivePlayer, getDetectives, getMisterX, getNode, getPlayer, getTurnOrderLabels, isGameEnded, isGameOver } from './GameStateHelpers.tsx';
 import GameInfos from './GameInfos.tsx';
 import type { GameState, Move, Ticket } from '../interfaces.ts';
 import Gameboard from './Gameboard.tsx';
 import TicketButton from './TicketButton.tsx';
 import LobbyInfos from './LobbyInfos.tsx';
+import MisterXHistory from './MisterXHistory.tsx';
 
 type InGameProps = {
     active: boolean,
@@ -18,6 +19,7 @@ type InGameProps = {
 export default function InGame({ active, socket, handleRoomLeave, playerId }: InGameProps) {
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
+    const [revealedPositions, setRevealedPositions] = useState<Record<number, number>>({});
     const [gameover, setGameover] = useState<boolean>(false);
     const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
     const [activeTab, setActiveTab] = useState<number>(0);
@@ -51,6 +53,12 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 ) {
                     console.log(`setLastMisterXShowPos: ${currentMisterXPos}`);
                     setLastMisterXShowPos(currentMisterXPos);
+
+                    const node = getNode(new_gamestate, currentMisterXPos);
+
+                    if (node) {
+                        setRevealedPositions(old => ({ ...old, [new_gamestate.info.current_round ?? 0]: node.number }));
+                    }
                 }
 
                 // Remember last known Mister-X position as Mister-X during detective rounds.
@@ -254,6 +262,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
             <button onClick={() => {
                 setLastMisterXShowPos(null);
+                setRevealedPositions({});
                 setGameState(null);
                 setGameover(false);
                 handleRoomLeave()
@@ -304,9 +313,11 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
             }
 
             {activeTab == 2 &&
-                <div className="MisterXHistory">
-                    {gamestate?.mister_x_moves?.map((move, index) => <div key={index}>{move}</div>)}
-                </div>
+                <MisterXHistory
+                    moves={gamestate?.mister_x_moves ?? []}
+                    mister_x_show={mister_x_show}
+                    revealedPositions={revealedPositions}>
+                </MisterXHistory>
             }
         </div>
     </div >
