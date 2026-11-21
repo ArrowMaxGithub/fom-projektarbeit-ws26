@@ -206,18 +206,24 @@ hr {
     flex-direction: row;
     align-items: center;
     gap: 0.7em;
-    padding: 0.6em 1em;
+    padding: 0.5em 0.8em;
     font-size: 0.8em;
-    width: 260px;
+    width: 250px;
     max-width: 100%;
     box-sizing: border-box;
     background-color: #16171d;
+
+    &.SelectedTicket {
+      border-color: #646cff;
+      color: white;
+      font-weight: bold;
+    }
   }
 
   img {
     display: block;
-    width: 45px;
-    height: 45px;
+    width: 30px;
+    height: 30px;
     filter: invert(49%) sepia(4%) saturate(861%) hue-rotate(205deg) brightness(87%) contrast(93%);
   }
 }
