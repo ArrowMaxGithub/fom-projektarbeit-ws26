@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { GameState, Role, Ticket } from '../interfaces.ts'
 import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle } from './GameStateHelpers.tsx';
+import { getPlayerColor } from './PlayerColors.tsx';
 
 type GameboardProps = {
     playerId: number | null,
@@ -15,7 +16,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
 
     useEffect(() => {
-        if (!playerId || !gamestate){
+        if (!playerId || !gamestate) {
             return;
         }
 
@@ -37,19 +38,19 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
 
     // TODO: Brittle comparison against vehicle name. Add vehicle color to database or user preferences.
     function vehicle_name_to_color(vehicle_name: string): string {
-        switch (vehicle_name){
-            case "U-Bahn": 
+        switch (vehicle_name) {
+            case "U-Bahn":
                 return "#a40000";
-            case "Taxi": 
+            case "Taxi":
                 return "#ffd000";
-            case "Bus": 
+            case "Bus":
                 return "#039c03";
             case "Schwarze Route":
                 return "#373737";
             default:
                 return "#ffffff";
         }
-           
+
     }
 
     interface ConnectionData {
@@ -69,7 +70,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             const to_node = getNode(gamestate, conn.to_node_id);
             const vehicle = getVehicle(gamestate, conn.vehicle_id);
 
-            if (!from_node || !to_node || !vehicle){
+            if (!from_node || !to_node || !vehicle) {
                 return undefined;
             }
 
@@ -80,11 +81,11 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             const color = vehicle_name_to_color(vehicle.name);
 
             return {
-                id: conn.connection_id, 
-                color, 
-                x1: from_node.position_x + nudge, 
-                y1: from_node.position_y + nudge, 
-                x2: to_node.position_x + nudge, 
+                id: conn.connection_id,
+                color,
+                x1: from_node.position_x + nudge,
+                y1: from_node.position_y + nudge,
+                x2: to_node.position_x + nudge,
                 y2: to_node.position_y + nudge
             };
         }).filter(data => data !== undefined) ?? [];
@@ -92,21 +93,8 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         return filtered;
     }
 
-    function turn_order_to_color(turn_order: number): string {
-        const colors = [
-            "#00d4c21f",
-            "#91f4da",
-            "#d4c881",
-            "#81dd7c",
-            "#da7171",
-            "#c274df",
-        ]
-
-        return colors[turn_order];
-    }
-
     function role_to_role_label(role: Role): string {
-        switch (role){
+        switch (role) {
             case "detektiv":
                 return "Detektiv"
             case "mister_x":
@@ -129,7 +117,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         const filtered = gamestate?.players.map((player, _index) => {
             const current_node = getNode(gamestate, player.current_node);
 
-            if (!current_node || !player.turn_order || !player.role){
+            if (!current_node || !player.turn_order || !player.role) {
                 return undefined;
             }
 
@@ -137,7 +125,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             const at_count = addEntry(dict, key);
             const nudge = 2 * node_size * at_count + (at_count - 1) * 10;
 
-            const color = turn_order_to_color(player.turn_order);
+            const color = getPlayerColor(player.name)
             const role = role_to_role_label(player.role);
 
             return {
@@ -214,116 +202,116 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
     const mrx_node = getNode(gamestate, lastMisterXShowPos)
 
     return (
-    <svg 
-        className="Gameboard" 
-        xmlns="http://www.w3.org/2000/svg" 
-        fill={"white"}
-        stroke={"black"}
-        width={1000}
-        height={1000}
-        viewBox={[0, 0, 1000, 1000].toString()}>
+        <svg
+            className="Gameboard"
+            xmlns="http://www.w3.org/2000/svg"
+            fill={"white"}
+            stroke={"black"}
+            width={1000}
+            height={1000}
+            viewBox={[0, 0, 1000, 1000].toString()}>
 
-        { 
-            // Draw connections with nudged colored lines
-            mapConnections()
-                .map(({id, color, x1, y1, x2, y2}, _index) =>
-                    <line
-                        key={`Connection${id}`} 
-                        x1={x1} 
-                        y1={y1} 
-                        x2={x2} 
-                        y2={y2} 
-                        stroke={color} 
-                        strokeWidth={4}>                
-                    </line>
-            )
-        }
+            {
+                // Draw connections with nudged colored lines
+                mapConnections()
+                    .map(({ id, color, x1, y1, x2, y2 }, _index) =>
+                        <line
+                            key={`Connection${id}`}
+                            x1={x1}
+                            y1={y1}
+                            x2={x2}
+                            y2={y2}
+                            stroke={color}
+                            strokeWidth={4}>
+                        </line>
+                    )
+            }
 
-        {
-            // Draw nodes as white numbered circles, clickable if legal dst nodes 
-            mapNodes()
-                .map(({id, number, is_legal, is_current, x, y}, _index) =>
-                    <g key={`MapNode${id}`}>
-                        <circle 
-                            className={is_legal ? "Clickable MapNode" : "Unclickable MapNode"}
-                            fill={is_current ? "#21729d" : is_legal ? "#ffffff" : "#4d4d4d"}
-                            cx={x} 
-                            cy={y} 
-                            r={node_size} 
-                            onClick={is_legal ? () => makeMove(id) : () => null}
-                        ></circle>
-                        <text 
-                            className={is_legal ? "Clickable MapNodeText" : "Unclickable MapNodeText"}
-                            fill={"#000000"} 
-                            stroke={"#000000"} 
-                            x={x} 
-                            y={y}
-                            onClick={is_legal ? () => makeMove(id) : () => null}
-                        >{number}</text>
-                    </g>
-                )
-        }
-        {
-            // Show player name and role below player's current node
-            mapPlayers()
-                .map(({id, name, role, color, x, y}, _index) =>
-                    <g key={`Player${id}`} >
-                        <text 
-                            className="DefaultCursor PlayerAt" 
-                            fill={color} 
-                            stroke={color} 
-                            x={x} 
-                            y={y}
-                        >{name}</text>
-                        <text 
-                            className="DefaultCursor PlayerAtRole" 
-                            fill={color} 
-                            stroke={color} 
-                            x={x} 
-                            y={y + node_size}
-                        >{role}</text>
-                    </g>
-                )
-        }
-        {
-            // Show last known Mr.X position as dotted ring around node
-            <circle 
-                className={"LastMisterXPos"}
-                fill={"none"}
-                stroke={lastMisterXShowPos ? "#ffffff" : "transparent"}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeDasharray={"5,5"}
-                cx={mrx_node?.position_x} 
-                cy={mrx_node?.position_y} 
-                r={node_size + 10} 
-            ></circle>
-        }
-        {
-            // Show legend of vehicles
-            mapVehicles()
-                .map(({id, name, color, rect_x, rect_y, text_x, text_y}, _index) => 
-                    <g key={`VehicleLegend${id}`}>
-                        <rect
-                            className="DefaultCursor" 
-                            fill={color} 
-                            stroke={color} 
-                            x={rect_x} 
-                            y={rect_y}
-                            width={20}
-                            height={20}>
-                        </rect>
-                        <text 
-                            className="DefaultCursor VehicleLegend" 
-                            fill="#9ca3af"
-                            stroke="#9ca3af"
-                            strokeWidth={1}
-                            x={text_x} 
-                            y={text_y}
-                        >{`- ${name}`}</text>
-                    </g>
-                )
-        }
-    </svg>
+            {
+                // Draw nodes as white numbered circles, clickable if legal dst nodes 
+                mapNodes()
+                    .map(({ id, number, is_legal, is_current, x, y }, _index) =>
+                        <g key={`MapNode${id}`}>
+                            <circle
+                                className={is_legal ? "Clickable MapNode" : "Unclickable MapNode"}
+                                fill={is_current ? "#21729d" : is_legal ? "#ffffff" : "#4d4d4d"}
+                                cx={x}
+                                cy={y}
+                                r={node_size}
+                                onClick={is_legal ? () => makeMove(id) : () => null}
+                            ></circle>
+                            <text
+                                className={is_legal ? "Clickable MapNodeText" : "Unclickable MapNodeText"}
+                                fill={"#000000"}
+                                stroke={"#000000"}
+                                x={x}
+                                y={y}
+                                onClick={is_legal ? () => makeMove(id) : () => null}
+                            >{number}</text>
+                        </g>
+                    )
+            }
+            {
+                // Show player name and role below player's current node
+                mapPlayers()
+                    .map(({ id, name, role, color, x, y }, _index) =>
+                        <g key={`Player${id}`} >
+                            <text
+                                className="DefaultCursor PlayerAt"
+                                fill={color}
+                                stroke={color}
+                                x={x}
+                                y={y}
+                            >{name}</text>
+                            <text
+                                className="DefaultCursor PlayerAtRole"
+                                fill={color}
+                                stroke={color}
+                                x={x}
+                                y={y + node_size}
+                            >{role}</text>
+                        </g>
+                    )
+            }
+            {
+                // Show last known Mr.X position as dotted ring around node
+                <circle
+                    className={"LastMisterXPos"}
+                    fill={"none"}
+                    stroke={lastMisterXShowPos ? "#ffffff" : "transparent"}
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeDasharray={"5,5"}
+                    cx={mrx_node?.position_x}
+                    cy={mrx_node?.position_y}
+                    r={node_size + 10}
+                ></circle>
+            }
+            {
+                // Show legend of vehicles
+                mapVehicles()
+                    .map(({ id, name, color, rect_x, rect_y, text_x, text_y }, _index) =>
+                        <g key={`VehicleLegend${id}`}>
+                            <rect
+                                className="DefaultCursor"
+                                fill={color}
+                                stroke={color}
+                                x={rect_x}
+                                y={rect_y}
+                                width={20}
+                                height={20}>
+                            </rect>
+                            <text
+                                className="DefaultCursor VehicleLegend"
+                                fill="#9ca3af"
+                                stroke="#9ca3af"
+                                strokeWidth={1}
+                                x={text_x}
+                                y={text_y}
+                            >{`- ${name}`}</text>
+                        </g>
+                    )
+            }
+        </svg>
     )
 }

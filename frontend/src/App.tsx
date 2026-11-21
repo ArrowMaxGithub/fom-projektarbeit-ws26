@@ -6,6 +6,7 @@ import type { GameInfo } from './interfaces.ts';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
+import { getPlayerColor } from './components/PlayerColors.tsx';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
@@ -127,7 +128,7 @@ function App() {
       <div className="AccountBar">
         <h1>GeoCatcher</h1>
         <div className="Account">
-          <span>Logged in as: {playerName}</span>
+          <span>Logged in as: <span style={{ color: getPlayerColor(playerName) }}>{playerName}</span></span>
           <button onClick={handleLogout}>Logout</button>
           <button onClick={handleResetDatabase}>Reset database</button>
         </div>
