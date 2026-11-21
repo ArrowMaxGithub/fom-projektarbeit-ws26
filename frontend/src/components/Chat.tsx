@@ -31,19 +31,27 @@ export default function ChatProps({ active, socket, playerName }: ChatProps) {
 
     function handleSubmitMessage(event: SubmitEvent) {
         event.preventDefault();
+
+        const content = message.trim();
+
+        if (isSending || !content) {
+            return;
+        }
+
         setIsSending(true);
+
         const msg: ChatMessage = {
             sender: playerName,
             content: message,
         };
 
         socket.emit('chat', msg, (success: boolean) => {
+            setIsSending(false);
+
             if (success) {
                 setMessage("");
-                setIsSending(false);
             } else {
-                console.error("Failed to send chat message");
-                setIsSending(false);
+                alert("Nachricht nicht gesendet. Maximal 300 Zeichen erlaubt!");
             }
         });
     }
@@ -53,14 +61,30 @@ export default function ChatProps({ active, socket, playerName }: ChatProps) {
     }
 
     return <div className="Chat">
-        <button onClick={() => setIsChatVisible(!isChatVisible)}>
-            {isChatVisible ? "Chat ausblenden" : "Chat einblenden"}
-        </button>
+        <div className="ChatHeader">
+            <span>Chat</span>
+            <button
+                type="button"
+                onClick={() => setIsChatVisible(!isChatVisible)}
+                aria-label={isChatVisible ? "Chat ausblenden" : "Chat einblenden"}
+            >
+                {isChatVisible ? "-" : "+"}
+            </button>
+        </div>
+
         {isChatVisible && <>
             <ChatHistory chatHistory={chatHistory} />
             <form onSubmit={handleSubmitMessage}>
-                <input value={message} onChange={current => setMessage(current.target.value)} />
-                <button type="submit" disabled={isSending}>Send Message</button>
+                <input
+                    value={message}
+                    onChange={current => setMessage(current.target.value)}
+                    placeholder="Nachricht eingeben"
+                />
+                <button
+                    type="submit"
+                    disabled={isSending || !message.trim()}
+                >Senden
+                </button>
             </form>
         </>}
     </div>
