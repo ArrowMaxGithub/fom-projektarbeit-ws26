@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../interfaces.ts'
 import { useEffect, useRef } from 'react'
+import { getPlayerColor } from './PlayerColors.tsx';
 
 type ChatHistoryProps = {
     chatHistory: ChatMessage[],
@@ -16,9 +17,6 @@ export default function ChatHistory({ chatHistory }: ChatHistoryProps) {
         }
     }, [chatHistory]);
 
-    const colors = ['green', 'dodgerblue', 'orange', 'mediumorchid', 'saddlebrown', 'deeppink'];
-    const senders = [...new Set(chatHistory.filter(msg => msg.sender !== 'Server').map(msg => msg.sender))];
-
     return <ul ref={historyRef}>
         {
             chatHistory.map((msg, index) =>
@@ -27,7 +25,7 @@ export default function ChatHistory({ chatHistory }: ChatHistoryProps) {
                         <span style={{ color: 'red' }}> {`${msg.sender}: ${msg.content}`.toUpperCase()}</span>
                         :
                         <>
-                            <span style={{ color: colors[senders.indexOf(msg.sender)] }}> {msg.sender}: </span> {msg.content}
+                            <span style={{ color: getPlayerColor(msg.sender) }}> {msg.sender}: </span> {msg.content}
                         </>
                     }
                 </li>

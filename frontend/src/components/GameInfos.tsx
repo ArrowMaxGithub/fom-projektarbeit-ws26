@@ -1,3 +1,5 @@
+import { getPlayerColor } from "./PlayerColors.tsx";
+
 type GameInfosProps = {
     gameover: boolean,
     turn_order: string[],
@@ -13,8 +15,8 @@ export default function GameInfos({ gameover, turn_order, round, active_player, 
 
     return <div className="GameInfos">
         <p>Runde: {round}</p>
-        <p>Zugreihenfolge: {turn_order.join(" -> ")}</p>
-        <p>Aktuell am Zug: {active_player}</p>
+        <p>Zugreihenfolge: {turn_order.map((name, index) => <span key={index}> {index > 0 ? "->" : ""} <span style={{ color: getPlayerColor(name) }}>{name}</span> </span>)}</p>
+        <p>Aktuell am Zug: {active_player === "-" ? "-" : <span style={{ color: getPlayerColor(active_player) }}>{active_player}</span>}</p>
         <p>Mister X wird wieder aufgedeckt in Runde: {mister_x_show.find(elem => elem > round) ?? "Keine"}</p>
     </div>
 }
