@@ -5,6 +5,7 @@ import GameInfos from './GameInfos.tsx';
 import type { GameState, Move, Ticket } from '../interfaces.ts';
 import Gameboard from './Gameboard.tsx';
 import TicketButton from './TicketButton.tsx';
+import LobbyInfos from './LobbyInfos.tsx';
 
 type InGameProps = {
     active: boolean,
@@ -53,7 +54,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 }
 
                 // Remember last known Mister-X position as Mister-X during detective rounds.
-                if (lastMisterXPos && currentMisterXPos === null && player_is_mister_x){
+                if (lastMisterXPos && currentMisterXPos === null && player_is_mister_x) {
                     console.log(`Remembering last known mister-x pos: ${lastMisterXPos}`);
                     mister_x.current_node = lastMisterXPos;
                 }
@@ -61,11 +62,11 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                 return new_gamestate;
             });
 
-            if(isGameOver(new_gamestate)){
+            if (isGameOver(new_gamestate)) {
                 setGameover(true);
                 revealMisterX(new_gamestate);
             }
-            switch (new_gamestate.info.end_cause){
+            switch (new_gamestate.info.end_cause) {
                 case 'detektive_blockiert':
                     misterXWon(new_gamestate);
                     break;
@@ -272,7 +273,7 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
         <div className="GameInfosPanel">
             <div className='SidepanelTabs'>
                 <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(0)}>Spielinformationen</button>
-                <button aria-pressed={activeTab === 1} onClick={() => setActiveTab(1)}>Tickets</button>
+                <button aria-pressed={activeTab === 1} onClick={() => setActiveTab(1)}>Lobbyinformationen</button>
                 <button aria-pressed={activeTab === 2} onClick={() => setActiveTab(2)}>Zughistorie Mister X</button>
             </div>
 
@@ -285,15 +286,21 @@ export default function InGame({ active, socket, handleRoomLeave, playerId }: In
                     active_player={getActivePlayer(gamestate)?.name ?? "-"}
                     mister_x_show={mister_x_show}>
                 </GameInfos>
-            </>}
 
-            {activeTab == 1 &&
                 <div className="Ticketbuttons">
                     {
                         getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) =>
-                            <TicketButton key={ticket.ticket_type_id} ticket={ticket} selectedTicket={selectedTicket} bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"} onClick={handleSelectTicket}></TicketButton>)
+                            <TicketButton key={ticket.ticket_type_id}
+                                ticket={ticket} selectedTicket={selectedTicket}
+                                bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"}
+                                onClick={handleSelectTicket}>
+                            </TicketButton>)
                     }
                 </div>
+            </>}
+
+            {activeTab == 1 &&
+                <LobbyInfos players={gamestate?.players ?? []}></LobbyInfos>
             }
 
             {activeTab == 2 &&
