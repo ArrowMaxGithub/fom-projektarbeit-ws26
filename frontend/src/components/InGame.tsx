@@ -16,7 +16,7 @@ type InGameProps = {
     playerId: number | null,
 }
 
-export default function InGame({ active, socket,setAccountBarHeader, playerId }: InGameProps) {
+export default function InGame({ active, socket, setAccountBarHeader, playerId }: InGameProps) {
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
     const [revealedPositions, setRevealedPositions] = useState<Record<number, number>>({});
@@ -258,14 +258,6 @@ export default function InGame({ active, socket,setAccountBarHeader, playerId }:
     }
 
     return <div className="InGame">
-        <button onClick={() => {
-            setLastMisterXShowPos(null);
-            setRevealedPositions({});
-            setGameState(null);
-            setGameover(false);
-            handleRoomLeave()
-            }
-        }>Raum verlassen</button>
         <div className="GameContent">
             <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
             <div className="GameControlButtons" hidden={gamestate?.info.status !== "lobby"}>
