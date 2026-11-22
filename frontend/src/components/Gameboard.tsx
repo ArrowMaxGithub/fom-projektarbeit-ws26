@@ -310,7 +310,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
                 strokeDasharray={"5,5"}
                 cx={mrx_node?.position_x} 
                 cy={mrx_node?.position_y} 
-                r={node_size + 10} 
+                r={node_size * 0.5 + 10} 
             ></circle>
         }
         {
