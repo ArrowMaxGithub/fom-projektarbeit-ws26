@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import type { GameState, Role, Ticket } from '../interfaces.ts'
 import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle } from './GameStateHelpers.tsx';
+import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode } from './GameStateHelpers.tsx';
+import MapNode from './MapNode.tsx';
 import { getPlayerColor } from './PlayerColors.tsx';
 
 type GameboardProps = {
@@ -14,6 +15,7 @@ type GameboardProps = {
 
 export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove }: GameboardProps) {
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
+    const node_size = 80;
 
     useEffect(() => {
         if (!playerId || !gamestate) {
@@ -148,7 +150,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
                 return undefined;
             }
 
-            const nudge = node_size;
+            const nudge = 0.5 * node_size + 10;
             const color = getPlayerColor(player.name)
             const role = role_to_role_label(player.role);
 
@@ -168,6 +170,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
     interface NodeData {
         id: number;
         number: number;
+        vehicles: number[],
         is_legal: boolean;
         is_current: boolean;
         x: number,
@@ -184,10 +187,12 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             const is_legal = nodeStates[index] === NodeState.LegalDst && player_is_active;
             const current_node = getPlayer(gamestate, perspective)?.current_node;
             const is_current = current_node === node.node_id;
+            const vehicles = getVehiclesAtNode(gamestate, node.node_id) ?? [];
 
             return {
                 id: node.node_id,
                 number: node.number,
+                vehicles,
                 is_legal,
                 is_current,
                 x: node.position_x,
@@ -222,7 +227,6 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         }) ?? [];
     }
 
-    const node_size = 30;
     const mrx_node = getNode(gamestate, lastMisterXShowPos)
 
     return (
@@ -252,25 +256,8 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         {
             // Draw nodes as white numbered circles, clickable if legal dst nodes 
             mapNodes()
-                .map(({id, number, is_legal, is_current, x, y}, _index) =>
-                    <g key={`MapNode${id}`}>
-                        <circle 
-                            className={is_legal ? "Clickable MapNode" : "Unclickable MapNode"}
-                            fill={is_current ? "#21729d" : is_legal ? "#ffffff" : "#4d4d4d"}
-                            cx={x} 
-                            cy={y} 
-                            r={node_size} 
-                            onClick={is_legal ? () => makeMove(id) : () => null}
-                        ></circle>
-                        <text 
-                            className={is_legal ? "Clickable MapNodeText" : "Unclickable MapNodeText"}
-                            fill={"#000000"} 
-                            stroke={"#000000"} 
-                            x={x} 
-                            y={y}
-                            onClick={is_legal ? () => makeMove(id) : () => null}
-                        >{number}</text>
-                    </g>
+                .map(({id, number, vehicles, is_legal, is_current, x, y}, _index) =>
+                    <MapNode key={id} id={id} number={number} vehicles={vehicles} is_legal={is_legal} is_current={is_current} x={x} y={y} makeMove={makeMove}></MapNode>
                 )
         }
         {
