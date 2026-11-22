@@ -3,9 +3,9 @@
 CAUTION: Do not modify this file unless you know what you are doing.
  Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="20"
+<dbmodel pgmodeler-ver="1.2.3" use-changelog="false" max-obj-count="20"
 	 gen-disabled-objs-code="false" show-sys-schemas-rects="true"
-	 last-position="0,-32" last-zoom="0.8" scene-rect="-20,-40,2111.85,1162.92"
+	 last-position="0,-42" last-zoom="1.05" scene-rect="-20,-40,2111.85,1162.92"
 	 default-schema="public" default-owner="postgres"
 	 layers="Default layer"
 	 active-layers="0"
@@ -375,7 +375,7 @@ OR
 	</constraint>
 </table>
 
-<table name="verbindung" layers="0" collapse-mode="1" max-obj-count="6" z-value="0">
+<table name="verbindung" layers="0" collapse-mode="1" max-obj-count="7" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
 	<tag name="karte_und_verkehrsnetz"/>
@@ -383,6 +383,12 @@ OR
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="integer" length="0"/>
+	</column>
+	<column name="halt_start" default-value="TRUE">
+		<type name="boolean" length="0"/>
+	</column>
+	<column name="halt_ziel" default-value="TRUE">
+		<type name="boolean" length="0"/>
 	</column>
 	<constraint name="verbindung_pk" type="pk-constr" table="public.verbindung">
 		<columns names="id" ref-type="src-columns"/>

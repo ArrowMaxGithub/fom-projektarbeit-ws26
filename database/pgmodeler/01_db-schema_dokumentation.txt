@@ -45,6 +45,7 @@ Tabelle knoten:
 Tabelle verbindung
  - Es handelt sich um ungerichtete Knoten, da die Verbindung ja in beide Richtungen funktionieren soll
  - Über einen Index wird eine Doppelung der Verbindung bereits abgefangen, daher sind die Einträge
+ - Attribute halt_{start, ziel} definieren, ob diese Verbindung am jeweiligen Knoten hält oder lediglich vorbeifährt.
 
  id_startknoten: 12 - id_zielknotne: 26 - id_verkehrsmittel: 2 (Bus) 
 
