@@ -14,6 +14,8 @@ type GameboardProps = {
 }
 
 export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove }: GameboardProps) {
+    const [center, setCenter] = useState<number[]>([500, 500]);
+    const [view, setView] = useState<number>(1000);
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const node_size = 80;
 
@@ -27,6 +29,23 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         setNodeStates(new_node_states);
 
     }, [playerId, gamestate, selectedTicket])
+
+    useEffect(() => {
+        const handleWheel = (e: WheelEvent) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault()
+                const delta = e.deltaY * 0.1;
+                console.log(`delta zoom: ${delta}`);
+                setView((prev) => prev + delta);
+            }
+        }
+
+        document.addEventListener("wheel", handleWheel, { passive: false })
+
+        return () => {
+            document.removeEventListener("wheel", handleWheel)
+        }
+    }, [])
 
     interface DictCount {
         [key: string]: number;
@@ -228,6 +247,8 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
     }
 
     const mrx_node = getNode(gamestate, lastMisterXShowPos)
+    const viewbox = [center[0] - view / 2, center[1] - view / 2, view, view].toString();
+    console.log(`center: ${center} | view: ${view} | viewbox: ${viewbox}`);
 
     return (
     <svg 
@@ -235,8 +256,9 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         xmlns="http://www.w3.org/2000/svg" 
         fill={"white"}
         stroke={"black"}
-        viewBox={[0, 0, 1000, 1000].toString()}>
-
+        width={1000}
+        height={1000}
+        viewBox={viewbox}>
             {
                 // Draw connections with nudged colored lines
                 mapConnections()
