@@ -65,6 +65,7 @@ class Connection(BaseModel):
     from_node_id: int
     to_node_id: int
     vehicle_id: int
+    via: list[int]
 
 
 @dataclass(frozen=True)
@@ -238,6 +239,7 @@ class GameState(BaseModel):
                 to_node_id=c.to_node_id
                 if c.from_node_id == player.current_node
                 else c.from_node_id,
+                via=c.via
             )
             for c in conns
         ]

@@ -670,13 +670,21 @@
           "vehicle_id": {
             "title": "Vehicle Id",
             "type": "integer"
+          },
+          "via": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Via",
+            "type": "array"
           }
         },
         "required": [
           "connection_id",
           "from_node_id",
           "to_node_id",
-          "vehicle_id"
+          "vehicle_id",
+          "via"
         ],
         "title": "Connection",
         "type": "object"

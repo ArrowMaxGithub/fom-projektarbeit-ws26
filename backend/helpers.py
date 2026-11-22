@@ -184,7 +184,7 @@ def get_gamestate(cursor: Cursor, game_id: int) -> GameState:
 
     all_vehicles = sorted(
         {Vehicle(vehicle_id=vid, name=name) for (_, _, vid, name) in rows},
-        key=lambda v: v.vehicle_id
+        key=lambda v: v.vehicle_id,
     )
 
     # Get per-player status
@@ -381,13 +381,36 @@ def get_map_nodes(cursor: Cursor, map_id: int) -> list[MapNode]:
 def get_map_connections(cursor, map_id) -> list[Connection]:
     rows = cursor.execute(
         t"""
-        SELECT v.id, v.id_startknoten, v.id_zielknoten, v.id_verkehrsmittel
+        WITH RECURSIVE complete_line AS (
+            SELECT v.id, v.id_startknoten, CAST(NULL as int) as via, v.id_zielknoten, v.halt_start, v.halt_ziel, v.id_verkehrsmittel
+            FROM verbindung as v
+            WHERE v.halt_start = TRUE
+
+            UNION ALL
+
+            SELECT cl.id, cl.id_startknoten, v.id_startknoten, v.id_zielknoten, cl.halt_start, v.halt_ziel, v.id_verkehrsmittel
+            FROM verbindung as v
+            JOIN complete_line as cl ON
+                cl.id_zielknoten = v.id_startknoten AND
+                cl.id_verkehrsmittel = v.id_verkehrsmittel
+            WHERE v.halt_start = FALSE
+        )
+
+        SELECT cl.id, cl.id_startknoten, cl.via, cl.id_zielknoten, cl.id_verkehrsmittel
         FROM knoten
-        JOIN verbindung AS v ON knoten.id = v.id_startknoten
-        WHERE knoten.id_karte = {map_id}
-        ORDER BY v.id;
+        JOIN complete_line AS cl ON knoten.id = cl.id_startknoten
+        WHERE 
+            knoten.id_karte = 3 AND
+            cl.halt_start = TRUE AND cl.halt_ziel = TRUE
+        ORDER BY cl.id, cl.via;
         """
     ).fetchall()
+
+    vias = {}
+    for cid, from_node, via, to_node, vehicle in rows:
+        vias.setdefault(cid, [])
+        if via:
+            vias[cid].append(via)
 
     connections = [
         Connection(
@@ -395,8 +418,9 @@ def get_map_connections(cursor, map_id) -> list[Connection]:
             from_node_id=from_node,
             to_node_id=to_node,
             vehicle_id=vehicle,
+            via=vias[cid],
         )
-        for (cid, from_node, to_node, vehicle) in rows
+        for cid, from_node, via, to_node, vehicle in rows
     ]
 
     return connections

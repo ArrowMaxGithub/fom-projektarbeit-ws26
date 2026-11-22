@@ -570,24 +570,7 @@ class StartGameQuery(Query):
                 for nid, num, x, y in cursor.fetchall()
             ]
 
-            cursor.execute(
-                t"""
-                    SELECT v.id, v.id_startknoten, v.id_zielknoten, v.id_verkehrsmittel
-                    FROM verbindung AS v
-                    JOIN knoten AS s ON s.id = v.id_startknoten
-                    JOIN knoten AS z on z.id = v.id_zielknoten
-                    WHERE s.id_karte = {map_id} AND z.id_karte = {map_id};
-                """
-            )
-            connections = [
-                Connection(
-                    connection_id=cid,
-                    from_node_id=source,
-                    to_node_id=target,
-                    vehicle_id=vehicle_id,
-                )
-                for cid, source, target, vehicle_id in cursor.fetchall()
-            ]
+            connections = get_map_connections(cursor, map_id)
 
             cursor.execute(
                 t"""
