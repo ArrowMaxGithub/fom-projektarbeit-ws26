@@ -6,7 +6,7 @@ import type { GameInfo } from './interfaces.ts';
 import Chat from './components/Chat.tsx'
 import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
-import icon_search from './assets/icon_search.svg'
+import AccountBarIcon from './assets/icon_search.svg?react'
 import { getPlayerColor } from './components/PlayerColors.tsx';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
@@ -130,7 +130,7 @@ function App() {
     {isLoggedIn && (
       <div className="AccountBar">
         <div className="AccountBarHeader">
-          <img className="Clickable AccountBarAction" src={icon_search} onClick={handleRoomLeave}/>
+          <AccountBarIcon className="Clickable AccountBarAction" onClick={handleRoomLeave}></AccountBarIcon>
           <h1>{accountBarHeader}</h1>
         </div>
         <div className="Account">

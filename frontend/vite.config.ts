@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+import svgr from "vite-plugin-svgr";
 import { defineConfig, type Plugin } from 'vite'
 import { exec } from 'node:child_process'
 import path from 'node:path'
@@ -32,7 +33,9 @@ function buildBackendInterface(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), buildBackendInterface()],
+  plugins: [react(), buildBackendInterface(), svgr({
+    svgrOptions: { plugins: ["@svgr/plugin-svgo", "@svgr/plugin-jsx"] },
+  })],
   server: {
     proxy: {
       '/api': 'http://backend:8000',

@@ -1,6 +1,10 @@
 import type { GameState, Player, Connection, Ticket, Vehicle, MapNode } from "../interfaces";
 import { NodeState } from "./NodeState";
 
+export function getVehiclesAtNode(gamestate: GameState | null, node_id: number): number[] | undefined {
+    return [... new Set(gamestate?.connections.filter(conn => conn.from_node_id === node_id || conn.to_node_id === node_id).map(conn => conn.vehicle_id).sort((a, b) => a - b))]
+}
+
 export function getPlayerPerspective(gamestate: GameState | null, player_id: number | null): number | null{
     const active_player = getActivePlayer(gamestate);
     const player = getPlayer(gamestate, player_id);
@@ -60,7 +64,8 @@ export function getConnections(gamestate: GameState, from_node_id: number, to_no
                     connection_id: conn.connection_id,
                     from_node_id: conn.to_node_id,
                     to_node_id: conn.from_node_id,
-                    vehicle_id: conn.vehicle_id
+                    vehicle_id: conn.vehicle_id,
+                    via: conn.via
                 }
             }
         });
