@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type MouseEvent } from 'react'
 import type { GameState, Role, Ticket } from '../interfaces.ts'
 import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode } from './GameStateHelpers.tsx';
@@ -14,8 +14,9 @@ type GameboardProps = {
 }
 
 export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove }: GameboardProps) {
+    const [isDragging, setIsDragging] = useState<boolean>(false);
     const [center, setCenter] = useState<number[]>([500, 500]);
-    const [view, setView] = useState<number>(1000);
+    const [zoom, setZoom] = useState<number>(1.0);
     const [nodeStates, setNodeStates] = useState<NodeState[]>([]);
     const node_size = 80;
 
@@ -34,9 +35,9 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         const handleWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault()
-                const delta = e.deltaY * 0.1;
+                const delta = e.deltaY * 0.001;
                 console.log(`delta zoom: ${delta}`);
-                setView((prev) => prev + delta);
+                setZoom((prev) => Math.min(Math.max(prev + delta, 0.25), 4.0));
             }
         }
 
@@ -246,9 +247,15 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         }) ?? [];
     }
 
+    function handleMouseMouse(e: MouseEvent){
+        if (isDragging){
+            setCenter((prev) => [prev[0] - e.movementX * zoom, prev[1] - e.movementY * zoom])
+        }
+    }
+
+    const view = 1200;
     const mrx_node = getNode(gamestate, lastMisterXShowPos)
-    const viewbox = [center[0] - view / 2, center[1] - view / 2, view, view].toString();
-    console.log(`center: ${center} | view: ${view} | viewbox: ${viewbox}`);
+    const viewbox = [center[0] - view * zoom / 2, center[1] - view * zoom / 2, view * zoom, view * zoom].toString();
 
     return (
     <svg 
@@ -256,9 +263,11 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         xmlns="http://www.w3.org/2000/svg" 
         fill={"white"}
         stroke={"black"}
-        width={1000}
-        height={1000}
-        viewBox={viewbox}>
+        viewBox={viewbox}
+        onMouseDown={(_e) => setIsDragging(true)}
+        onMouseMove={(e) => handleMouseMouse(e)}
+        onMouseLeave={(_e) => setIsDragging(false)}
+        onMouseUp={(_e) => setIsDragging(false)}>
             {
                 // Draw connections with nudged colored lines
                 mapConnections()
