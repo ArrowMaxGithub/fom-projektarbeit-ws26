@@ -224,6 +224,8 @@ CREATE TABLE public.verbindung (
     id_startknoten integer NOT NULL,
     id_zielknoten integer NOT NULL,
     id_verkehrsmittel integer NOT NULL,
+    halt_start boolean DEFAULT TRUE,
+    halt_ziel boolean DEFAULT TRUE,
 
     CONSTRAINT verbindung_pk PRIMARY KEY (id),
 

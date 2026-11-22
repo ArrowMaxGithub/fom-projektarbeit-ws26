@@ -434,34 +434,73 @@ INSERT INTO
         id_zielknoten,
         id_verkehrsmittel
     )
-VALUES (DEFAULT, '1', '4', '2');
+VALUES (DEFAULT, '1', '5', '2');
 
 INSERT INTO
     public.verbindung (
         id,
         id_startknoten,
         id_zielknoten,
-        id_verkehrsmittel
+        id_verkehrsmittel,
+        halt_start,
+        halt_ziel
     )
-VALUES (DEFAULT, '3', '5', '2');
+VALUES (DEFAULT, '3', '6', '2', TRUE, FALSE);
 
 INSERT INTO
     public.verbindung (
         id,
         id_startknoten,
         id_zielknoten,
-        id_verkehrsmittel
+        id_verkehrsmittel,
+        halt_start,
+        halt_ziel
     )
-VALUES (DEFAULT, '2', '4', '3');
+VALUES (DEFAULT, '6', '5', '2', FALSE, TRUE);
 
 INSERT INTO
     public.verbindung (
         id,
         id_startknoten,
         id_zielknoten,
-        id_verkehrsmittel
+        id_verkehrsmittel,
+        halt_start,
+        halt_ziel
     )
-VALUES (DEFAULT, '2', '5', '3');
+VALUES (DEFAULT, '2', '3', '3', TRUE, FALSE);
+
+INSERT INTO
+    public.verbindung (
+        id,
+        id_startknoten,
+        id_zielknoten,
+        id_verkehrsmittel,
+        halt_start,
+        halt_ziel
+    )
+VALUES (DEFAULT, '3', '4', '3', FALSE, TRUE);
+
+INSERT INTO
+    public.verbindung (
+        id,
+        id_startknoten,
+        id_zielknoten,
+        id_verkehrsmittel,
+        halt_start,
+        halt_ziel
+    )
+VALUES (DEFAULT, '2', '1', '3', TRUE, FALSE);
+
+INSERT INTO
+    public.verbindung (
+        id,
+        id_startknoten,
+        id_zielknoten,
+        id_verkehrsmittel,
+        halt_start,
+        halt_ziel
+    )
+VALUES (DEFAULT, '1', '5', '3', FALSE, TRUE);
 
 INSERT INTO
     public.verbindung (

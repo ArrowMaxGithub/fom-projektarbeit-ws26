@@ -1,5 +1,5 @@
 -- ** Database generated with pgModeler (PostgreSQL Database Modeler).
--- ** pgModeler version: 1.2.2
+-- ** pgModeler version: 1.2.3
 -- ** PostgreSQL version: 16.0
 -- ** Project Site: pgmodeler.io
 -- ** Model Author: ---
@@ -196,6 +196,7 @@ CREATE TABLE public.verbindung (
 	id_startknoten integer NOT NULL,
 	id_zielknoten integer NOT NULL,
 	id_verkehrsmittel integer NOT NULL,
+	halt boolean DEFAULT FALSE,
 	CONSTRAINT verbindung_pk PRIMARY KEY (id),
 	CONSTRAINT chk_verbindung_selbstverbindung CHECK (id_startknoten <> id_zielknoten)
 );
