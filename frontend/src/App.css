@@ -141,7 +141,9 @@ hr {
 .Gameboard {
   padding: 20px;
   margin-bottom: 5px;
-  max-height: 700px;
+  display: block;
+  width: calc(100% - 40px);
+  max-height: calc(100dvh - 135px);
 
   .MapNode {
     stroke-width: 2px;
