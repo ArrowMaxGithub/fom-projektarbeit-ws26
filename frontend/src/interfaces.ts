@@ -28,6 +28,7 @@ export interface Connection {
   from_node_id: number;
   to_node_id: number;
   vehicle_id: number;
+  via: number[];
 }
 export interface GameInfo {
   room_id: number;
