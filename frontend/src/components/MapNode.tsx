@@ -23,10 +23,10 @@ type MapNodeProps = {
     is_current: boolean,
     x: number,
     y: number,
-    makeMove: (node_id: number) => void,
+    onClick: (node_id: number) => void,
 }
 
-export default function MapNode({ id, number, vehicles, is_legal, x, y, makeMove}: MapNodeProps) {
+export default function MapNode({ id, number, vehicles, is_legal, x, y, onClick}: MapNodeProps) {
     const vehiclesToNodeSvg: Record<string, SvgComponent> = {
         "1,2,3,4": NodeAll,
         "2,4": NodeBusBlack,
@@ -44,7 +44,7 @@ export default function MapNode({ id, number, vehicles, is_legal, x, y, makeMove
     const key = vehicles.join(",");
     const Icon = vehiclesToNodeSvg[key] ?? Node;
 
-    return <g className={is_legal ? "Clickable MapNode" : "Unclickable MapNode"} onClick={is_legal ? () => makeMove(id) : () => null}>
+    return <g className={is_legal ? "Clickable MapNode" : "Unclickable MapNode"} onClick={is_legal ? () => onClick(id) : () => null}>
         <Icon width={80} height={80} x={x - 40} y={y - 40}></Icon>
         <text 
             className={is_legal ? "Clickable MapNodeText" : "Unclickable MapNodeText"}
@@ -52,7 +52,7 @@ export default function MapNode({ id, number, vehicles, is_legal, x, y, makeMove
             stroke={"#000000"} 
             x={x} 
             y={y - 1}
-            onClick={is_legal ? () => makeMove(id) : () => null}
+            onClick={is_legal ? () => onClick(id) : () => null}
         >{number}</text>
     </g>
 }

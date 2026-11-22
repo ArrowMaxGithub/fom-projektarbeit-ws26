@@ -84,12 +84,61 @@ hr {
 .LobbyLayout {
   display: grid;
   grid-template-columns: 75% 25%;
+  grid-template-areas:
+    "lobby infos" 
+    "lobby chat ";
   width: 100%;
   align-items: start;
 }
 
+.EditorLayout {
+  display: grid;
+  grid-template-columns: 75% 25%;
+  grid-template-areas:
+    "editor infos" 
+    "editor chat ";
+  width: 100%;
+  align-items: start;
+
+  .EditorContent {
+    grid-area: editor;
+  }
+
+  .EditorInfoPanel{
+    grid-area: infos;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .EditorTools{
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      .EditorTool{
+        padding: 5px;
+        width: 80px;
+        height: 80px;
+      }
+
+      .ActiveEditorTool{
+        padding: 5px;
+        width: 80px;
+        height: 80px;
+        background-color: rgb(74, 74, 74);
+      }
+    }
+  }
+}
+
 .GameLayout {
-  grid-template-areas: "game infos" "game chat";
+  display: grid;
+  grid-template-columns: 75% 25%;
+  grid-template-areas:
+    "game infos" 
+    "game chat ";
+  width: 100%;
+  align-items: start;
 
   .InGame {
     display: contents;
@@ -121,11 +170,11 @@ hr {
       }
     }
   }
+}
 
-  .Chat {
+.Chat {
     grid-area: chat;
   }
-}
 
 @keyframes rotate {
   from {

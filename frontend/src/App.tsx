@@ -8,6 +8,7 @@ import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
 import AccountBarIcon from './assets/icon_search.svg?react'
 import { getPlayerColor } from './components/PlayerColors.tsx';
+import MapEditor from './components/MapEditor.tsx';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
@@ -19,6 +20,7 @@ function App() {
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Array<GameInfo>>([]);
   const [current_room, setCurrentRoom] = useState<number | null>(null);
+  const [isEditor, setIsEditor] = useState<boolean>(false);
   const [accountBarHeader, setAccountBarHeader] = useState<string>("GeoCatcher");
 
   // Define any callbacks to events sent by the server here
@@ -100,8 +102,15 @@ function App() {
     });
   }
 
-  function handleRoomLeave() {
-    if (current_room === null || userId === null) return;
+  function handleReturnToLobby() {
+    if (userId === null) return;
+
+    if (isEditor){
+      console.log("Returning from editor to main lobby");
+      setIsEditor(false);
+    }
+
+    if (current_room === null) return;
 
     console.log(`${playerName} leaving room: ${current_room}`);
     setAccountBarHeader("GeoCatcher");
@@ -113,6 +122,17 @@ function App() {
         console.error("Failed to leave room");
       }
     });
+  }
+
+  function handleSwitchToEditor(){
+    if (current_room !== null){
+      console.error("Can't switch from active game to map editor. Return to lobby first.");
+      return;
+    }
+
+    console.log("Switching to map editor");
+    setIsEditor(true);
+    setAccountBarHeader("Map Editor");
   }
 
   function handleResetDatabase() {
@@ -130,7 +150,7 @@ function App() {
     {isLoggedIn && (
       <div className="AccountBar">
         <div className="AccountBarHeader">
-          <AccountBarIcon className="Clickable AccountBarAction" onClick={handleRoomLeave}></AccountBarIcon>
+          <AccountBarIcon className="Clickable AccountBarAction" onClick={handleReturnToLobby}></AccountBarIcon>
           <h1>{accountBarHeader}</h1>
         </div>
         <div className="Account">
@@ -143,12 +163,18 @@ function App() {
 
     {/*Raumauswahl mit eigenem Chat*/}
     <div className="LobbyLayout">
-      <Lobby active={isLoggedIn && current_room === null} rooms={rooms} handleRoomJoin={handleRoomJoin} />
-      <Chat active={isLoggedIn && current_room === null} socket={socket} playerName={playerName} />
+      <Lobby active={isLoggedIn && current_room === null && !isEditor} rooms={rooms} handleRoomJoin={handleRoomJoin} handleSwitchToEditor={handleSwitchToEditor} />
+      <Chat active={isLoggedIn && current_room === null && !isEditor} socket={socket} playerName={playerName} />
+    </div>
+
+    {/*Map Editor mit eigenem Chat*/}
+    <div className="EditorLayout">
+      <MapEditor active={isLoggedIn && current_room === null && isEditor}></MapEditor>
+      <Chat active={isLoggedIn && current_room === null && isEditor} socket={socket} playerName={playerName} />
     </div>
 
     {/*Raum mit eigenem Chat*/}
-    <div className="LobbyLayout GameLayout">
+    <div className="GameLayout">
       <InGame
         active={isLoggedIn && current_room !== null}
         socket={socket}

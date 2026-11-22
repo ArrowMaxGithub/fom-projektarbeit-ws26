@@ -32,7 +32,7 @@ export default function TicketButton({ ticket, selectedTicket, bobbby_round, onC
         }
     }
 
-    const isSelectedTicket = selectedTicket === ticket;
+    const isSelectedTicket = selectedTicket?.ticket_type_id === ticket.ticket_type_id;
     const background = well_known_tickets_background(ticket)
 
     return <button 

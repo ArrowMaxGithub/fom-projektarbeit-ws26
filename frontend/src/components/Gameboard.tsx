@@ -1,4 +1,4 @@
-import { useState, useEffect, type MouseEvent } from 'react'
+import { useRef, useState, useEffect, type MouseEvent } from 'react'
 import type { GameState, Role, Ticket } from '../interfaces.ts'
 import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode } from './GameStateHelpers.tsx';
@@ -13,7 +13,8 @@ type GameboardProps = {
     makeMove: (to_node: number) => void,
 }
 
-export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove }: GameboardProps) {
+export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove}: GameboardProps) {
+    const svgRef = useRef<SVGSVGElement | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [center, setCenter] = useState<number[]>([500, 500]);
     const [zoom, setZoom] = useState<number>(1.0);
@@ -259,15 +260,16 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
 
     return (
     <svg 
+        ref={svgRef}
         className="Gameboard" 
         xmlns="http://www.w3.org/2000/svg" 
         fill={"white"}
         stroke={"black"}
         viewBox={viewbox}
         onMouseDown={(_e) => setIsDragging(true)}
+        onMouseUp={(_e) => setIsDragging(false)}
         onMouseMove={(e) => handleMouseMouse(e)}
-        onMouseLeave={(_e) => setIsDragging(false)}
-        onMouseUp={(_e) => setIsDragging(false)}>
+        onMouseLeave={(_e) => setIsDragging(false)}>
             {
                 // Draw connections with nudged colored lines
                 mapConnections()
@@ -288,7 +290,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             // Draw nodes as white numbered circles, clickable if legal dst nodes 
             mapNodes()
                 .map(({id, number, vehicles, is_legal, is_current, x, y}, _index) =>
-                    <MapNode key={id} id={id} number={number} vehicles={vehicles} is_legal={is_legal} is_current={is_current} x={x} y={y} makeMove={makeMove}></MapNode>
+                    <MapNode key={id} id={id} number={number} vehicles={vehicles} is_legal={is_legal} is_current={is_current} x={x} y={y} onClick={makeMove}></MapNode>
                 )
         }
         {
