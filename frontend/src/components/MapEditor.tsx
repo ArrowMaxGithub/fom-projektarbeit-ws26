@@ -9,7 +9,7 @@ import ToolNode from "../assets/nodes/node_all.svg?react"
 import ToolMove from "../assets/tools/move.svg?react"
 import ToolEmpty from "../assets/tools/empty.svg?react"
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getConnection, getNode, getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
+import { getConnection, getNextConnectionId, getNextNodeId, getNode, getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
 
 type MapEditorProps = {
     active: boolean,
@@ -29,24 +29,33 @@ export default function MapEditor({ active }: MapEditorProps) {
         setActiveConn(prev => {
             const nodes = selectedNodes;
             const conn = prev ?? startNewConnection(nodes);
-            conn.from_node_id = nodes[0]!;
-            conn.to_node_id = nodes.at(-1)!;
+
+            conn.from_node_id = nodes.at(0) ?? -1;
+            conn.to_node_id = nodes.at(-1) ?? -1;
             conn.via = nodes.slice(1, -1) ?? [];
 
             if (nodes.length >= 2) {
-                setConnContextMenu(nodes.at(-1) ?? null)
+                setConnContextMenu(nodes.at(-1)!);
+            } else {
+                setConnContextMenu(null);
             }
-            return conn;
+
+            return { ...conn };
         });
     }, [selectedNodes])
 
     useEffect(() => {
         setGameState(prev => {
-            if (!activeConn) {
-                return prev;
-            }
+            if (!activeConn) return prev;
 
-            prev.connections[activeConn.connection_id] = activeConn;
+            console.log(`${activeConn.connection_id}: ${activeConn.from_node_id} | ${activeConn.via} | ${activeConn.to_node_id}`);
+
+
+            if (activeConn.from_node_id === -1 && activeConn.to_node_id === -1) {
+                prev.connections = prev.connections.filter(c => c.connection_id !== activeConn.connection_id);
+            } else {
+                prev.connections[activeConn.connection_id] = activeConn;
+            }
 
             return {
                 ...prev,
@@ -59,10 +68,10 @@ export default function MapEditor({ active }: MapEditorProps) {
     }
 
     function startNewConnection(nodes: number[]): Connection {
-        const connection_id = gamestate.connections.length + 1;
-        const from_node_id = nodes[0]!;
-        const to_node_id = nodes.at(-1)!;
         const vehicle_id = getVehicleByName(gamestate, activeConnPalette)!.vehicle_id;
+        const connection_id = getNextConnectionId(gamestate);
+        const from_node_id = nodes.at(0)!;
+        const to_node_id = nodes.at(-1)!;
         const via = nodes.slice(1, -1) ?? [];
 
         const conn: Connection = {
@@ -82,7 +91,7 @@ export default function MapEditor({ active }: MapEditorProps) {
 
     function handleAddNode(x: number, y: number) {
         setGameState((prev) => {
-            const node_id = prev.nodes.length + 1;
+            const node_id = getNextNodeId(gamestate);
             const node: MapNode = {
                 node_id,
                 number: node_id,
@@ -97,17 +106,17 @@ export default function MapEditor({ active }: MapEditorProps) {
     }
 
     function handleMoveNode(x: number, y: number) {
+        setNodeToMove(prev => {
+            if (!prev) return null;
+
+            const node = getNode(gamestate, prev)!;
+            node.position_x = x;
+            node.position_y = y;
+
+            return prev;
+        })
+
         setGameState((prev_gamestate) => {
-            setNodeToMove(prev => {
-                if (!prev) return null;
-
-                const node = getNode(gamestate, prev)!;
-                node.position_x = x;
-                node.position_y = y;
-
-                return prev;
-            })
-
             return {
                 ...prev_gamestate,
             };
@@ -183,6 +192,9 @@ export default function MapEditor({ active }: MapEditorProps) {
         setSelectedNodes([]);
         setNodeToMove(null);
         setActiveConnPalette("Taxi");
+        if (activeConn) {
+            activeConn.vehicle_id = getVehicleByName(gamestate, "Taxi")?.vehicle_id!;
+        }
 
         if (activeTool === tool) {
             setActiveTool(null);

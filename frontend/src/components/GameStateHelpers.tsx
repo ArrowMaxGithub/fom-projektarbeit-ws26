@@ -93,8 +93,20 @@ export function getNode(gamestate: GameState | null, node_id: number | null): Ma
     return gamestate?.nodes.find(node => node.node_id === node_id)
 }
 
+export function getNextNodeId(gamestate: GameState): number {
+    let next = 0;
+    gamestate.nodes.forEach(n => next = Math.max(next, n.node_id));
+    return next + 1;
+}
+
 export function getConnection(gamestate: GameState | null, conn_id: number | null): Connection | undefined {
     return gamestate?.connections.find(conn => conn.connection_id === conn_id)
+}
+
+export function getNextConnectionId(gamestate: GameState): number {
+    let next = 0;
+    gamestate.connections.forEach(c => next = Math.max(next, c.connection_id));
+    return next + 1;
 }
 
 export function getVehicle(gamestate: GameState | null, vehicle_id: number): Vehicle | undefined {
