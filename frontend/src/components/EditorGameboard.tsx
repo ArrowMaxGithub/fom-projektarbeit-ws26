@@ -1,34 +1,42 @@
 import { useRef, useState, useEffect, type MouseEvent } from 'react'
-import type { GameState, Player, Role, Ticket, Vehicle } from '../interfaces.ts'
+import type { GameState, MapNode, Player, Role, Ticket, Vehicle } from '../interfaces.ts'
 import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode } from './GameStateHelpers.tsx';
-import MapNode from './MapNode.tsx';
+import { getActivePlayer, getConnection, getConnections, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode, vehicleNameToColor } from './GameStateHelpers.tsx';
 import { getPlayerColor } from './PlayerColors.tsx';
+import NodeContextMenu from './NodeContextMenu.tsx';
+import Mapnode from './Mapnode.tsx';
+import ConnContextMenu from './ConnContextMenu.tsx';
 
 type EditorGameboardProps = {
     gamestate: GameState,
     selectedTicket: Ticket | null,
+    selectedNodes: number[],
+    nodeContextMenu: number | null,
+    connContextmenu: number | null,
     onClickNode: (node_id: number) => void,
+    onRightClickNode: (node_id: number) => void,
     onClickMap: (mapX: number, mapY: number) => void,
+    onAcceptConnection: () => void,
+    onDeleteConnection: () => void,
 }
 
 const taxi: Vehicle = {
-    vehicle_id: 1,  
+    vehicle_id: 1,
     name: "Taxi"
 }
 
 const bus: Vehicle = {
-    vehicle_id: 2,  
+    vehicle_id: 2,
     name: "Bus"
 }
 
 const subway: Vehicle = {
-    vehicle_id: 3,  
+    vehicle_id: 3,
     name: "U-Bahn"
 }
 
 const black: Vehicle = {
-    vehicle_id: 4,  
+    vehicle_id: 4,
     name: "Schwarze Route"
 }
 
@@ -91,8 +99,9 @@ export function defaultEditorGameState(): GameState {
     }
 }
 
-export default function EditorGameboard({ gamestate, selectedTicket, onClickNode, onClickMap}: EditorGameboardProps) {
+export default function EditorGameboard({ gamestate, selectedTicket, selectedNodes, nodeContextMenu, connContextmenu, onClickNode, onRightClickNode, onClickMap, onAcceptConnection, onDeleteConnection }: EditorGameboardProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [center, setCenter] = useState<number[]>([500, 500]);
     const [zoom, setZoom] = useState<number>(1.0);
@@ -134,23 +143,6 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
         return current + 1;
     }
 
-    // TODO: Brittle comparison against vehicle name. Add vehicle color to database or user preferences.
-    function vehicle_name_to_color(vehicle_name: string): string {
-        switch (vehicle_name) {
-            case "U-Bahn":
-                return "#a40000";
-            case "Taxi":
-                return "#ffd000";
-            case "Bus":
-                return "#039c03";
-            case "Schwarze Route":
-                return "#373737";
-            default:
-                return "#ffffff";
-        }
-
-    }
-
     interface ConnectionData {
         id: number;
         parts_index: number;
@@ -175,7 +167,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
             }
 
             const parts = [from_node.node_id, ...conn.via, to_node.node_id];
-            let conn_data = [];
+            let conn_data: ConnectionData[] = [];
 
             for (let i = 0; i < parts.length - 1; i++) {
                 const current = parts[i];
@@ -183,17 +175,17 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
 
                 const conn_count = addEntry(dict, current, next);
                 const nudge = 10 * (conn_count - 1);
-                let color = vehicle_name_to_color(vehicle.name);
+                let color = vehicleNameToColor(vehicle.name);
                 const legalForSelectedTicket = selectedTicket?.allowed_vehicles.find(v => v.vehicle_id === vehicle.vehicle_id);
 
-                if (selectedTicket && !legalForSelectedTicket){
+                if (selectedTicket && !legalForSelectedTicket) {
                     color = "grey";
                 }
 
                 const part_from_node = getNode(gamestate, current);
                 const part_to_node = getNode(gamestate, next);
 
-                if (!part_from_node || !part_to_node){
+                if (!part_from_node || !part_to_node) {
                     return undefined;
                 }
 
@@ -201,14 +193,18 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
                 const normal_y = part_to_node.position_x - part_from_node.position_x;
                 const normal_mag = Math.sqrt(normal_x * normal_x + normal_y * normal_y);
 
+                const x1 = part_from_node.position_x + normal_x * nudge / normal_mag;
+                const y1 = part_from_node.position_y + normal_y * nudge / normal_mag;
+                const x2 = part_to_node.position_x + normal_x * nudge / normal_mag;
+                const y2 = part_to_node.position_y + normal_y * nudge / normal_mag;
+
+                if ([x1, y1, x2, y2].some(n => isNaN(n))) return undefined;
+
                 conn_data.push({
                     id: conn.connection_id,
-                    parts_index: i, 
-                    color, 
-                    x1: part_from_node.position_x + normal_x * nudge / normal_mag, 
-                    y1: part_from_node.position_y + normal_y * nudge / normal_mag, 
-                    x2: part_to_node.position_x + normal_x * nudge / normal_mag, 
-                    y2: part_to_node.position_y + normal_y * nudge / normal_mag
+                    parts_index: i,
+                    color,
+                    x1, y1, x2, y2,
                 });
             }
 
@@ -267,7 +263,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
         number: number;
         vehicles: number[],
         is_legal: boolean;
-        is_current: boolean;
+        is_selected: boolean;
         x: number,
         y: number,
     }
@@ -280,8 +276,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
             const player_is_active = active_player === player;
 
             const is_legal = nodeStates[index] === NodeState.LegalDst && player_is_active;
-            const current_node = getPlayer(gamestate, perspective)?.current_node;
-            const is_current = current_node === node.node_id;
+            const is_selected = selectedNodes.includes(node.node_id);
             const vehicles = getVehiclesAtNode(gamestate, node.node_id) ?? [];
 
             return {
@@ -289,7 +284,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
                 number: node.number,
                 vehicles,
                 is_legal,
-                is_current,
+                is_selected,
                 x: node.position_x,
                 y: node.position_y,
             };
@@ -308,7 +303,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
 
     function mapVehicles(): VehicleData[] {
         return gamestate?.vehicles.map((vehicle, index) => {
-            const color = vehicle_name_to_color(vehicle.name);
+            const color = vehicleNameToColor(vehicle.name);
 
             return {
                 id: vehicle.vehicle_id,
@@ -322,16 +317,16 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
         }) ?? [];
     }
 
-    function handleClick(e: MouseEvent){
+    function handleClick(e: MouseEvent) {
         const svg = svgRef.current;
-        if (!svg){
+        if (!svg) {
             return;
         }
 
         let point = svg.createSVGPoint();
         point.x = e.clientX;
         point.y = e.clientY;
-        
+
         const matrix = svg.getScreenCTM();
 
         if (matrix) {
@@ -341,8 +336,8 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
         onClickMap(point.x, point.y);
     }
 
-    function handleMouseMouse(e: MouseEvent){
-        if (isDragging){
+    function handleMouseMouse(e: MouseEvent) {
+        if (isDragging) {
             setCenter((prev) => [prev[0] - e.movementX * zoom, prev[1] - e.movementY * zoom])
         }
     }
@@ -351,18 +346,18 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
     const viewbox = [center[0] - view * zoom / 2, center[1] - view * zoom / 2, view * zoom, view * zoom].toString();
 
     return (
-    <svg 
-        ref={svgRef}
-        className="Gameboard" 
-        xmlns="http://www.w3.org/2000/svg" 
-        fill={"white"}
-        stroke={"black"}
-        viewBox={viewbox}
-        onClick={handleClick}
-        onMouseDown={(_e) => setIsDragging(true)}
-        onMouseUp={(_e) => setIsDragging(false)}
-        onMouseMove={handleMouseMouse}
-        onMouseLeave={(_e) => setIsDragging(false)}>
+        <svg
+            ref={svgRef}
+            className="Gameboard"
+            xmlns="http://www.w3.org/2000/svg"
+            fill={"white"}
+            stroke={"black"}
+            viewBox={viewbox}
+            onClick={handleClick}
+            onMouseDown={(_e) => setIsDragging(true)}
+            onMouseUp={(_e) => setIsDragging(false)}
+            onMouseMove={handleMouseMouse}
+            onMouseLeave={(_e) => setIsDragging(false)}>
             {
                 // Draw connections with nudged colored lines
                 mapConnections()
@@ -379,46 +374,52 @@ export default function EditorGameboard({ gamestate, selectedTicket, onClickNode
                     )
             }
 
-        {
-            // Draw nodes as white numbered circles, clickable if legal dst nodes 
-            mapNodes()
-                .map(({id, number, vehicles, is_legal, is_current, x, y}, _index) =>
-                    <MapNode key={id} id={id} number={number} vehicles={vehicles} is_legal={is_legal} is_current={is_current} x={x} y={y} onClick={onClickNode}></MapNode>
-                )
-        }
-        {
-            // Show player name and role below player's current node
-            mapPlayers()
-                .map(({id, color, x, y}, _index) =>
-                    <svg key={`Player${id}`} className="PlayerFigurine" xmlns="http://www.w3.org/2000/svg" width={20} height={40} fill={color} shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" fillRule="evenodd" clipRule="evenodd" viewBox="0 0 265 512.88" transform={`translate(${x} ${y})`} >
-                        <path d="M218.85 394.25c12.52 21.98 33.03 44.25 29.71 73.85H16.4c-3.32-29.6 19.95-51.87 32.47-73.85h169.98zM65.53 149.31h133.94c7.64 0 13.89 6.29 13.89 13.89 0 7.6-6.29 13.9-13.89 13.9H65.53c-7.6 0-13.89-6.25-13.89-13.9 0-7.64 6.25-13.89 13.89-13.89zM132.5 0c40.53 0 73.39 32.86 73.39 73.39 0 26.17-13.7 49.14-34.32 62.13H93.43c-20.62-12.99-34.32-35.96-34.32-62.13C59.11 32.86 91.97 0 132.5 0zM73.55 190.88c-1.39 55.62-14.03 109.88-27.94 145.81h173.78c-16.19-40.76-29.57-94.31-31.44-145.81H73.55zM42.59 350.51h179.82c8.24 0 14.97 6.77 14.97 14.96 0 8.19-6.77 14.96-14.97 14.96H42.59c-8.2 0-14.97-6.73-14.97-14.96s6.73-14.96 14.97-14.96zM15.47 481.93h234.06c8.51 0 15.47 6.96 15.47 15.47 0 8.51-6.96 15.48-15.47 15.48H15.47C6.96 512.88 0 505.91 0 497.4c0-8.51 6.96-15.47 15.47-15.47z"/></svg>
-                )
-        }
-        {
-            // Show legend of vehicles
-            mapVehicles()
-                .map(({id, name, color, rect_x, rect_y, text_x, text_y}, _index) => 
-                    <g key={`VehicleLegend${id}`}>
-                        <rect
-                            className="DefaultCursor" 
-                            fill={color} 
-                            stroke={color} 
-                            x={rect_x} 
-                            y={rect_y}
-                            width={20}
-                            height={20}>
-                        </rect>
-                        <text 
-                            className="DefaultCursor VehicleLegend" 
-                            fill="#9ca3af"
-                            stroke="#9ca3af"
-                            strokeWidth={1}
-                            x={text_x} 
-                            y={text_y}
-                        >{`- ${name}`}</text>
-                    </g>
-                )
-        }
-    </svg>
+            {
+                // Draw nodes as white numbered circles, clickable if legal dst nodes 
+                mapNodes()
+                    .map(({ id, number, vehicles, is_legal, is_selected, x, y }, _index) =>
+                        <Mapnode key={id} id={id} number={number} vehicles={vehicles} is_legal={isPlaying ? is_legal : true} is_selected={is_selected} x={x} y={y} onClick={onClickNode} onRightClick={onRightClickNode}></Mapnode>
+                    )
+            }
+            {
+                <NodeContextMenu node={getNode(gamestate, nodeContextMenu) ?? null} stops={getVehiclesAtNode(gamestate, nodeContextMenu)?.map(vid => getVehicle(gamestate, vid)?.name).filter(n => n !== undefined) ?? []}></NodeContextMenu>
+            }
+            {
+                <ConnContextMenu node={getNode(gamestate, connContextmenu) ?? null} onAccept={onAcceptConnection} onDelete={onDeleteConnection}></ConnContextMenu>
+            }
+            {
+                // Show player name and role below player's current node
+                mapPlayers()
+                    .map(({ id, color, x, y }, _index) =>
+                        <svg key={`Player${id}`} className="PlayerFigurine" xmlns="http://www.w3.org/2000/svg" width={20} height={40} fill={color} shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" fillRule="evenodd" clipRule="evenodd" viewBox="0 0 265 512.88" transform={`translate(${x} ${y})`} >
+                            <path d="M218.85 394.25c12.52 21.98 33.03 44.25 29.71 73.85H16.4c-3.32-29.6 19.95-51.87 32.47-73.85h169.98zM65.53 149.31h133.94c7.64 0 13.89 6.29 13.89 13.89 0 7.6-6.29 13.9-13.89 13.9H65.53c-7.6 0-13.89-6.25-13.89-13.9 0-7.64 6.25-13.89 13.89-13.89zM132.5 0c40.53 0 73.39 32.86 73.39 73.39 0 26.17-13.7 49.14-34.32 62.13H93.43c-20.62-12.99-34.32-35.96-34.32-62.13C59.11 32.86 91.97 0 132.5 0zM73.55 190.88c-1.39 55.62-14.03 109.88-27.94 145.81h173.78c-16.19-40.76-29.57-94.31-31.44-145.81H73.55zM42.59 350.51h179.82c8.24 0 14.97 6.77 14.97 14.96 0 8.19-6.77 14.96-14.97 14.96H42.59c-8.2 0-14.97-6.73-14.97-14.96s6.73-14.96 14.97-14.96zM15.47 481.93h234.06c8.51 0 15.47 6.96 15.47 15.47 0 8.51-6.96 15.48-15.47 15.48H15.47C6.96 512.88 0 505.91 0 497.4c0-8.51 6.96-15.47 15.47-15.47z" /></svg>
+                    )
+            }
+            {
+                // Show legend of vehicles
+                mapVehicles()
+                    .map(({ id, name, color, rect_x, rect_y, text_x, text_y }, _index) =>
+                        <g key={`VehicleLegend${id}`}>
+                            <rect
+                                className="DefaultCursor"
+                                fill={color}
+                                stroke={color}
+                                x={rect_x}
+                                y={rect_y}
+                                width={20}
+                                height={20}>
+                            </rect>
+                            <text
+                                className="DefaultCursor VehicleLegend"
+                                fill="#9ca3af"
+                                stroke="#9ca3af"
+                                strokeWidth={1}
+                                x={text_x}
+                                y={text_y}
+                            >{`- ${name}`}</text>
+                        </g>
+                    )
+            }
+        </svg>
     )
 }

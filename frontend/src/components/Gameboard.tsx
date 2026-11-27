@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect, type MouseEvent } from 'react'
 import type { GameState, Role, Ticket } from '../interfaces.ts'
 import { NodeState } from './NodeState.tsx';
-import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode } from './GameStateHelpers.tsx';
-import MapNode from './MapNode.tsx';
+import { getActivePlayer, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode, vehicleNameToColor } from './GameStateHelpers.tsx';
+import MapNode from './Mapnode.tsx';
 import { getPlayerColor } from './PlayerColors.tsx';
 
 type GameboardProps = {
@@ -13,7 +13,7 @@ type GameboardProps = {
     makeMove: (to_node: number) => void,
 }
 
-export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove}: GameboardProps) {
+export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, selectedTicket, makeMove }: GameboardProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [center, setCenter] = useState<number[]>([500, 500]);
@@ -60,23 +60,6 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         return current + 1;
     }
 
-    // TODO: Brittle comparison against vehicle name. Add vehicle color to database or user preferences.
-    function vehicle_name_to_color(vehicle_name: string): string {
-        switch (vehicle_name) {
-            case "U-Bahn":
-                return "#a40000";
-            case "Taxi":
-                return "#ffd000";
-            case "Bus":
-                return "#039c03";
-            case "Schwarze Route":
-                return "#373737";
-            default:
-                return "#ffffff";
-        }
-
-    }
-
     interface ConnectionData {
         id: number;
         parts_index: number;
@@ -101,7 +84,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             }
 
             const parts = [from_node.node_id, ...conn.via, to_node.node_id];
-            let conn_data = [];
+            let conn_data: ConnectionData[] = [];
 
             for (let i = 0; i < parts.length - 1; i++) {
                 const current = parts[i];
@@ -109,17 +92,17 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
 
                 const conn_count = addEntry(dict, current, next);
                 const nudge = 10 * (conn_count - 1);
-                let color = vehicle_name_to_color(vehicle.name);
+                let color = vehicleNameToColor(vehicle.name);
                 const legalForSelectedTicket = selectedTicket?.allowed_vehicles.find(v => v.vehicle_id === vehicle.vehicle_id);
 
-                if (selectedTicket && !legalForSelectedTicket){
+                if (selectedTicket && !legalForSelectedTicket) {
                     color = "grey";
                 }
 
                 const part_from_node = getNode(gamestate, current);
                 const part_to_node = getNode(gamestate, next);
 
-                if (!part_from_node || !part_to_node){
+                if (!part_from_node || !part_to_node) {
                     return undefined;
                 }
 
@@ -129,11 +112,11 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
 
                 conn_data.push({
                     id: conn.connection_id,
-                    parts_index: i, 
-                    color, 
-                    x1: part_from_node.position_x + normal_x * nudge / normal_mag, 
-                    y1: part_from_node.position_y + normal_y * nudge / normal_mag, 
-                    x2: part_to_node.position_x + normal_x * nudge / normal_mag, 
+                    parts_index: i,
+                    color,
+                    x1: part_from_node.position_x + normal_x * nudge / normal_mag,
+                    y1: part_from_node.position_y + normal_y * nudge / normal_mag,
+                    x2: part_to_node.position_x + normal_x * nudge / normal_mag,
                     y2: part_to_node.position_y + normal_y * nudge / normal_mag
                 });
             }
@@ -234,7 +217,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
 
     function mapVehicles(): VehicleData[] {
         return gamestate?.vehicles.map((vehicle, index) => {
-            const color = vehicle_name_to_color(vehicle.name);
+            const color = vehicleNameToColor(vehicle.name);
 
             return {
                 id: vehicle.vehicle_id,
@@ -248,8 +231,8 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
         }) ?? [];
     }
 
-    function handleMouseMouse(e: MouseEvent){
-        if (isDragging){
+    function handleMouseMouse(e: MouseEvent) {
+        if (isDragging) {
             setCenter((prev) => [prev[0] - e.movementX * zoom, prev[1] - e.movementY * zoom])
         }
     }
@@ -259,17 +242,17 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
     const viewbox = [center[0] - view * zoom / 2, center[1] - view * zoom / 2, view * zoom, view * zoom].toString();
 
     return (
-    <svg 
-        ref={svgRef}
-        className="Gameboard" 
-        xmlns="http://www.w3.org/2000/svg" 
-        fill={"white"}
-        stroke={"black"}
-        viewBox={viewbox}
-        onMouseDown={(_e) => setIsDragging(true)}
-        onMouseUp={(_e) => setIsDragging(false)}
-        onMouseMove={(e) => handleMouseMouse(e)}
-        onMouseLeave={(_e) => setIsDragging(false)}>
+        <svg
+            ref={svgRef}
+            className="Gameboard"
+            xmlns="http://www.w3.org/2000/svg"
+            fill={"white"}
+            stroke={"black"}
+            viewBox={viewbox}
+            onMouseDown={(_e) => setIsDragging(true)}
+            onMouseUp={(_e) => setIsDragging(false)}
+            onMouseMove={(e) => handleMouseMouse(e)}
+            onMouseLeave={(_e) => setIsDragging(false)}>
             {
                 // Draw connections with nudged colored lines
                 mapConnections()
@@ -286,60 +269,60 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
                     )
             }
 
-        {
-            // Draw nodes as white numbered circles, clickable if legal dst nodes 
-            mapNodes()
-                .map(({id, number, vehicles, is_legal, is_current, x, y}, _index) =>
-                    <MapNode key={id} id={id} number={number} vehicles={vehicles} is_legal={is_legal} is_current={is_current} x={x} y={y} onClick={makeMove}></MapNode>
-                )
-        }
-        {
-            // Show player name and role below player's current node
-            mapPlayers()
-                .map(({id, color, x, y}, _index) =>
-                    <svg key={`Player${id}`} className="PlayerFigurine" xmlns="http://www.w3.org/2000/svg" width={20} height={40} fill={color} shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" fillRule="evenodd" clipRule="evenodd" viewBox="0 0 265 512.88" transform={`translate(${x} ${y})`} >
-                        <path d="M218.85 394.25c12.52 21.98 33.03 44.25 29.71 73.85H16.4c-3.32-29.6 19.95-51.87 32.47-73.85h169.98zM65.53 149.31h133.94c7.64 0 13.89 6.29 13.89 13.89 0 7.6-6.29 13.9-13.89 13.9H65.53c-7.6 0-13.89-6.25-13.89-13.9 0-7.64 6.25-13.89 13.89-13.89zM132.5 0c40.53 0 73.39 32.86 73.39 73.39 0 26.17-13.7 49.14-34.32 62.13H93.43c-20.62-12.99-34.32-35.96-34.32-62.13C59.11 32.86 91.97 0 132.5 0zM73.55 190.88c-1.39 55.62-14.03 109.88-27.94 145.81h173.78c-16.19-40.76-29.57-94.31-31.44-145.81H73.55zM42.59 350.51h179.82c8.24 0 14.97 6.77 14.97 14.96 0 8.19-6.77 14.96-14.97 14.96H42.59c-8.2 0-14.97-6.73-14.97-14.96s6.73-14.96 14.97-14.96zM15.47 481.93h234.06c8.51 0 15.47 6.96 15.47 15.47 0 8.51-6.96 15.48-15.47 15.48H15.47C6.96 512.88 0 505.91 0 497.4c0-8.51 6.96-15.47 15.47-15.47z"/></svg>
-                )
-        }
-        {
-            // Show last known Mr.X position as dotted ring around node
-            <circle 
-                className={"LastMisterXPos"}
-                fill={"none"}
-                stroke={lastMisterXShowPos ? "#ffffff" : "transparent"}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeDasharray={"5,5"}
-                cx={mrx_node?.position_x} 
-                cy={mrx_node?.position_y} 
-                r={node_size * 0.5 + 10} 
-            ></circle>
-        }
-        {
-            // Show legend of vehicles
-            mapVehicles()
-                .map(({id, name, color, rect_x, rect_y, text_x, text_y}, _index) => 
-                    <g key={`VehicleLegend${id}`}>
-                        <rect
-                            className="DefaultCursor" 
-                            fill={color} 
-                            stroke={color} 
-                            x={rect_x} 
-                            y={rect_y}
-                            width={20}
-                            height={20}>
-                        </rect>
-                        <text 
-                            className="DefaultCursor VehicleLegend" 
-                            fill="#9ca3af"
-                            stroke="#9ca3af"
-                            strokeWidth={1}
-                            x={text_x} 
-                            y={text_y}
-                        >{`- ${name}`}</text>
-                    </g>
-                )
-        }
-    </svg>
+            {
+                // Draw nodes as white numbered circles, clickable if legal dst nodes 
+                mapNodes()
+                    .map(({ id, number, vehicles, is_legal, is_current, x, y }, _index) =>
+                        <MapNode key={id} id={id} number={number} vehicles={vehicles} is_legal={is_legal} is_selected={false} x={x} y={y} onClick={makeMove} onRightClick={() => undefined}></MapNode>
+                    )
+            }
+            {
+                // Show player name and role below player's current node
+                mapPlayers()
+                    .map(({ id, color, x, y }, _index) =>
+                        <svg key={`Player${id}`} className="PlayerFigurine" xmlns="http://www.w3.org/2000/svg" width={20} height={40} fill={color} shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" fillRule="evenodd" clipRule="evenodd" viewBox="0 0 265 512.88" transform={`translate(${x} ${y})`} >
+                            <path d="M218.85 394.25c12.52 21.98 33.03 44.25 29.71 73.85H16.4c-3.32-29.6 19.95-51.87 32.47-73.85h169.98zM65.53 149.31h133.94c7.64 0 13.89 6.29 13.89 13.89 0 7.6-6.29 13.9-13.89 13.9H65.53c-7.6 0-13.89-6.25-13.89-13.9 0-7.64 6.25-13.89 13.89-13.89zM132.5 0c40.53 0 73.39 32.86 73.39 73.39 0 26.17-13.7 49.14-34.32 62.13H93.43c-20.62-12.99-34.32-35.96-34.32-62.13C59.11 32.86 91.97 0 132.5 0zM73.55 190.88c-1.39 55.62-14.03 109.88-27.94 145.81h173.78c-16.19-40.76-29.57-94.31-31.44-145.81H73.55zM42.59 350.51h179.82c8.24 0 14.97 6.77 14.97 14.96 0 8.19-6.77 14.96-14.97 14.96H42.59c-8.2 0-14.97-6.73-14.97-14.96s6.73-14.96 14.97-14.96zM15.47 481.93h234.06c8.51 0 15.47 6.96 15.47 15.47 0 8.51-6.96 15.48-15.47 15.48H15.47C6.96 512.88 0 505.91 0 497.4c0-8.51 6.96-15.47 15.47-15.47z" /></svg>
+                    )
+            }
+            {
+                // Show last known Mr.X position as dotted ring around node
+                <circle
+                    className={"LastMisterXPos"}
+                    fill={"none"}
+                    stroke={lastMisterXShowPos ? "#ffffff" : "transparent"}
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeDasharray={"5,5"}
+                    cx={mrx_node?.position_x}
+                    cy={mrx_node?.position_y}
+                    r={node_size * 0.5 + 10}
+                ></circle>
+            }
+            {
+                // Show legend of vehicles
+                mapVehicles()
+                    .map(({ id, name, color, rect_x, rect_y, text_x, text_y }, _index) =>
+                        <g key={`VehicleLegend${id}`}>
+                            <rect
+                                className="DefaultCursor"
+                                fill={color}
+                                stroke={color}
+                                x={rect_x}
+                                y={rect_y}
+                                width={20}
+                                height={20}>
+                            </rect>
+                            <text
+                                className="DefaultCursor VehicleLegend"
+                                fill="#9ca3af"
+                                stroke="#9ca3af"
+                                strokeWidth={1}
+                                x={text_x}
+                                y={text_y}
+                            >{`- ${name}`}</text>
+                        </g>
+                    )
+            }
+        </svg>
     )
 }

@@ -7,16 +7,16 @@ hr {
 }
 
 .Clickable {
-    cursor: pointer !important;
-  }
+  cursor: pointer !important;
+}
 
-  .Unclickable {
-    cursor: not-allowed !important;
-  }
+.Unclickable {
+  cursor: not-allowed !important;
+}
 
-  .DefaultCursor {
-    cursor: default;
-  }
+.DefaultCursor {
+  cursor: default;
+}
 
 .App {
   display: flex;
@@ -127,6 +127,12 @@ hr {
         height: 80px;
         background-color: rgb(74, 74, 74);
       }
+
+      .ConnPalette{
+      }
+
+      .ActiveConnPalette{
+      }
     }
   }
 }
@@ -193,6 +199,7 @@ hr {
   display: block;
   width: calc(100% - 40px);
   max-height: calc(100dvh - 135px);
+  user-select: none;
 
   .MapNode {
     stroke-width: 2px;

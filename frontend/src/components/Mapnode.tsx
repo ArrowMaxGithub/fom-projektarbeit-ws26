@@ -1,4 +1,4 @@
-import type { FC, SVGProps } from 'react'
+import type { FC, SVGProps, MouseEvent } from 'react'
 
 type SvgComponent = FC<SVGProps<SVGSVGElement>>
 
@@ -15,18 +15,19 @@ import NodeTaxiSubway from "../assets/nodes/node_taxi_subway.svg?react"
 import NodeTaxi from "../assets/nodes/node_taxi.svg?react"
 import Node from "../assets/nodes/node.svg?react"
 
-type MapNodeProps = {
+type MapnodeProps = {
     id: number,
     number: number,
     vehicles: number[],
     is_legal: boolean,
-    is_current: boolean,
+    is_selected: boolean,
     x: number,
     y: number,
     onClick: (node_id: number) => void,
+    onRightClick: (node_id: number) => void,
 }
 
-export default function MapNode({ id, number, vehicles, is_legal, x, y, onClick}: MapNodeProps) {
+export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x, y, onClick, onRightClick }: MapnodeProps) {
     const vehiclesToNodeSvg: Record<string, SvgComponent> = {
         "1,2,3,4": NodeAll,
         "2,4": NodeBusBlack,
@@ -44,15 +45,46 @@ export default function MapNode({ id, number, vehicles, is_legal, x, y, onClick}
     const key = vehicles.join(",");
     const Icon = vehiclesToNodeSvg[key] ?? Node;
 
-    return <g className={is_legal ? "Clickable MapNode" : "Unclickable MapNode"} onClick={is_legal ? () => onClick(id) : () => null}>
-        <Icon width={80} height={80} x={x - 40} y={y - 40}></Icon>
-        <text 
-            className={is_legal ? "Clickable MapNodeText" : "Unclickable MapNodeText"}
-            fill={"#000000"} 
-            stroke={"#000000"} 
-            x={x} 
+    function handleRightClick(e: MouseEvent) {
+        e.preventDefault();
+        onRightClick(id);
+    }
+
+    let className = "MapNodeText ";
+    if (is_legal) {
+        className += "Clickable ";
+    } else {
+        className += "Unclickable ";
+    }
+
+    return <g>
+        <Icon
+            className={className}
+            width={80}
+            height={80}
+            x={x - 40}
+            y={y - 40}
+        ></Icon>
+
+        <text
+            className={className}
+            fill={"#000000"}
+            stroke={"#000000"}
+            x={x}
             y={y - 1}
-            onClick={is_legal ? () => onClick(id) : () => null}
         >{number}</text>
+
+        <circle
+            className={is_selected ? className + "Selected " : className}
+            r={50}
+            cx={x}
+            cy={y}
+            stroke={is_selected ? "#006500" : "none"}
+            strokeWidth={4}
+            fill={"transparent"}
+            onClick={is_legal ? () => onClick(id) : () => undefined}
+            onContextMenu={handleRightClick}
+        >
+        </circle>
     </g>
 }

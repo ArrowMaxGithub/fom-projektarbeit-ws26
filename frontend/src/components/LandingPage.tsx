@@ -10,7 +10,7 @@ type LandingPageProps = {
 export default function LandingPage({ active, playerName, handleNameChange, handleLogin }: LandingPageProps) {
     const [showInfo, setShowInfo] = useState(false);
 
-    if (!active){
+    if (!active) {
         return null;
     }
 

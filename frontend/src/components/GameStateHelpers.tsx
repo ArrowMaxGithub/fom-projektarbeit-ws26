@@ -1,19 +1,35 @@
 import type { GameState, Player, Connection, Ticket, Vehicle, MapNode } from "../interfaces";
 import { NodeState } from "./NodeState";
 
-export function getVehiclesAtNode(gamestate: GameState | null, node_id: number): number[] | undefined {
+// TODO: Brittle comparison against vehicle name. Add vehicle color to database or user preferences.
+export function vehicleNameToColor(vehicle_name: string): string {
+    switch (vehicle_name) {
+        case "U-Bahn":
+            return "#a40000";
+        case "Taxi":
+            return "#ffd000";
+        case "Bus":
+            return "#039c03";
+        case "Schwarze Route":
+            return "#373737";
+        default:
+            return "#ffffff";
+    }
+}
+
+export function getVehiclesAtNode(gamestate: GameState | null, node_id: number | null): number[] | undefined {
     return [... new Set(gamestate?.connections.filter(conn => conn.from_node_id === node_id || conn.to_node_id === node_id).map(conn => conn.vehicle_id).sort((a, b) => a - b))]
 }
 
-export function getPlayerPerspective(gamestate: GameState | null, player_id: number | null): number | null{
+export function getPlayerPerspective(gamestate: GameState | null, player_id: number | null): number | null {
     const active_player = getActivePlayer(gamestate);
     const player = getPlayer(gamestate, player_id);
 
     let perspective;
-    if (player?.player_type === "zuschauer"){
+    if (player?.player_type === "zuschauer") {
         perspective = null;
     }
-    else if (active_player?.player_type === "bobby" && player?.role === "detektiv"){
+    else if (active_player?.player_type === "bobby" && player?.role === "detektiv") {
         perspective = active_player?.player_id;
     }
     else {
@@ -77,8 +93,16 @@ export function getNode(gamestate: GameState | null, node_id: number | null): Ma
     return gamestate?.nodes.find(node => node.node_id === node_id)
 }
 
+export function getConnection(gamestate: GameState | null, conn_id: number | null): Connection | undefined {
+    return gamestate?.connections.find(conn => conn.connection_id === conn_id)
+}
+
 export function getVehicle(gamestate: GameState | null, vehicle_id: number): Vehicle | undefined {
     return gamestate?.vehicles.find(vehicle => vehicle.vehicle_id === vehicle_id)
+}
+
+export function getVehicleByName(gamestate: GameState | null, vehicle_name: string): Vehicle | undefined {
+    return gamestate?.vehicles.find(vehicle => vehicle.name === vehicle_name)
 }
 
 export function getLegalTicketsForVehicle(player: Player, vehicle_id: number): Ticket[] | undefined {

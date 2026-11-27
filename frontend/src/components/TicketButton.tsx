@@ -16,7 +16,7 @@ type TicketButtonProps = {
 
 export default function TicketButton({ ticket, selectedTicket, bobbby_round, onClick }: TicketButtonProps) {
     function well_known_tickets_background(ticket: Ticket): string {
-        switch (ticket.name){
+        switch (ticket.name) {
             case ("Taxiticket"):
                 return taxi_ticket;
             case ("Busticket"):
@@ -35,13 +35,13 @@ export default function TicketButton({ ticket, selectedTicket, bobbby_round, onC
     const isSelectedTicket = selectedTicket?.ticket_type_id === ticket.ticket_type_id;
     const background = well_known_tickets_background(ticket)
 
-    return <button 
-        className={isSelectedTicket ? "Ticketbutton SelectedTicket" : "Ticketbutton"} 
-        disabled={ticket.count === 0 || bobbby_round} 
+    return <button
+        className={isSelectedTicket ? "Ticketbutton SelectedTicket" : "Ticketbutton"}
+        disabled={ticket.count === 0 || bobbby_round}
         onClick={() => onClick(ticket)}
-        >
-        <img src={background}/>
+    >
+        <img src={background} />
         <span>{ticket.name}</span>
         <span>{ticket.count}</span>
-    </button>     
+    </button>
 }
