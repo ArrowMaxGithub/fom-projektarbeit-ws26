@@ -3,7 +3,6 @@ import type { GameState, MapNode, Player, Role, Ticket, Vehicle } from '../inter
 import { NodeState } from './NodeState.tsx';
 import { getActivePlayer, getConnection, getConnections, getNode, getNodeStates, getPlayer, getPlayerPerspective, getVehicle, getVehiclesAtNode, vehicleNameToColor } from './GameStateHelpers.tsx';
 import { getPlayerColor } from './PlayerColors.tsx';
-import NodeContextMenu from './NodeContextMenu.tsx';
 import Mapnode from './Mapnode.tsx';
 import ConnContextMenu from './ConnContextMenu.tsx';
 
@@ -11,10 +10,9 @@ type EditorGameboardProps = {
     gamestate: GameState,
     selectedTicket: Ticket | null,
     selectedNodes: number[],
-    nodeContextMenu: number | null,
     connContextmenu: number | null,
+    nodeToMove: number | null,
     onClickNode: (node_id: number) => void,
-    onRightClickNode: (node_id: number) => void,
     onClickMap: (mapX: number, mapY: number) => void,
     onAcceptConnection: () => void,
     onDeleteConnection: () => void,
@@ -99,7 +97,7 @@ export function defaultEditorGameState(): GameState {
     }
 }
 
-export default function EditorGameboard({ gamestate, selectedTicket, selectedNodes, nodeContextMenu, connContextmenu, onClickNode, onRightClickNode, onClickMap, onAcceptConnection, onDeleteConnection }: EditorGameboardProps) {
+export default function EditorGameboard({ gamestate, selectedTicket, selectedNodes, connContextmenu, nodeToMove, onClickNode, onClickMap, onAcceptConnection, onDeleteConnection }: EditorGameboardProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -276,7 +274,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
             const player_is_active = active_player === player;
 
             const is_legal = nodeStates[index] === NodeState.LegalDst && player_is_active;
-            const is_selected = selectedNodes.includes(node.node_id);
+            const is_selected = selectedNodes.includes(node.node_id) || nodeToMove === node.node_id;
             const vehicles = getVehiclesAtNode(gamestate, node.node_id) ?? [];
 
             return {
@@ -317,15 +315,11 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
         }) ?? [];
     }
 
-    function handleClick(e: MouseEvent) {
-        const svg = svgRef.current;
-        if (!svg) {
-            return;
-        }
-
+    function translateToSvgCoord(clientX: number, clientY: number): DOMPoint {
+        const svg = svgRef.current!;
         let point = svg.createSVGPoint();
-        point.x = e.clientX;
-        point.y = e.clientY;
+        point.x = clientX;
+        point.y = clientY;
 
         const matrix = svg.getScreenCTM();
 
@@ -333,10 +327,21 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
             point = point.matrixTransform(matrix.inverse());
         }
 
+        return point;
+    }
+
+    function handleClick(e: MouseEvent) {
+        const point = translateToSvgCoord(e.clientX, e.clientY);
         onClickMap(point.x, point.y);
     }
 
     function handleMouseMouse(e: MouseEvent) {
+        if (nodeToMove) {
+            const point = translateToSvgCoord(e.clientX, e.clientY);
+            onClickMap(point.x, point.y);
+            return;
+        }
+
         if (isDragging) {
             setCenter((prev) => [prev[0] - e.movementX * zoom, prev[1] - e.movementY * zoom])
         }
@@ -378,14 +383,11 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
                 // Draw nodes as white numbered circles, clickable if legal dst nodes 
                 mapNodes()
                     .map(({ id, number, vehicles, is_legal, is_selected, x, y }, _index) =>
-                        <Mapnode key={id} id={id} number={number} vehicles={vehicles} is_legal={isPlaying ? is_legal : true} is_selected={is_selected} x={x} y={y} onClick={onClickNode} onRightClick={onRightClickNode}></Mapnode>
+                        <Mapnode key={id} id={id} number={number} vehicles={vehicles} is_legal={isPlaying ? is_legal : true} is_selected={is_selected} x={x} y={y} onClick={onClickNode}></Mapnode>
                     )
             }
             {
-                <NodeContextMenu node={getNode(gamestate, nodeContextMenu) ?? null} stops={getVehiclesAtNode(gamestate, nodeContextMenu)?.map(vid => getVehicle(gamestate, vid)?.name).filter(n => n !== undefined) ?? []}></NodeContextMenu>
-            }
-            {
-                <ConnContextMenu node={getNode(gamestate, connContextmenu) ?? null} onAccept={onAcceptConnection} onDelete={onDeleteConnection}></ConnContextMenu>
+                <ConnContextMenu node={getNode(gamestate, connContextmenu)!} onAccept={onAcceptConnection} onDelete={onDeleteConnection}></ConnContextMenu>
             }
             {
                 // Show player name and role below player's current node

@@ -24,10 +24,9 @@ type MapnodeProps = {
     x: number,
     y: number,
     onClick: (node_id: number) => void,
-    onRightClick: (node_id: number) => void,
 }
 
-export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x, y, onClick, onRightClick }: MapnodeProps) {
+export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x, y, onClick }: MapnodeProps) {
     const vehiclesToNodeSvg: Record<string, SvgComponent> = {
         "1,2,3,4": NodeAll,
         "2,4": NodeBusBlack,
@@ -44,11 +43,6 @@ export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x
 
     const key = vehicles.join(",");
     const Icon = vehiclesToNodeSvg[key] ?? Node;
-
-    function handleRightClick(e: MouseEvent) {
-        e.preventDefault();
-        onRightClick(id);
-    }
 
     let className = "MapNodeText ";
     if (is_legal) {
@@ -83,7 +77,6 @@ export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x
             strokeWidth={4}
             fill={"transparent"}
             onClick={is_legal ? () => onClick(id) : () => undefined}
-            onContextMenu={handleRightClick}
         >
         </circle>
     </g>

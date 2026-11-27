@@ -6,9 +6,10 @@ import ToolRemove from "../assets/tools/remove.svg?react"
 import ToolEdit from "../assets/tools/edit.svg?react"
 import ToolConnection from "../assets/tools/connection.svg?react"
 import ToolNode from "../assets/nodes/node_all.svg?react"
+import ToolMove from "../assets/tools/move.svg?react"
 import ToolEmpty from "../assets/tools/empty.svg?react"
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
+import { getNode, getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
 
 type MapEditorProps = {
     active: boolean,
@@ -20,9 +21,9 @@ export default function MapEditor({ active }: MapEditorProps) {
     const [activeTool, setActiveTool] = useState<string | null>(null);
     const [activeConnPalette, setActiveConnPalette] = useState<string>("Taxi");
     const [selectedNodes, setSelectedNodes] = useState<number[]>([]);
-    const [nodeContextMenu, setNodeContextMenu] = useState<number | null>(null);
     const [connContextMenu, setConnContextMenu] = useState<number | null>(null);
     const [activeConn, setActiveConn] = useState<Connection | null>(null);
+    const [nodeToMove, setNodeToMove] = useState<number | null>(null);
 
     if (!active) {
         return null
@@ -69,6 +70,24 @@ export default function MapEditor({ active }: MapEditorProps) {
         });
     }
 
+    function handleMoveNode(x: number, y: number) {
+        setGameState((prev_gamestate) => {
+            setNodeToMove(prev => {
+                if (!prev) return null;
+
+                const node = getNode(gamestate, prev)!;
+                node.position_x = x;
+                node.position_y = y;
+
+                return prev;
+            })
+
+            return {
+                ...prev_gamestate,
+            };
+        });
+    }
+
     function handleRemoveNode(node_id: number) {
 
     }
@@ -95,17 +114,16 @@ export default function MapEditor({ active }: MapEditorProps) {
 
     function handleMapClick(mapX: number, mapY: number) {
         switch (activeTool) {
-            case "add_node": return handleAddNode(mapX, mapY)
+            case "add_node": return handleAddNode(mapX, mapY);
+            case "move_node": return handleMoveNode(mapX, mapY);
         }
     }
 
-    function handleNodeRightClick(node: number) {
-        setNodeContextMenu(prev => {
-            return prev === node ? null : node;
-        })
-    }
-
     function handleNodeClick(node: number) {
+        if (activeTool === "move_node") {
+            setNodeToMove(prev => prev === node ? null : node);
+        }
+
         if (activeTool !== "add_conn") return;
 
         setSelectedNodes(prev => {
@@ -137,8 +155,11 @@ export default function MapEditor({ active }: MapEditorProps) {
         })
     }
 
-    function handleSelectTool(tool: string) {
+    function handleSelectTool(e: MouseEvent, tool: string) {
+        e.stopPropagation();
+
         setSelectedNodes([]);
+        setNodeToMove(null);
         setActiveConnPalette("Taxi");
 
         if (activeTool === tool) {
@@ -167,16 +188,22 @@ export default function MapEditor({ active }: MapEditorProps) {
 
     return <>
         <div className="EditorContent">
-            <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onRightClickNode={handleNodeRightClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} nodeContextMenu={nodeContextMenu} connContextmenu={connContextMenu}></EditorGameboard>
+            <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove}></EditorGameboard>
         </div>
         <div className="EditorInfoPanel">
             <h1>Tools</h1>
             <div className="EditorTools">
-                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "add_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={() => handleSelectTool("add_node")}>
+                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "add_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "add_node")}>
                     <ToolNode className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></ToolNode>
                     <ToolAdd className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></ToolAdd>
                 </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "add_conn" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={() => handleSelectTool("add_conn")} overflow={"visible"}>
+
+                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "move_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "move_node")}>
+                    <ToolNode className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></ToolNode>
+                    <ToolMove className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></ToolMove>
+                </svg>
+
+                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "add_conn" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "add_conn")} overflow={"visible"}>
                     <ToolConnection className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></ToolConnection>
                     <ToolAdd className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></ToolAdd>
                     {
