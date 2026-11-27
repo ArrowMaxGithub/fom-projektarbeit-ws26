@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { Connection, GameState, MapNode, Ticket } from "../interfaces";
 import TicketButton from "./TicketButton";
 import ToolAdd from "../assets/tools/add.svg?react"
@@ -9,7 +9,7 @@ import ToolNode from "../assets/nodes/node_all.svg?react"
 import ToolMove from "../assets/tools/move.svg?react"
 import ToolEmpty from "../assets/tools/empty.svg?react"
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getNode, getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
+import { getConnection, getNode, getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
 
 type MapEditorProps = {
     active: boolean,
@@ -24,6 +24,35 @@ export default function MapEditor({ active }: MapEditorProps) {
     const [connContextMenu, setConnContextMenu] = useState<number | null>(null);
     const [activeConn, setActiveConn] = useState<Connection | null>(null);
     const [nodeToMove, setNodeToMove] = useState<number | null>(null);
+
+    useEffect(() => {
+        setActiveConn(prev => {
+            const nodes = selectedNodes;
+            const conn = prev ?? startNewConnection(nodes);
+            conn.from_node_id = nodes[0]!;
+            conn.to_node_id = nodes.at(-1)!;
+            conn.via = nodes.slice(1, -1) ?? [];
+
+            if (nodes.length >= 2) {
+                setConnContextMenu(nodes.at(-1) ?? null)
+            }
+            return conn;
+        });
+    }, [selectedNodes])
+
+    useEffect(() => {
+        setGameState(prev => {
+            if (!activeConn) {
+                return prev;
+            }
+
+            prev.connections[activeConn.connection_id] = activeConn;
+
+            return {
+                ...prev,
+            }
+        })
+    }, [activeConn])
 
     if (!active) {
         return null
@@ -43,9 +72,6 @@ export default function MapEditor({ active }: MapEditorProps) {
             vehicle_id,
             via
         };
-
-        gamestate.connections.push(conn);
-        console.log(`Started new connection: ${conn.connection_id}`);
 
         return conn;
     }
@@ -94,18 +120,31 @@ export default function MapEditor({ active }: MapEditorProps) {
 
     function handleAcceptConnection() {
         if (!activeConn) return;
+
         setActiveConn(null);
         setConnContextMenu(null);
         setSelectedNodes([]);
+        setGameState(prev => {
+            return {
+                ...prev
+            }
+        });
     }
 
     function handleDeleteConnection() {
         if (!activeConn) return;
-        const index = gamestate.connections.indexOf(activeConn);
-        delete gamestate.connections[index];
+
         setActiveConn(null);
         setConnContextMenu(null);
         setSelectedNodes([]);
+        setGameState(prev => {
+            const index = prev.connections.indexOf(activeConn);
+            delete prev.connections[index];
+
+            return {
+                ...prev
+            }
+        });
     }
 
     function handlePlacePlayer(node_id: number) {
@@ -134,25 +173,8 @@ export default function MapEditor({ active }: MapEditorProps) {
                 nodes = [...prev, node];
             }
 
-            setActiveConn(prev => {
-                let conn = prev ?? startNewConnection(nodes);
-                conn.from_node_id = nodes[0]!;
-                conn.to_node_id = nodes.at(-1)!;
-                conn.via = nodes.slice(1, -1) ?? [];
-
-                console.log(`conn from: ${conn.from_node_id}`);
-                console.log(`conn via: ${conn.via}`);
-                console.log(`conn to: ${conn.to_node_id}`);
-
-                if (nodes.length >= 2) {
-                    setConnContextMenu(nodes.at(-1) ?? null)
-                }
-
-                return conn;
-            })
-
             return nodes;
-        })
+        });
     }
 
     function handleSelectTool(e: MouseEvent, tool: string) {
@@ -164,26 +186,25 @@ export default function MapEditor({ active }: MapEditorProps) {
 
         if (activeTool === tool) {
             setActiveTool(null);
-            console.log(`Deselected tool ${tool}`);
         } else {
             setActiveTool(tool);
-            console.log(`Selecting tool: ${tool}`);
         }
     }
 
     function handleSelectTicket(ticket: Ticket) {
         if (ticket.ticket_type_id === selectedTicket?.ticket_type_id) {
             setselectedTicket(null)
-            console.log(`Deselected ticket ${ticket.name} with ${ticket.count} remaining`);
         } else {
             setselectedTicket(ticket)
-            console.log(`Selected ticket ${ticket.name} with ${ticket.count} remaining`);
         }
     }
 
     function handleSelectConnPalette(e: MouseEvent, name: string) {
         e.stopPropagation();
-        setActiveConnPalette(name)
+        setActiveConnPalette(name);
+        if (activeConn) {
+            activeConn.vehicle_id = getVehicleByName(gamestate, name)?.vehicle_id!;
+        }
     }
 
     return <>

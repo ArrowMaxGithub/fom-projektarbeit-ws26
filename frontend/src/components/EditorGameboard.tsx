@@ -118,7 +118,6 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault()
                 const delta = e.deltaY * 0.001;
-                console.log(`delta zoom: ${delta}`);
                 setZoom((prev) => Math.min(Math.max(prev + delta, 0.25), 4.0));
             }
         }
