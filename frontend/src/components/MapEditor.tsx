@@ -24,6 +24,7 @@ export default function MapEditor({ active }: MapEditorProps) {
     const [connContextMenu, setConnContextMenu] = useState<number | null>(null);
     const [activeConn, setActiveConn] = useState<Connection | null>(null);
     const [nodeToMove, setNodeToMove] = useState<number | null>(null);
+    const [overlapConn, setoOverlapConn] = useState<number[]>([]);
 
     useEffect(() => {
         setActiveConn(prev => {
@@ -36,6 +37,11 @@ export default function MapEditor({ active }: MapEditorProps) {
                 const overlap = isOverlappingConnection(gamestate, conn);
                 if (overlap.length !== 0) {
                     console.error(`Connection from ${overlap[0]} to ${overlap[1]} already used for vehicle ${vehicle}`);
+                    const overlap_0 = getNode(gamestate, overlap[0])!;
+                    const overlap_1 = getNode(gamestate, overlap[1])!;
+                    const x = overlap_0.position_x + (overlap_1.position_x - overlap_0.position_x) / 2;
+                    const y = overlap_0.position_y + (overlap_1.position_y - overlap_0.position_y) / 2;
+                    setoOverlapConn([x, y]);
                     setSelectedNodes(prev_nodes => {
                         const new_nodes = prev_nodes.filter(n => n !== overlap[0] && n !== overlap[1]);
                         conn.to_node_id = new_nodes[0];
@@ -197,6 +203,8 @@ export default function MapEditor({ active }: MapEditorProps) {
 
             return nodes;
         });
+
+        setoOverlapConn([]);
     }
 
     function handleSelectTool(e: MouseEvent, tool: string) {
@@ -234,7 +242,7 @@ export default function MapEditor({ active }: MapEditorProps) {
 
     return <>
         <div className="EditorContent">
-            <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove}></EditorGameboard>
+            <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove} overlapConn={overlapConn}></EditorGameboard>
         </div>
         <div className="EditorInfoPanel">
             <h1>Tools</h1>

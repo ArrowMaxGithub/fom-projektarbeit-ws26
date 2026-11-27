@@ -192,6 +192,15 @@ hr {
   }
 }
 
+@keyframes fadeaway {
+  from {
+    filter: opacity(100%);
+  }
+
+  to {
+    filter: opacity(0%);
+  }
+}
 
 .Gameboard {
   padding: 20px;

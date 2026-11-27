@@ -5,6 +5,7 @@ import { getActivePlayer, getConnection, getConnections, getNode, getNodeStates,
 import { getPlayerColor } from './PlayerColors.tsx';
 import Mapnode from './Mapnode.tsx';
 import ConnContextMenu from './ConnContextMenu.tsx';
+import Error from '../assets/tools/error.svg?react'
 
 type EditorGameboardProps = {
     gamestate: GameState,
@@ -12,6 +13,7 @@ type EditorGameboardProps = {
     selectedNodes: number[],
     connContextmenu: number | null,
     nodeToMove: number | null,
+    overlapConn: number[],
     onClickNode: (node_id: number) => void,
     onClickMap: (mapX: number, mapY: number) => void,
     onAcceptConnection: () => void,
@@ -97,7 +99,7 @@ export function defaultEditorGameState(): GameState {
     }
 }
 
-export default function EditorGameboard({ gamestate, selectedTicket, selectedNodes, connContextmenu, nodeToMove, onClickNode, onClickMap, onAcceptConnection, onDeleteConnection }: EditorGameboardProps) {
+export default function EditorGameboard({ gamestate, selectedTicket, selectedNodes, connContextmenu, nodeToMove, overlapConn, onClickNode, onClickMap, onAcceptConnection, onDeleteConnection }: EditorGameboardProps) {
     const svgRef = useRef<SVGSVGElement | null>(null);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -389,10 +391,16 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
                 <ConnContextMenu node={getNode(gamestate, connContextmenu)!} onAccept={onAcceptConnection} onDelete={onDeleteConnection}></ConnContextMenu>
             }
             {
+                <svg visibility={overlapConn.length == 0 ? "hidden" : ""} x={overlapConn[0]} y={overlapConn[1]}>
+                    <Error x={10} width={40} height={40}></Error>
+                    <text y={27} x={50} stroke='red' fill='red'>Duplikat</text>
+                </svg>
+            }
+            {
                 // Show player name and role below player's current node
                 mapPlayers()
                     .map(({ id, color, x, y }, _index) =>
-                        <svg key={`Player${id}`} className="PlayerFigurine" xmlns="http://www.w3.org/2000/svg" width={20} height={40} fill={color} shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" fillRule="evenodd" clipRule="evenodd" viewBox="0 0 265 512.88" transform={`translate(${x} ${y})`} >
+                        <svg key={`Player${id}`} className="PlayerFigurine" xmlns="http://www.w3.org/2000/svg" width={20} height={40} fill={color} fillRule="evenodd" clipRule="evenodd" viewBox="0 0 265 512.88" transform={`translate(${x} ${y})`} >
                             <path d="M218.85 394.25c12.52 21.98 33.03 44.25 29.71 73.85H16.4c-3.32-29.6 19.95-51.87 32.47-73.85h169.98zM65.53 149.31h133.94c7.64 0 13.89 6.29 13.89 13.89 0 7.6-6.29 13.9-13.89 13.9H65.53c-7.6 0-13.89-6.25-13.89-13.9 0-7.64 6.25-13.89 13.89-13.89zM132.5 0c40.53 0 73.39 32.86 73.39 73.39 0 26.17-13.7 49.14-34.32 62.13H93.43c-20.62-12.99-34.32-35.96-34.32-62.13C59.11 32.86 91.97 0 132.5 0zM73.55 190.88c-1.39 55.62-14.03 109.88-27.94 145.81h173.78c-16.19-40.76-29.57-94.31-31.44-145.81H73.55zM42.59 350.51h179.82c8.24 0 14.97 6.77 14.97 14.96 0 8.19-6.77 14.96-14.97 14.96H42.59c-8.2 0-14.97-6.73-14.97-14.96s6.73-14.96 14.97-14.96zM15.47 481.93h234.06c8.51 0 15.47 6.96 15.47 15.47 0 8.51-6.96 15.48-15.47 15.48H15.47C6.96 512.88 0 505.91 0 497.4c0-8.51 6.96-15.47 15.47-15.47z" /></svg>
                     )
             }
