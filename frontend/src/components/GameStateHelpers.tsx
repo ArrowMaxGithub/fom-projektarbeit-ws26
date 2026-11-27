@@ -193,3 +193,38 @@ export function isGameEnded(gamestate: GameState): boolean {
 export function isGameOver(gamestate: GameState): boolean {
     return gamestate.info.status === "beendet" || gamestate.info.status === "abgebrochen"
 }
+
+export function isOverlappingConnection(gamestate: GameState, conn: Connection): number[] {
+    const nodes = [conn.from_node_id, ...conn.via, conn.to_node_id];
+    const vehicle = conn.vehicle_id;
+
+    for (let k = 0; k < gamestate.connections.length; k += 1) {
+        const c = gamestate.connections[k];
+        if (!c) continue;
+        const other_nodes = [c.from_node_id, ...c.via, c.to_node_id];
+
+        for (let i = 0; i < other_nodes.length - 1; i += 1) {
+            const other_from = other_nodes[i];
+            const other_to = other_nodes[i + 1];
+            const other_vehicle = c.vehicle_id;
+
+            if (vehicle !== other_vehicle || conn.connection_id === c.connection_id) {
+                continue;
+            }
+
+            for (let j = 0; j < nodes.length - 1; j += 1) {
+                const from = nodes[j];
+                const to = nodes[j + 1];
+
+                if (
+                    (from === other_from && to === other_to) ||
+                    (to === other_from && from === other_to)
+                ) {
+                    return [from, to];
+                }
+            }
+        }
+    };
+
+    return [];
+}

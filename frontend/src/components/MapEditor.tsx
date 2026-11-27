@@ -9,7 +9,7 @@ import ToolNode from "../assets/nodes/node_all.svg?react"
 import ToolMove from "../assets/tools/move.svg?react"
 import ToolEmpty from "../assets/tools/empty.svg?react"
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getConnection, getNextConnectionId, getNextNodeId, getNode, getVehicle, getVehicleByName, vehicleNameToColor } from "./GameStateHelpers";
+import { getConnection, getNextConnectionId, getNextNodeId, getNode, getVehicle, getVehicleByName, isOverlappingConnection, vehicleNameToColor } from "./GameStateHelpers";
 
 type MapEditorProps = {
     active: boolean,
@@ -30,6 +30,23 @@ export default function MapEditor({ active }: MapEditorProps) {
             const nodes = selectedNodes;
             const conn = prev ?? startNewConnection(nodes);
 
+            // Check existing connections for any overlap, including vias => if already used for this vehicle: remove overlap from selected nodes with error
+            for (let i = 0; i <= nodes.length - 1; i++) {
+                const vehicle = prev?.vehicle_id;
+                const overlap = isOverlappingConnection(gamestate, conn);
+                if (overlap.length !== 0) {
+                    console.error(`Connection from ${overlap[0]} to ${overlap[1]} already used for vehicle ${vehicle}`);
+                    setSelectedNodes(prev_nodes => {
+                        const new_nodes = prev_nodes.filter(n => n !== overlap[0] && n !== overlap[1]);
+                        conn.to_node_id = new_nodes[0];
+                        conn.from_node_id = new_nodes.at(-1) ?? new_nodes[0];
+                        return new_nodes;
+                    });
+
+                    return conn;
+                }
+            }
+
             conn.from_node_id = nodes.at(0) ?? -1;
             conn.to_node_id = nodes.at(-1) ?? -1;
             conn.via = nodes.slice(1, -1) ?? [];
@@ -47,10 +64,6 @@ export default function MapEditor({ active }: MapEditorProps) {
     useEffect(() => {
         setGameState(prev => {
             if (!activeConn) return prev;
-
-            console.log(`${activeConn.connection_id}: ${activeConn.from_node_id} | ${activeConn.via} | ${activeConn.to_node_id}`);
-
-
             if (activeConn.from_node_id === -1 && activeConn.to_node_id === -1) {
                 prev.connections = prev.connections.filter(c => c.connection_id !== activeConn.connection_id);
             } else {
