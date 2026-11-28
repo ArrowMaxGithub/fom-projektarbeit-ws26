@@ -3,15 +3,18 @@
 // Server: Server<ClientToServerEvents, ServerToClientEvents> for /; Namespace<...> for other paths.
 export type Role = "mister_x" | "detektiv";
 export type EndCause = "gefangen" | "mr_x_blockiert" | "mr_x_entkommen" | "detektive_blockiert";
+export type Nodes = MapNode[];
+export type Connections = Connection[];
+export type Vehicles = Vehicle[];
 export type Status = "lobby" | "laufend" | "beendet" | "abgebrochen";
 export type Phase = "mister_x" | "detektive";
 export type PlayerType = "spieler" | "bobby" | "zuschauer";
 export type AllowedVehicles = Vehicle[];
 export type Tickets = Ticket[];
 export type Players = Player[];
-export type Nodes = MapNode[];
-export type Connections = Connection[];
-export type Vehicles = Vehicle[];
+export type Nodes1 = MapNode[];
+export type Connections1 = Connection[];
+export type Vehicles1 = Vehicle[];
 export type RootLobbyPayloadArgument1 = GameInfo[];
 
 export interface ChatMessage {
@@ -30,6 +33,26 @@ export interface Connection {
   vehicle_id: number;
   via: number[];
 }
+export interface ExportedMap {
+  name: string;
+  dimensions: number[];
+  nodes: Nodes;
+  connections: Connections;
+  vehicles: Vehicles;
+}
+export interface MapNode {
+  node_id: number;
+  number: number;
+  position_x: number;
+  position_y: number;
+}
+/**
+ * Vehicle(*, vehicle_id: int, name: str)
+ */
+export interface Vehicle {
+  vehicle_id: number;
+  name: string;
+}
 export interface GameInfo {
   room_id: number;
   creator_name: string;
@@ -45,9 +68,9 @@ export interface GameState {
   info: GameInfo;
   active_player: number | null;
   players: Players;
-  nodes: Nodes;
-  connections: Connections;
-  vehicles: Vehicles;
+  nodes: Nodes1;
+  connections: Connections1;
+  vehicles: Vehicles1;
   mister_x_moves?: string[];
 }
 export interface Player {
@@ -66,19 +89,6 @@ export interface Ticket {
   count: number;
   allowed_vehicles: AllowedVehicles;
 }
-/**
- * Vehicle(*, vehicle_id: int, name: str)
- */
-export interface Vehicle {
-  vehicle_id: number;
-  name: string;
-}
-export interface MapNode {
-  node_id: number;
-  number: number;
-  position_x: number;
-  position_y: number;
-}
 export interface Move {
   player_id: number;
   game_id: number;
@@ -95,6 +105,7 @@ export namespace Root {
   export interface ClientToServerEvents {
     "chat": (...args: [...[message: ChatMessage], ack?: (...args: unknown[]) => void]) => void;
     "choose_role": (...args: [...[choice: ChooseRole], ack?: (...args: unknown[]) => void]) => void;
+    "export_map": (...args: [...[exported_map: ExportedMap], ack?: (...args: unknown[]) => void]) => void;
     "login": (...args: [...[player_name: string], ack?: (...args: unknown[]) => void]) => void;
     "logout": (...args: [...[player_id: number], ack?: (...args: unknown[]) => void]) => void;
     "move": (...args: [...[move: Move], ack?: (...args: unknown[]) => void]) => void;

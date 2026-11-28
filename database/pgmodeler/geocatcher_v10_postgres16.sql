@@ -143,8 +143,8 @@ CREATE TABLE public.karte (
 	id integer NOT NULL GENERATED ALWAYS AS IDENTITY ,
 	name varchar NOT NULL,
 	version integer NOT NULL DEFAULT 1,
-	breite integer NOT NULL,
-	hoehe integer NOT NULL,
+	breite real NOT NULL,
+	hoehe real NOT NULL,
 	CONSTRAINT karte_pk PRIMARY KEY (id),
 	CONSTRAINT unq_karte_name_und_version UNIQUE (name,version),
 	CONSTRAINT chk_karte_version CHECK (version > 0),
@@ -160,8 +160,8 @@ CREATE TABLE public.knoten (
 	id integer NOT NULL GENERATED ALWAYS AS IDENTITY ,
 	id_karte integer NOT NULL,
 	nummer integer NOT NULL,
-	position_x integer NOT NULL,
-	position_y integer NOT NULL,
+	position_x real NOT NULL,
+	position_y real NOT NULL,
 	CONSTRAINT knoten_pk PRIMARY KEY (id),
 	CONSTRAINT chk_knoten_positionen CHECK (position_x >= 0 AND position_y >= 0),
 	CONSTRAINT chk_knoten_nummer CHECK (nummer > 0)
@@ -196,7 +196,8 @@ CREATE TABLE public.verbindung (
 	id_startknoten integer NOT NULL,
 	id_zielknoten integer NOT NULL,
 	id_verkehrsmittel integer NOT NULL,
-	halt boolean DEFAULT FALSE,
+	halt_start boolean DEFAULT TRUE,
+	halt_ziel boolean DEFAULT TRUE,
 	CONSTRAINT verbindung_pk PRIMARY KEY (id),
 	CONSTRAINT chk_verbindung_selbstverbindung CHECK (id_startknoten <> id_zielknoten)
 );

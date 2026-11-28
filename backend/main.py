@@ -141,6 +141,12 @@ async def chat(sid, message: ChatMessage):
     return await guarded_query(sid, lambda: ChatQuery(sid, message))
 
 
+@sio.on("export_map")
+async def export_map(sid, exported_map: ExportedMap):
+    with pool.connection() as conn:
+        return await guarded_query(sid, lambda: ExportMapQuery(conn, sid, exported_map))
+
+
 # TODO: Remove in prod
 @sio.on("reset_database")
 async def reset_database(sid):

@@ -1,5 +1,26 @@
+import itertools
+
 from models import *
 from psycopg.cursor import Cursor
+
+
+def get_all_segements(
+    connections: list[Connection],
+) -> list[(int, int, int, bool, bool)]:
+    segments = []
+    for c in connections:
+        nodes = [c.from_node_id]
+        nodes.extend(c.via)
+        nodes.append(c.to_node_id)
+
+        for from_node_id, to_node_id in itertools.pairwise(nodes):
+            stop_from = from_node_id == c.from_node_id
+            stop_to = to_node_id == c.to_node_id
+            segments.append(
+                (from_node_id, to_node_id, c.vehicle_id, stop_from, stop_to)
+            )
+
+    return segments
 
 
 def get_last_move_ticket_name(cursor: Cursor, round: int, player_id: int) -> str:

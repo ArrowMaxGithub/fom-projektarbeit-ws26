@@ -21,6 +21,14 @@
         }
       }
     },
+    "op_export_map_receive_root_3d49fa39344f15f8_channel": {
+      "address": "/",
+      "messages": {
+        "op_export_map_receive_root_3d49fa39344f15f8_message": {
+          "$ref": "#/components/messages/op_export_map_receive_root_3d49fa39344f15f8_message"
+        }
+      }
+    },
     "op_gamestate_send_root_468f8dc1224789e8_channel": {
       "address": "/",
       "messages": {
@@ -119,6 +127,21 @@
       "messages": [
         {
           "$ref": "#/channels/op_choose_role_receive_root_547aafb7a7a63308_channel/messages/op_choose_role_receive_root_547aafb7a7a63308_message"
+        }
+      ],
+      "x-pydantic-socketio": {
+        "ack": "unspecified"
+      }
+    },
+    "op_export_map_receive_root_3d49fa39344f15f8": {
+      "summary": "Receive export_map (/)",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/op_export_map_receive_root_3d49fa39344f15f8_channel"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/op_export_map_receive_root_3d49fa39344f15f8_channel/messages/op_export_map_receive_root_3d49fa39344f15f8_message"
         }
       ],
       "x-pydantic-socketio": {
@@ -339,6 +362,69 @@
                 "role"
               ],
               "title": "ChooseRole",
+              "type": "object"
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        }
+      },
+      "op_export_map_receive_root_3d49fa39344f15f8_message": {
+        "name": "export_map",
+        "x-pydantic-socketio": {
+          "event": "export_map",
+          "arguments": [
+            {
+              "name": "exported_map"
+            }
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "properties": {
+                "name": {
+                  "title": "Name",
+                  "type": "string"
+                },
+                "dimensions": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "title": "Dimensions",
+                  "type": "array"
+                },
+                "nodes": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_export_map_receive_root_3d49fa39344f15f8_message_0_MapNode"
+                  },
+                  "title": "Nodes",
+                  "type": "array"
+                },
+                "connections": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_export_map_receive_root_3d49fa39344f15f8_message_0_Connection"
+                  },
+                  "title": "Connections",
+                  "type": "array"
+                },
+                "vehicles": {
+                  "items": {
+                    "$ref": "#/components/schemas/op_export_map_receive_root_3d49fa39344f15f8_message_0_Vehicle"
+                  },
+                  "title": "Vehicles",
+                  "type": "array"
+                }
+              },
+              "required": [
+                "name",
+                "dimensions",
+                "nodes",
+                "connections",
+                "vehicles"
+              ],
+              "title": "ExportedMap",
               "type": "object"
             }
           ],
@@ -653,6 +739,89 @@
         "title": "Role",
         "type": "string"
       },
+      "op_export_map_receive_root_3d49fa39344f15f8_message_0_Connection": {
+        "properties": {
+          "connection_id": {
+            "title": "Connection Id",
+            "type": "integer"
+          },
+          "from_node_id": {
+            "title": "From Node Id",
+            "type": "integer"
+          },
+          "to_node_id": {
+            "title": "To Node Id",
+            "type": "integer"
+          },
+          "vehicle_id": {
+            "title": "Vehicle Id",
+            "type": "integer"
+          },
+          "via": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Via",
+            "type": "array"
+          }
+        },
+        "required": [
+          "connection_id",
+          "from_node_id",
+          "to_node_id",
+          "vehicle_id",
+          "via"
+        ],
+        "title": "Connection",
+        "type": "object"
+      },
+      "op_export_map_receive_root_3d49fa39344f15f8_message_0_MapNode": {
+        "properties": {
+          "node_id": {
+            "title": "Node Id",
+            "type": "integer"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "position_x": {
+            "title": "Position X",
+            "type": "number"
+          },
+          "position_y": {
+            "title": "Position Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "node_id",
+          "number",
+          "position_x",
+          "position_y"
+        ],
+        "title": "MapNode",
+        "type": "object"
+      },
+      "op_export_map_receive_root_3d49fa39344f15f8_message_0_Vehicle": {
+        "description": "Vehicle(*, vehicle_id: int, name: str)",
+        "properties": {
+          "vehicle_id": {
+            "title": "Vehicle Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vehicle_id",
+          "name"
+        ],
+        "title": "Vehicle",
+        "type": "object"
+      },
       "op_gamestate_send_root_468f8dc1224789e8_message_0_Connection": {
         "properties": {
           "connection_id": {
@@ -792,11 +961,11 @@
           },
           "position_x": {
             "title": "Position X",
-            "type": "integer"
+            "type": "number"
           },
           "position_y": {
             "title": "Position Y",
-            "type": "integer"
+            "type": "number"
           }
         },
         "required": [

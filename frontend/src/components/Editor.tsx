@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent } from "react";
-import type { Connection, GameState, MapNode, Ticket } from "../interfaces";
+import type { Connection, ExportedMap, GameState, MapNode, Ticket } from "../interfaces";
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
 import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, repopulateIds } from "./GameStateHelpers";
 import { EditorTools } from "./EditorTools";
@@ -22,6 +22,7 @@ export default function Editor({ active, socket, playerName }: EditorProps) {
     const [activeConn, setActiveConn] = useState<Connection | null>(null);
     const [nodeToMove, setNodeToMove] = useState<number | null>(null);
     const [overlapConn, setoOverlapConn] = useState<number[]>([]);
+    const [mapName, setmapName] = useState<string>("");
 
     useEffect(() => {
         setActiveConn(prev => {
@@ -289,6 +290,21 @@ export default function Editor({ active, socket, playerName }: EditorProps) {
         setoOverlapConn([]);
     }
 
+    function handleExportMap() {
+        const exported_map: ExportedMap = {
+            name: mapName,
+            dimensions: [1000, 1000],
+            nodes: gamestate.nodes,
+            connections: gamestate.connections,
+            vehicles: gamestate.vehicles,
+        };
+        socket.emit("export_map", exported_map, (result: any) => {
+            if (result !== undefined) {
+                console.log(`Map was succesfully exported with ID ${result["id"]} and version ${result["version"]}`);
+            }
+        });
+    }
+
     return <div className="Editor">
         <div className="MainPanel">
             <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove} overlapConn={overlapConn}></EditorGameboard>
@@ -296,9 +312,19 @@ export default function Editor({ active, socket, playerName }: EditorProps) {
         <div className="SidePanel">
             <div className="SidePanelTop">
                 <div className="EditorSettings">
-                    <label htmlFor="EditorMapName">Kartenname: </label>
-                    <input id="EditorMapName" className="EditorMapName"></input>
+                    <form>
+                        <label htmlFor="MapNameInput">Kartenname: </label>
+                        <input
+                            id="MapNameInput"
+                            value={mapName}
+                            onChange={(e) =>
+                                setmapName(e.target.value)
+                            }
+                            placeholder=""
+                        />
+                    </form>
                     <button onClick={() => confirm("Soll die gesamte Karte zurückgesetzt werden?") ? handleResetEditor() : null}>Karte zurücksetzen</button>
+                    <button onClick={() => confirm("Soll die Karte final exportiert werden?") ? handleExportMap() : null}>Karte exportieren</button>
                 </div>
                 <div className="EditorInteractions">
                     <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool} handleSelectConnPalette={handleSelectConnPalette}></EditorTools>

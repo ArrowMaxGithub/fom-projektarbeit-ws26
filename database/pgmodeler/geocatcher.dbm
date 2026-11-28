@@ -286,10 +286,10 @@ OR
 		<type name="integer" length="0"/>
 	</column>
 	<column name="breite" not-null="true">
-		<type name="integer" length="0"/>
+		<type name="real" length="0"/>
 	</column>
 	<column name="hoehe" not-null="true">
-		<type name="integer" length="0"/>
+		<type name="real" length="0"/>
 	</column>
 	<constraint name="karte_pk" type="pk-constr" table="public.karte">
 		<columns names="id" ref-type="src-columns"/>
@@ -318,10 +318,10 @@ OR
 		<type name="integer" length="0"/>
 	</column>
 	<column name="position_x" not-null="true">
-		<type name="integer" length="0"/>
+		<type name="real" length="0"/>
 	</column>
 	<column name="position_y" not-null="true">
-		<type name="integer" length="0"/>
+		<type name="real" length="0"/>
 	</column>
 	<constraint name="knoten_pk" type="pk-constr" table="public.knoten">
 		<columns names="id" ref-type="src-columns"/>

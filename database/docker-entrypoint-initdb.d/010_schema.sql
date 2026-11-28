@@ -160,8 +160,8 @@ CREATE TABLE public.karte (
     id integer NOT NULL GENERATED ALWAYS AS IDENTITY ,
     name varchar NOT NULL,
     version integer NOT NULL DEFAULT 1,
-    breite integer NOT NULL,
-    hoehe integer NOT NULL,
+    breite real NOT NULL,
+    hoehe real NOT NULL,
 
     CONSTRAINT karte_pk PRIMARY KEY (id),
 
@@ -183,8 +183,8 @@ CREATE TABLE public.knoten (
     id integer NOT NULL GENERATED ALWAYS AS IDENTITY ,
     id_karte integer NOT NULL,
     nummer integer NOT NULL,
-    position_x integer NOT NULL,
-    position_y integer NOT NULL,
+    position_x real NOT NULL,
+    position_y real NOT NULL,
 
     CONSTRAINT knoten_pk PRIMARY KEY (id),
 

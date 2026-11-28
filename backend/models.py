@@ -56,8 +56,8 @@ class GameInfo(BaseModel):
 class MapNode(BaseModel):
     node_id: int
     number: int
-    position_x: int
-    position_y: int
+    position_x: float
+    position_y: float
 
 
 class Connection(BaseModel):
@@ -239,7 +239,7 @@ class GameState(BaseModel):
                 to_node_id=c.to_node_id
                 if c.from_node_id == player.current_node
                 else c.from_node_id,
-                via=c.via
+                via=c.via,
             )
             for c in conns
         ]
@@ -293,3 +293,11 @@ class ChooseRole(BaseModel):
     player_id: int
     game_id: int
     role: Role | None
+
+
+class ExportedMap(BaseModel):
+    name: str
+    dimensions: list[float]
+    nodes: list[MapNode]
+    connections: list[Connection]
+    vehicles: list[Vehicle]

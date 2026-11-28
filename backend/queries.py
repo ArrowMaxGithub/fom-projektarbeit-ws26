@@ -754,3 +754,89 @@ class ChooseRoleQuery(Query):
         )
 
         return True
+
+
+class ExportMapQuery:
+    def __init__(self, conn: DBConnection, sid, exportmap: ExportedMap):
+        self.sid = sid
+        self.map_id = None
+        self.map_version = None
+        self.error = None
+
+        with conn.transaction():
+            cursor = conn.cursor()
+            assert len(exportmap.name) > 0, "Karte benötigt einen Namen"
+            assert exportmap.dimensions[0] > 0, "Kartenbreite muss positiv sein"
+            assert exportmap.dimensions[1] > 0, "Kartenhöhe muss positiv sein"
+            assert len(exportmap.nodes) >= 10, "Karte benötigt mindestens 10 Knoten"
+            assert len(exportmap.connections) >= 10, (
+                "Karte benötigt mindestens 10 Verbindungen"
+            )
+
+            row = cursor.execute(
+                t"""
+                SELECT COALESCE(MAX(version), 1) 
+                FROM karte
+                WHERE name = {exportmap.name};
+                """
+            ).fetchone()
+            version = row[0] if row else None
+            self.map_version = version + 1 if version else 1
+
+            row = cursor.execute(
+                t"""
+                INSERT INTO karte(name, version, breite, hoehe) 
+                VALUES ({exportmap.name}, {self.map_version}, {exportmap.dimensions[0]}, {exportmap.dimensions[1]})
+                RETURNING id;
+                """
+            ).fetchone()
+            self.map_id = row[0]
+
+            assert self.map_version is not None
+            assert self.map_id is not None
+
+            nodes = [
+                (self.map_id, node.number, node.position_x, node.position_y)
+                for node in exportmap.nodes
+            ]
+            orig_id_number_map = {node.node_id: node.number for node in exportmap.nodes}
+            new_number_id_map = {node.number: None for node in exportmap.nodes}
+
+            cursor.executemany(
+                """
+                INSERT INTO knoten(id_karte, nummer, position_x, position_y) 
+                VALUES (%s, %s, %s, %s);
+                """,
+                nodes,
+            )
+            rows = cursor.execute(
+                t"""
+                SELECT id, nummer
+                FROM knoten
+                WHERE id_karte = {self.map_id};
+                """
+            ).fetchall()
+            for node_id, number in rows:
+                new_number_id_map[number] = node_id
+
+            # Translate editor-IDs to database-IDs via node numbers
+            for c in exportmap.connections:
+                c.from_node_id = new_number_id_map[orig_id_number_map[c.from_node_id]]
+                c.to_node_id = new_number_id_map[orig_id_number_map[c.to_node_id]]
+                c.via = [new_number_id_map[orig_id_number_map[v]] for v in c.via]
+
+            connections = get_all_segements(exportmap.connections)
+            rows = cursor.executemany(
+                """
+                INSERT INTO verbindung(id_startknoten, id_zielknoten, id_verkehrsmittel, halt_start, halt_ziel) 
+                VALUES (%s, %s, %s, %s, %s);
+                """,
+                connections,
+            )
+
+    async def fullfill(self, sio: FastAPISocketIO):
+        if self.error is not None:
+            await sio.emit("error", to=self.sid, data=self.error)
+            return None
+        else:
+            return {"id": self.map_id, "version": self.map_version}
