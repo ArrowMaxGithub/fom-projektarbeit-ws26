@@ -236,13 +236,20 @@ export default function Editor({ active }: EditorProps) {
         }
     }
 
+    function handleResetEditor() {
+        setGameState(defaultEditorGameState);
+        setSelectedNodes([]);
+        setNodeToMove(null);
+        setActiveConnPalette("Taxi");
+        setoOverlapConn([]);
+    }
+
     return <>
         <div className="EditorContent">
             <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove} overlapConn={overlapConn}></EditorGameboard>
         </div>
         <div className="EditorInfoPanel">
-            <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool
-            } handleSelectConnPalette={handleSelectConnPalette}></EditorTools>
+            <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool} handleSelectConnPalette={handleSelectConnPalette} handleResetEditor={handleResetEditor}></EditorTools>
             <div className="Ticketbuttons">
                 <h1>Tickets</h1>
                 {

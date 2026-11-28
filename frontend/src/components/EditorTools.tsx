@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react"
+import { type MouseEvent } from "react"
 import Add from "../assets/tools/add.svg?react"
 import Conn from "../assets/tools/connection.svg?react"
 import Node from "../assets/nodes/node_all.svg?react"
@@ -8,11 +8,12 @@ import { vehicleNameToColor } from "./GameStateHelpers"
 export interface EditorToolsProps {
     activeTool: string | null,
     activeConnPalette: string | null,
+    handleResetEditor: () => void,
     handleSelectTool: (e: MouseEvent, tool: string) => void,
     handleSelectConnPalette: (e: MouseEvent, palette: string) => void,
 }
 
-export function EditorTools({ activeTool, activeConnPalette, handleSelectTool, handleSelectConnPalette }: EditorToolsProps) {
+export function EditorTools({ activeTool, activeConnPalette, handleResetEditor, handleSelectTool, handleSelectConnPalette }: EditorToolsProps) {
     return <>
         <h1>Tools</h1>
         <div className="EditorTools">
@@ -38,6 +39,7 @@ export function EditorTools({ activeTool, activeConnPalette, handleSelectTool, h
                     })
                 }
             </svg>
-        </div>
+            <button onClick={() => confirm("Soll die gesamte Karte zurückgesetzt werden?") ? handleResetEditor() : null}>Karte zurücksetzen</button>
+        </div >
     </>
 }
