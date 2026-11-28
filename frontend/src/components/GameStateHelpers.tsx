@@ -1,6 +1,42 @@
 import type { GameState, Player, Connection, Ticket, Vehicle, MapNode } from "../interfaces";
 import { NodeState } from "./NodeState";
 
+interface KeyDict {
+    [key: number]: number;
+}
+
+export function repopulateIds(gamestate: GameState): GameState {
+    const nodeMapping: KeyDict = {};
+    gamestate.nodes.forEach((n, index) => {
+        nodeMapping[n.node_id] = index + 1;
+    })
+
+    const connMapping: KeyDict = {};
+    gamestate.connections.forEach((c, index) => {
+        connMapping[c.connection_id] = index + 1;
+    })
+
+    return {
+        ...gamestate,
+        nodes: gamestate.nodes.map(n => {
+            return {
+                ...n,
+                number: nodeMapping[n.node_id],
+                node_id: nodeMapping[n.node_id],
+            }
+        }),
+        connections: gamestate.connections.map(c => {
+            return {
+                ...c,
+                connection_id: connMapping[c.connection_id],
+                from_node_id: nodeMapping[c.from_node_id],
+                via: c.via.map(v => nodeMapping[v]),
+                to_node_id: nodeMapping[c.to_node_id],
+            }
+        }),
+    };
+}
+
 // TODO: Brittle comparison against vehicle name. Add vehicle color to database or user preferences.
 export function vehicleNameToColor(vehicle_name: string): string {
     switch (vehicle_name) {

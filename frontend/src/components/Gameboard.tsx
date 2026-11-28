@@ -77,7 +77,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
                 // Draw connections with nudged colored lines
                 mapConnections(gamestate, selectedTicket)
                     .map(({ id, partsIndex, color, x1, y1, x2, y2 }, _index) =>
-                        <ConnectionLine id={id} partsIndex={partsIndex} x1={x1} y1={y1} x2={x2} y2={y2} color={color}></ConnectionLine>
+                        <ConnectionLine key={`Connection${id}_${partsIndex}`} id={id} x1={x1} y1={y1} x2={x2} y2={y2} color={color}></ConnectionLine>
                     )
             }
             {

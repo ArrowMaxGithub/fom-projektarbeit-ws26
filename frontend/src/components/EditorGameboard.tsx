@@ -90,7 +90,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
                 // Draw connections with nudged colored lines
                 mapConnections(gamestate, selectedTicket)
                     .map(({ id, partsIndex, color, x1, y1, x2, y2 }, _index) =>
-                        <ConnectionLine id={id} partsIndex={partsIndex} x1={x1} y1={y1} x2={x2} y2={y2} color={color}></ConnectionLine>
+                        <ConnectionLine key={`Connection${id}_${partsIndex}`} id={id} x1={x1} y1={y1} x2={x2} y2={y2} color={color}></ConnectionLine>
                     )
             }
             {
@@ -118,7 +118,7 @@ export default function EditorGameboard({ gamestate, selectedTicket, selectedNod
                 // Show legend of vehicles
                 mapVehicles(gamestate)
                     .map(({ id, name, color, rect_x, rect_y, text_x, text_y }, _index) =>
-                        <VehicleLegend id={id} name={name} color={color} rect_x={rect_x} rect_y={rect_y} text_x={text_x} text_y={text_y}></VehicleLegend>
+                        <VehicleLegend key={id} id={id} name={name} color={color} rect_x={rect_x} rect_y={rect_y} text_x={text_x} text_y={text_y}></VehicleLegend>
                     )
             }
         </svg>

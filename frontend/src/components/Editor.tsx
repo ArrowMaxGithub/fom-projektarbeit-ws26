@@ -2,7 +2,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import type { Connection, GameState, MapNode, Ticket } from "../interfaces";
 import TicketButton from "./TicketButton";
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, vehicleNameToColor } from "./GameStateHelpers";
+import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, repopulateIds, vehicleNameToColor } from "./GameStateHelpers";
 import { EditorTools } from "./EditorTools";
 
 type EditorProps = {
@@ -136,8 +136,47 @@ export default function Editor({ active }: EditorProps) {
         });
     }
 
-    function handleRemoveNode(node_id: number) {
+    function handleRemoveNode(nodeId: number) {
+        setGameState((prev) => {
+            const connections = prev.connections.map(c => {
+                const nodes = [c.from_node_id, ...c.via, c.to_node_id];
+                if (!nodes.includes(nodeId)) {
+                    return c;
+                }
 
+                if (c.via.includes(nodeId)) {
+                    return {
+                        ...c,
+                        via: c.via.filter(n => n !== nodeId)
+                    };
+                }
+
+                if (c.to_node_id === nodeId && c.via.length > 0) {
+                    return {
+                        ...c,
+                        via: c.via.slice(0, -1),
+                        to_node_id: c.via.at(-1)!
+                    };
+                }
+
+                if (c.from_node_id === nodeId && c.via.length > 0) {
+                    return {
+                        ...c,
+                        from_node_id: c.via.at(0)!,
+                        via: c.via.slice(1)
+                    };
+                }
+
+                return undefined;
+            }).filter(c => c !== undefined);
+
+            const newGamestate = {
+                ...prev,
+                connections,
+                nodes: prev.nodes.filter(node => node.node_id !== nodeId)
+            };
+            return repopulateIds(newGamestate);
+        });
     }
 
     function handleAcceptConnection() {
@@ -182,11 +221,14 @@ export default function Editor({ active }: EditorProps) {
 
     function handleNodeClick(node: number) {
         if (activeTool === "move_node") {
-            setNodeToMove(prev => prev === node ? null : node);
+            return setNodeToMove(prev => prev === node ? null : node);
+        }
+
+        if (activeTool === "remove_node") {
+            return handleRemoveNode(node);
         }
 
         if (activeTool !== "add_conn") return;
-
         setSelectedNodes(prev => {
             let nodes;
             if (prev.includes(node)) {
@@ -194,10 +236,8 @@ export default function Editor({ active }: EditorProps) {
             } else {
                 nodes = [...prev, node];
             }
-
             return nodes;
         });
-
         setoOverlapConn([]);
     }
 

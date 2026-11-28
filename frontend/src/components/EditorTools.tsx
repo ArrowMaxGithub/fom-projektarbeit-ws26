@@ -1,5 +1,6 @@
 import { type MouseEvent } from "react"
 import Add from "../assets/tools/add.svg?react"
+import Remove from "../assets/tools/remove.svg?react"
 import Conn from "../assets/tools/connection.svg?react"
 import Node from "../assets/nodes/node_all.svg?react"
 import Move from "../assets/tools/move.svg?react"
@@ -20,6 +21,11 @@ export function EditorTools({ activeTool, activeConnPalette, handleResetEditor, 
             <svg className={activeTool === "add_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "add_node")}>
                 <Node className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></Node>
                 <Add className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></Add>
+            </svg>
+
+            <svg className={activeTool === "remove_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "remove_node")}>
+                <Node className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></Node>
+                <Remove className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></Remove>
             </svg>
 
             <svg className={activeTool === "move_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "move_node")}>
