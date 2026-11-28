@@ -107,7 +107,7 @@ hr {
   .EditorInfoPanel{
     grid-area: infos;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
 
     .EditorTools{
@@ -133,6 +133,23 @@ hr {
       }
 
       .ActiveConnPalette{
+      }
+    }
+
+    .EditorFilters{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+
+      .EditorFilter{
+        max-width: 100px;
+        padding: 5px;
+      }
+
+      .SelectedEditorFilter{
+        max-width: 100px;
+        padding: 5px;
+        background-color: rgb(74, 74, 74);
       }
     }
   }

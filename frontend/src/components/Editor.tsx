@@ -1,9 +1,9 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import type { Connection, GameState, MapNode, Ticket } from "../interfaces";
-import TicketButton from "./TicketButton";
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, repopulateIds, vehicleNameToColor } from "./GameStateHelpers";
+import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, repopulateIds } from "./GameStateHelpers";
 import { EditorTools } from "./EditorTools";
+import EditorFilters from "./EditorFilters";
 
 type EditorProps = {
     active: boolean,
@@ -262,9 +262,9 @@ export default function Editor({ active }: EditorProps) {
 
     function handleSelectTicket(ticket: Ticket) {
         if (ticket.ticket_type_id === selectedTicket?.ticket_type_id) {
-            setselectedTicket(null)
+            setselectedTicket(null);
         } else {
-            setselectedTicket(ticket)
+            setselectedTicket(ticket);
         }
     }
 
@@ -279,7 +279,9 @@ export default function Editor({ active }: EditorProps) {
     function handleResetEditor() {
         setGameState(defaultEditorGameState);
         setSelectedNodes([]);
+        setselectedTicket(null);
         setNodeToMove(null);
+        setActiveTool(null);
         setActiveConnPalette("Taxi");
         setoOverlapConn([]);
     }
@@ -290,17 +292,7 @@ export default function Editor({ active }: EditorProps) {
         </div>
         <div className="EditorInfoPanel">
             <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool} handleSelectConnPalette={handleSelectConnPalette} handleResetEditor={handleResetEditor}></EditorTools>
-            <div className="Ticketbuttons">
-                <h1>Tickets</h1>
-                {
-                    gamestate.players[0].tickets.map((ticket, _index) =>
-                        <TicketButton key={ticket.ticket_type_id}
-                            ticket={ticket} selectedTicket={selectedTicket}
-                            bobbby_round={false}
-                            onClick={handleSelectTicket}>
-                        </TicketButton>)
-                }
-            </div>
+            <EditorFilters tickets={gamestate.players[0].tickets} selectedTicket={selectedTicket} handleSelectTicket={handleSelectTicket}></EditorFilters>
         </div>
     </>
 }

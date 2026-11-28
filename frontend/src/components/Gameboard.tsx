@@ -90,7 +90,7 @@ export default function Gameboard({ playerId, gamestate, lastMisterXShowPos, sel
             {
                 // Show player name and role below player's current node
                 mapPlayers(gamestate, nodeSize)
-                    .map(({ id, color, x, y }, _index) => <PlayerFigure id={id} color={color} x={x} y={y}></PlayerFigure>)
+                    .map(({ id, color, x, y }, _index) => <PlayerFigure key={`Player${id}`} color={color} x={x} y={y}></PlayerFigure>)
             }
             {
                 // Show last known Mr.X position as dotted ring around node

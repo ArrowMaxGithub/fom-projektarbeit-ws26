@@ -5,6 +5,7 @@ type SvgComponent = FC<SVGProps<SVGSVGElement>>
 import NodeAll from "../assets/nodes/node_all.svg?react"
 import NodeBusBlack from "../assets/nodes/node_bus_black.svg?react"
 import NodeBusSubway from "../assets/nodes/node_bus_subway.svg?react"
+import NodeBusSubwayBlack from "../assets/nodes/node_bus_subway_black.svg?react"
 import NodeBus from "../assets/nodes/node_bus.svg?react"
 import NodeSubwayBlack from "../assets/nodes/node_subway_black.svg?react"
 import NodeSubway from "../assets/nodes/node_subway.svg?react"
@@ -12,7 +13,9 @@ import NodeTaxiBusBlack from "../assets/nodes/node_taxi_bus_black.svg?react"
 import NodeTaxiBusSubway from "../assets/nodes/node_taxi_bus_subway.svg?react"
 import NodeTaxiBus from "../assets/nodes/node_taxi_bus.svg?react"
 import NodeTaxiSubway from "../assets/nodes/node_taxi_subway.svg?react"
+import NodeTaxiSubwayBlack from "../assets/nodes/node_taxi_subway_black.svg?react"
 import NodeTaxi from "../assets/nodes/node_taxi.svg?react"
+import NodeTaxiBlack from "../assets/nodes/node_taxi_black.svg?react"
 import Node from "../assets/nodes/node.svg?react"
 
 type MapnodeProps = {
@@ -31,6 +34,7 @@ export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x
         "1,2,3,4": NodeAll,
         "2,4": NodeBusBlack,
         "2,3": NodeBusSubway,
+        "2,3,4": NodeBusSubwayBlack,
         "2": NodeBus,
         "3,4": NodeSubwayBlack,
         "3": NodeSubway,
@@ -38,6 +42,8 @@ export default function Mapnode({ id, number, vehicles, is_legal, is_selected, x
         "1,2,3": NodeTaxiBusSubway,
         "1,2": NodeTaxiBus,
         "1,3": NodeTaxiSubway,
+        "1,3,4": NodeTaxiSubwayBlack,
+        "1,4": NodeTaxiBlack,
         "1": NodeTaxi,
     }
 

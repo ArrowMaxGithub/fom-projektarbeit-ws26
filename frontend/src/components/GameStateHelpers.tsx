@@ -53,6 +53,24 @@ export function vehicleNameToColor(vehicle_name: string): string {
     }
 }
 
+// TODO: Brittle comparison against ticket name. Add ticket color to database or user preferences.
+export function ticketNameToColor(ticketName: string): string {
+    switch (ticketName) {
+        case "Undergroundticket":
+            return "#a40000";
+        case "Taxiticket":
+            return "#ffd000";
+        case "Busticket":
+            return "#039c03";
+        case "Blackticket":
+            return "#373737";
+        case "Doppelzugticket":
+            return "#5d037e";
+        default:
+            return "#ffffff";
+    }
+}
+
 export function getVehiclesAtNode(gamestate: GameState | null, node_id: number | null): number[] | undefined {
     return [... new Set(gamestate?.connections.filter(conn => conn.from_node_id === node_id || conn.to_node_id === node_id).map(conn => conn.vehicle_id).sort((a, b) => a - b))]
 }
