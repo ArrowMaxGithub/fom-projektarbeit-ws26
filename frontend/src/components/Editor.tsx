@@ -4,12 +4,15 @@ import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
 import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, repopulateIds } from "./GameStateHelpers";
 import { EditorTools } from "./EditorTools";
 import EditorFilters from "./EditorFilters";
+import Chat from "./Chat";
 
 type EditorProps = {
     active: boolean,
+    socket: any,
+    playerName: string,
 }
 
-export default function Editor({ active }: EditorProps) {
+export default function Editor({ active, socket, playerName }: EditorProps) {
     const [gamestate, setGameState] = useState<GameState>(defaultEditorGameState());
     const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
     const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -286,13 +289,23 @@ export default function Editor({ active }: EditorProps) {
         setoOverlapConn([]);
     }
 
-    return <>
-        <div className="EditorContent">
+    return <div className="Editor">
+        <div className="MainPanel">
             <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove} overlapConn={overlapConn}></EditorGameboard>
         </div>
-        <div className="EditorInfoPanel">
-            <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool} handleSelectConnPalette={handleSelectConnPalette} handleResetEditor={handleResetEditor}></EditorTools>
-            <EditorFilters tickets={gamestate.players[0].tickets} selectedTicket={selectedTicket} handleSelectTicket={handleSelectTicket}></EditorFilters>
+        <div className="SidePanel">
+            <div className="SidePanelTop">
+                <div className="EditorSettings">
+                    <label htmlFor="EditorMapName">Kartenname: </label>
+                    <input id="EditorMapName" className="EditorMapName"></input>
+                    <button onClick={() => confirm("Soll die gesamte Karte zurückgesetzt werden?") ? handleResetEditor() : null}>Karte zurücksetzen</button>
+                </div>
+                <div className="EditorInteractions">
+                    <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool} handleSelectConnPalette={handleSelectConnPalette}></EditorTools>
+                    <EditorFilters tickets={gamestate.players[0].tickets} selectedTicket={selectedTicket} handleSelectTicket={handleSelectTicket}></EditorFilters>
+                </div>
+            </div>
+            <Chat active={active} socket={socket} playerName={playerName} />
         </div>
-    </>
+    </div>
 }

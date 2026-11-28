@@ -161,33 +161,29 @@ function App() {
     )}
 
     {/*Raumauswahl mit eigenem Chat*/}
-    <div className="LobbyLayout">
-      <Lobby active={isLoggedIn && current_room === null && !isEditor} rooms={rooms} handleRoomJoin={handleRoomJoin} handleSwitchToEditor={handleSwitchToEditor} />
-      <Chat active={isLoggedIn && current_room === null && !isEditor} socket={socket} playerName={playerName} />
-    </div>
+    <Lobby
+      active={isLoggedIn && current_room === null && !isEditor}
+      socket={socket}
+      playerName={playerName}
+      rooms={rooms}
+      handleRoomJoin={handleRoomJoin}
+      handleSwitchToEditor={handleSwitchToEditor} />
 
     {/*Map Editor mit eigenem Chat*/}
-    <div className="EditorLayout">
-      <Editor active={isLoggedIn && current_room === null && isEditor}></Editor>
-      <Chat active={isLoggedIn && current_room === null && isEditor} socket={socket} playerName={playerName} />
-    </div>
+    <Editor
+      active={isLoggedIn && current_room === null && isEditor}
+      socket={socket}
+      playerName={playerName} />
 
     {/*Raum mit eigenem Chat*/}
-    <div className="GameLayout">
-      <InGame
-        active={isLoggedIn && current_room !== null}
-        socket={socket}
-        setAccountBarHeader={setAccountBarHeader}
-        gameId={current_room}
-        playerId={playerId}
-      />
-      <Chat
-        active={isLoggedIn && current_room !== null}
-        key={current_room}
-        socket={socket}
-        playerName={playerName}
-      />
-    </div>
+    <InGame
+      active={isLoggedIn && current_room !== null}
+      socket={socket}
+      playerName={playerName}
+      setAccountBarHeader={setAccountBarHeader}
+      gameId={current_room}
+      playerId={playerId}
+    />
 
   </div>
 }

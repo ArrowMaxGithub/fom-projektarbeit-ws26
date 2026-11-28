@@ -34,6 +34,7 @@ export default function MisterXHistory({ moves, mister_x_show, revealedPositions
     const rounds = Array.from({ length: 22 }, (_, index) => index + 1);
 
     return <div className="MisterXHistory">
+        <p>Züge:</p>
         {rounds.map(round =>
             <div key={round} className={mister_x_show.includes(round) ? "HistoryRound RevealRound" : "HistoryRound"}><span>{round}.</span>
 

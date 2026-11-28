@@ -9,12 +9,11 @@ import { vehicleNameToColor } from "./GameStateHelpers"
 export interface EditorToolsProps {
     activeTool: string | null,
     activeConnPalette: string | null,
-    handleResetEditor: () => void,
     handleSelectTool: (e: MouseEvent, tool: string) => void,
     handleSelectConnPalette: (e: MouseEvent, palette: string) => void,
 }
 
-export function EditorTools({ activeTool, activeConnPalette, handleResetEditor, handleSelectTool, handleSelectConnPalette }: EditorToolsProps) {
+export function EditorTools({ activeTool, activeConnPalette, handleSelectTool, handleSelectConnPalette }: EditorToolsProps) {
     return <div className="EditorTools">
         <h1>Tools</h1>
         <svg className={activeTool === "add_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "add_node")}>
@@ -44,6 +43,5 @@ export function EditorTools({ activeTool, activeConnPalette, handleResetEditor, 
                 })
             }
         </svg>
-        <button onClick={() => confirm("Soll die gesamte Karte zurückgesetzt werden?") ? handleResetEditor() : null}>Karte zurücksetzen</button>
     </div >
 }

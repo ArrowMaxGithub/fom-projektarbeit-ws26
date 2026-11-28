@@ -7,16 +7,18 @@ import Gameboard from './Gameboard.tsx';
 import TicketButton from './TicketButton.tsx';
 import LobbyInfos from './LobbyInfos.tsx';
 import MisterXHistory from './MisterXHistory.tsx';
+import Chat from './Chat.tsx';
 
 type InGameProps = {
     active: boolean,
     socket: Socket,
+    playerName: string,
     setAccountBarHeader: (value: string) => void,
     gameId: number | null,
     playerId: number | null,
 }
 
-export default function InGame({ active, socket, setAccountBarHeader, playerId }: InGameProps) {
+export default function InGame({ active, socket, playerName, setAccountBarHeader, playerId }: InGameProps) {
     const [gamestate, setGameState] = useState<GameState | null>(null);
     const [lastMisterXShowPos, setLastMisterXShowPos] = useState<number | null>(null);
     const [revealedPositions, setRevealedPositions] = useState<Record<number, number>>({});
@@ -258,7 +260,7 @@ export default function InGame({ active, socket, setAccountBarHeader, playerId }
     }
 
     return <div className="InGame">
-        <div className="GameContent">
+        <div className="MainPanel">
             <Gameboard playerId={playerId} gamestate={gamestate} lastMisterXShowPos={lastMisterXShowPos} selectedTicket={selectedTicket} makeMove={makeMove}></Gameboard>
             <div className="GameControlButtons" hidden={gamestate?.info.status !== "lobby"}>
                 <button
@@ -271,46 +273,49 @@ export default function InGame({ active, socket, setAccountBarHeader, playerId }
             </div>
         </div>
 
-        <div className="GameInfosPanel">
-            <div className='SidepanelTabs'>
-                <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(0)}>Spielinformationen</button>
-                <button aria-pressed={activeTab === 1} onClick={() => setActiveTab(1)}>Lobbyinformationen</button>
-                <button aria-pressed={activeTab === 2} onClick={() => setActiveTab(2)}>Zughistorie Mister X</button>
-            </div>
-
-            {activeTab == 0 && <>
-                {gameover && <p>Game Over</p>}
-                <GameInfos
-                    gameover={gameover}
-                    turn_order={getTurnOrderLabels(gamestate) ?? []}
-                    round={gamestate?.info.current_round ?? 0}
-                    active_player={getActivePlayer(gamestate)?.name ?? "-"}
-                    mister_x_show={mister_x_show}>
-                </GameInfos>
-
-                <div className="Ticketbuttons">
-                    {
-                        getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) =>
-                            <TicketButton key={ticket.ticket_type_id}
-                                ticket={ticket} selectedTicket={selectedTicket}
-                                bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"}
-                                onClick={handleSelectTicket}>
-                            </TicketButton>)
-                    }
+        <div className="SidePanel">
+            <div className="SidePanelTop">
+                <div className='SidepanelTabs'>
+                    <button aria-pressed={activeTab === 0} onClick={() => setActiveTab(0)}>Spielinformationen</button>
+                    <button aria-pressed={activeTab === 1} onClick={() => setActiveTab(1)}>Lobbyinformationen</button>
+                    <button aria-pressed={activeTab === 2} onClick={() => setActiveTab(2)}>Zughistorie Mister X</button>
                 </div>
-            </>}
 
-            {activeTab == 1 &&
-                <LobbyInfos players={gamestate?.players ?? []}></LobbyInfos>
-            }
+                {activeTab == 0 && <>
+                    {gameover && <p>Game Over</p>}
+                    <GameInfos
+                        gameover={gameover}
+                        turn_order={getTurnOrderLabels(gamestate) ?? []}
+                        round={gamestate?.info.current_round ?? 0}
+                        active_player={getActivePlayer(gamestate)?.name ?? "-"}
+                        mister_x_show={mister_x_show}>
+                    </GameInfos>
 
-            {activeTab == 2 &&
-                <MisterXHistory
-                    moves={gamestate?.mister_x_moves ?? []}
-                    mister_x_show={mister_x_show}
-                    revealedPositions={revealedPositions}>
-                </MisterXHistory>
-            }
+                    <div className="Ticketbuttons">
+                        {
+                            getPlayer(gamestate, playerId)?.tickets.map((ticket, _index) =>
+                                <TicketButton key={ticket.ticket_type_id}
+                                    ticket={ticket} selectedTicket={selectedTicket}
+                                    bobbby_round={getActivePlayer(gamestate)?.player_type === "bobby"}
+                                    onClick={handleSelectTicket}>
+                                </TicketButton>)
+                        }
+                    </div>
+                </>}
+
+                {activeTab == 1 &&
+                    <LobbyInfos players={gamestate?.players ?? []}></LobbyInfos>
+                }
+
+                {activeTab == 2 &&
+                    <MisterXHistory
+                        moves={gamestate?.mister_x_moves ?? []}
+                        mister_x_show={mister_x_show}
+                        revealedPositions={revealedPositions}>
+                    </MisterXHistory>
+                }
+            </div>
+            <Chat active={active} socket={socket} playerName={playerName} />
         </div>
     </div >
 }
