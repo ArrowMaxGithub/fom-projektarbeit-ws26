@@ -8,7 +8,7 @@ import InGame from './components/InGame.tsx'
 import LandingPage from './components/LandingPage.tsx';
 import AccountBarIcon from './assets/icon_search.svg?react'
 import { getPlayerColor } from './components/PlayerColors.tsx';
-import MapEditor from './components/MapEditor.tsx';
+import Editor from './components/Editor.tsx';
 
 export const socket = io(undefined, { autoConnect: false }); // Infer URL from window.location
 
@@ -104,16 +104,15 @@ function App() {
 
   function handleReturnToLobby() {
     if (userId === null) return;
+    setAccountBarHeader("GeoCatcher");
 
-    if (isEditor){
+    if (isEditor) {
       console.log("Returning from editor to main lobby");
       setIsEditor(false);
     }
 
     if (current_room === null) return;
-
     console.log(`${playerName} leaving room: ${current_room}`);
-    setAccountBarHeader("GeoCatcher");
     socket.emit("room_leave", userId, current_room, (success: boolean) => {
       if (success !== undefined) {
         setPlayerId(null);
@@ -124,8 +123,8 @@ function App() {
     });
   }
 
-  function handleSwitchToEditor(){
-    if (current_room !== null){
+  function handleSwitchToEditor() {
+    if (current_room !== null) {
       console.error("Can't switch from active game to map editor. Return to lobby first.");
       return;
     }
@@ -169,7 +168,7 @@ function App() {
 
     {/*Map Editor mit eigenem Chat*/}
     <div className="EditorLayout">
-      <MapEditor active={isLoggedIn && current_room === null && isEditor}></MapEditor>
+      <Editor active={isLoggedIn && current_room === null && isEditor}></Editor>
       <Chat active={isLoggedIn && current_room === null && isEditor} socket={socket} playerName={playerName} />
     </div>
 

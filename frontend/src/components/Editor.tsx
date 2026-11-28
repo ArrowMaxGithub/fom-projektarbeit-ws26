@@ -1,21 +1,15 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import type { Connection, GameState, MapNode, Ticket } from "../interfaces";
 import TicketButton from "./TicketButton";
-import ToolAdd from "../assets/tools/add.svg?react"
-import ToolRemove from "../assets/tools/remove.svg?react"
-import ToolEdit from "../assets/tools/edit.svg?react"
-import ToolConnection from "../assets/tools/connection.svg?react"
-import ToolNode from "../assets/nodes/node_all.svg?react"
-import ToolMove from "../assets/tools/move.svg?react"
-import ToolEmpty from "../assets/tools/empty.svg?react"
 import EditorGameboard, { defaultEditorGameState } from "./EditorGameboard";
-import { getConnection, getNextConnectionId, getNextNodeId, getNode, getVehicle, getVehicleByName, isOverlappingConnection, vehicleNameToColor } from "./GameStateHelpers";
+import { getNextConnectionId, getNextNodeId, getNode, getVehicleByName, isOverlappingConnection, vehicleNameToColor } from "./GameStateHelpers";
+import { EditorTools } from "./EditorTools";
 
-type MapEditorProps = {
+type EditorProps = {
     active: boolean,
 }
 
-export default function MapEditor({ active }: MapEditorProps) {
+export default function Editor({ active }: EditorProps) {
     const [gamestate, setGameState] = useState<GameState>(defaultEditorGameState());
     const [selectedTicket, setselectedTicket] = useState<Ticket | null>(null);
     const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -213,6 +207,8 @@ export default function MapEditor({ active }: MapEditorProps) {
         setSelectedNodes([]);
         setNodeToMove(null);
         setActiveConnPalette("Taxi");
+        setoOverlapConn([]);
+
         if (activeConn) {
             activeConn.vehicle_id = getVehicleByName(gamestate, "Taxi")?.vehicle_id!;
         }
@@ -245,31 +241,8 @@ export default function MapEditor({ active }: MapEditorProps) {
             <EditorGameboard gamestate={gamestate} selectedTicket={selectedTicket} selectedNodes={selectedNodes} onClickNode={handleNodeClick} onClickMap={handleMapClick} onAcceptConnection={handleAcceptConnection} onDeleteConnection={handleDeleteConnection} connContextmenu={connContextMenu} nodeToMove={nodeToMove} overlapConn={overlapConn}></EditorGameboard>
         </div>
         <div className="EditorInfoPanel">
-            <h1>Tools</h1>
-            <div className="EditorTools">
-                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "add_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "add_node")}>
-                    <ToolNode className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></ToolNode>
-                    <ToolAdd className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></ToolAdd>
-                </svg>
-
-                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "move_node" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "move_node")}>
-                    <ToolNode className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></ToolNode>
-                    <ToolMove className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></ToolMove>
-                </svg>
-
-                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className={activeTool === "add_conn" ? "ActiveEditorTool Clickable" : "EditorTool Clickable"} onClick={(e) => handleSelectTool(e, "add_conn")} overflow={"visible"}>
-                    <ToolConnection className="EditorToolBase" width={"100%"} height={"100%"} x={0} y={0}></ToolConnection>
-                    <ToolAdd className="EditorToolModifier" width={"40%"} height={"40%"} x={0} y={0} fill="#ffffff"></ToolAdd>
-                    {
-                        ["Taxi", "Bus", "U-Bahn", "Schwarze Route"].map((name, i) => {
-                            return <g key={name}>
-                                <rect className={activeConnPalette === name ? "ActiveConnPalette Clickable" : "ConnPalette Clickable"} x={-30} y={5 + i * 20} width={15} height={15} fill={activeTool === "add_conn" ? vehicleNameToColor(name) : "none"} onClick={(e) => handleSelectConnPalette(e, name)}></rect>
-                                {name === activeConnPalette ? <circle cx={-30 + 7.5} cy={5 + i * 20 + 7.5} r={4} fill={activeTool === "add_conn" ? "black" : "none"}></circle> : null}
-                            </g>
-                        })
-                    }
-                </svg>
-            </div>
+            <EditorTools activeTool={activeTool} activeConnPalette={activeConnPalette} handleSelectTool={handleSelectTool
+            } handleSelectConnPalette={handleSelectConnPalette}></EditorTools>
             <div className="Ticketbuttons">
                 <h1>Tickets</h1>
                 {
